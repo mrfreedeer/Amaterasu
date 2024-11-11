@@ -1,4 +1,4 @@
-#include "Engine/Renderer/D3D12/Fence.hpp"
+#include "Engine/Renderer/Interfaces/Fence.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
 #include <d3d12.h>
 
