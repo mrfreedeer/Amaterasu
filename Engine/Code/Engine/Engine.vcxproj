@@ -303,8 +303,8 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)Renderer\D3D12\dxcompiler.dll" "$(SolutionDir)Run\dxcompiler.dll"
-copy /Y "$(ProjectDir)Renderer\D3D12\dxil.dll" "$(SolutionDir)Run\dxil.dll"
+      <Command>copy /Y "$(ProjectDir)Renderer\D3D12\lib\dxcompiler.dll" "$(SolutionDir)Run\dxcompiler.dll"
+copy /Y "$(ProjectDir)Renderer\D3D12\lib\dxil.dll" "$(SolutionDir)Run\dxil.dll"
 copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dll" "$(SolutionDir)Run\WinPixEventRuntime.dll"</Command>
       <Message>Copying DXCompiler, WinPix to Run folder</Message>
     </PreBuildEvent>
@@ -344,8 +344,8 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)Renderer\D3D12\dxcompiler.dll" "$(SolutionDir)Run\dxcompiler.dll"
-copy /Y "$(ProjectDir)Renderer\D3D12\dxil.dll" "$(SolutionDir)Run\dxil.dll"
+      <Command>copy /Y "$(ProjectDir)Renderer\D3D12\lib\dxcompiler.dll" "$(SolutionDir)Run\dxcompiler.dll"
+copy /Y "$(ProjectDir)Renderer\D3D12\lib\dxil.dll" "$(SolutionDir)Run\dxil.dll"
 copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dll" "$(SolutionDir)Run\WinPixEventRuntime.dll"</Command>
       <Message>Copying DXCompiler, WinPix to Run folder</Message>
     </PreBuildEvent>
@@ -386,8 +386,8 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)Renderer\D3D12\dxcompiler.dll" "$(SolutionDir)Run\dxcompiler.dll"
-copy /Y "$(ProjectDir)Renderer\D3D12\dxil.dll" "$(SolutionDir)Run\dxil.dll"
+      <Command>copy /Y "$(ProjectDir)Renderer\D3D12\lib\dxcompiler.dll" "$(SolutionDir)Run\dxcompiler.dll"
+copy /Y "$(ProjectDir)Renderer\D3D12\lib\dxil.dll" "$(SolutionDir)Run\dxil.dll"
 copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dll" "$(SolutionDir)Run\WinPixEventRuntime.dll"</Command>
       <Message>Copying DXCompiler, WinPix to Run folder</Message>
     </PreBuildEvent>
@@ -429,8 +429,8 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)Renderer\D3D12\dxcompiler.dll" "$(SolutionDir)Run\dxcompiler.dll"
-copy /Y "$(ProjectDir)Renderer\D3D12\dxil.dll" "$(SolutionDir)Run\dxil.dll"
+      <Command>copy /Y "$(ProjectDir)Renderer\D3D12\lib\dxcompiler.dll" "$(SolutionDir)Run\dxcompiler.dll"
+copy /Y "$(ProjectDir)Renderer\D3D12\lib\dxil.dll" "$(SolutionDir)Run\dxil.dll"
 copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dll" "$(SolutionDir)Run\WinPixEventRuntime.dll"</Command>
       <Message>Copying DXCompiler, WinPix to Run folder</Message>
     </PreBuildEvent>
@@ -505,33 +505,18 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClCompile Include="Network\TCPServer.cpp" />
     <ClCompile Include="Network\TCPSocket.cpp" />
     <ClCompile Include="Renderer\Billboard.cpp" />
-    <ClCompile Include="Renderer\BitmapFont.cpp" />
     <ClCompile Include="Renderer\Camera.cpp" />
-    <ClCompile Include="Renderer\ConstantBuffer.cpp" />
-    <ClCompile Include="Renderer\D3D11\D3D11TypeConversions.cpp" />
     <ClCompile Include="Renderer\D3D12\D3D12TypeConversions.cpp" />
-    <ClCompile Include="Renderer\D3D12\DescriptorHeap.cpp" />
-    <ClCompile Include="Renderer\D3D12\Fence.cpp" />
-    <ClCompile Include="Renderer\D3D12\Resource.cpp" />
-    <ClCompile Include="Renderer\DebugRendererSystem.cpp" />
-    <ClCompile Include="Renderer\DebugShape.cpp" />
     <ClCompile Include="Renderer\GraphicsCommon.cpp" />
-    <ClCompile Include="Renderer\ImmediateContext.cpp" />
-    <ClCompile Include="Renderer\IndexBuffer.cpp" />
-    <ClCompile Include="Renderer\MaterialSystem.cpp" />
-    <ClCompile Include="Renderer\Mesh.cpp" />
-    <ClCompile Include="Renderer\OrbitCamera.cpp" />
+    <ClCompile Include="Renderer\Interfaces\CommandList.cpp" />
+    <ClCompile Include="Renderer\Interfaces\DescriptorHeap.cpp" />
+    <ClCompile Include="Renderer\Interfaces\Fence.cpp" />
+    <ClCompile Include="Renderer\Interfaces\Resource.cpp" />
     <ClCompile Include="Renderer\PixEventReporter.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
-    <ClCompile Include="Renderer\ResourceView.cpp" />
-    <ClCompile Include="Renderer\Material.cpp" />
-    <ClCompile Include="Renderer\SimpleTriangleFont.cpp" />
     <ClCompile Include="Renderer\SpriteAnimDefinition.cpp" />
     <ClCompile Include="Renderer\SpriteSheet.cpp" />
-    <ClCompile Include="Renderer\StreamOutputBuffer.cpp" />
     <ClCompile Include="Renderer\Texture.cpp" />
-    <ClCompile Include="Renderer\UnorderedAccessBuffer.cpp" />
-    <ClCompile Include="Renderer\VertexBuffer.cpp" />
     <ClCompile Include="Window\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -618,10 +603,7 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Network\TCPServer.hpp" />
     <ClInclude Include="Network\TCPSocket.hpp" />
     <ClInclude Include="Renderer\Billboard.hpp" />
-    <ClInclude Include="Renderer\BitmapFont.hpp" />
     <ClInclude Include="Renderer\Camera.hpp" />
-    <ClInclude Include="Renderer\ConstantBuffer.hpp" />
-    <ClInclude Include="Renderer\D3D11\D3D11TypeConversions.hpp" />
     <ClInclude Include="Renderer\D3D12\D3D12TypeConversions.hpp" />
     <ClInclude Include="Renderer\D3D12\d3dx12.h" />
     <ClInclude Include="Renderer\D3D12\d3dx12_barriers.h" />
@@ -634,554 +616,19 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Renderer\D3D12\d3dx12_resource_helpers.h" />
     <ClInclude Include="Renderer\D3D12\d3dx12_root_signature.h" />
     <ClInclude Include="Renderer\D3D12\d3dx12_state_object.h" />
-    <ClInclude Include="Renderer\D3D12\DescriptorHeap.hpp" />
-    <ClInclude Include="Renderer\D3D12\Fence.hpp" />
-    <ClInclude Include="Renderer\D3D12\Resource.hpp" />
-    <ClInclude Include="Renderer\DebugRendererSystem.hpp" />
-    <ClInclude Include="Renderer\DebugShape.hpp" />
-    <ClInclude Include="Renderer\DefaultShader.hpp" />
     <ClInclude Include="Renderer\GraphicsCommon.hpp" />
-    <ClInclude Include="Renderer\ImmediateContext.hpp" />
-    <ClInclude Include="Renderer\IndexBuffer.hpp" />
-    <ClInclude Include="Renderer\MaterialSystem.hpp" />
-    <ClInclude Include="Renderer\Mesh.hpp" />
-    <ClInclude Include="Renderer\OrbitCamera.hpp" />
+    <ClInclude Include="Renderer\Interfaces\CommandList.hpp" />
+    <ClInclude Include="Renderer\Interfaces\DescriptorHeap.hpp" />
+    <ClInclude Include="Renderer\Interfaces\Fence.hpp" />
+    <ClInclude Include="Renderer\Interfaces\Resource.hpp" />
     <ClInclude Include="Renderer\PixEventReporter.hpp" />
     <ClInclude Include="Renderer\Renderer.hpp" />
-    <ClInclude Include="Renderer\ResourceView.hpp" />
-    <ClInclude Include="Renderer\Material.hpp" />
-    <ClInclude Include="Renderer\SimpleTriangleFont.hpp" />
     <ClInclude Include="Renderer\SpriteAnimDefinition.hpp" />
-    <ClInclude Include="Renderer\SpriteSheet.hpp" />
-    <ClInclude Include="Renderer\StreamOutputBuffer.hpp" />
     <ClInclude Include="Renderer\Texture.hpp" />
-    <ClInclude Include="Renderer\UnorderedAccessBuffer.hpp" />
-    <ClInclude Include="Renderer\VertexBuffer.hpp" />
     <ClInclude Include="Window\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\ColorBandEffect_p.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\ColorBandEffect_v.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\DefaultDiffuse_p.hlsl">
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\DefaultDiffuse_v.hlsl">
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\Default_p.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\Default_v.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VertexMain</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">VertexMain</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">VertexMain</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VertexMain</EntryPointName>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\DistanceFogEffect_p.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\DistanceFogEffect_v.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\FirstTriangle_p.hlsl">
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\FirstTriangle_v.hlsl">
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\GrayScaleEffect_p.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\GrayScaleEffect_v.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\InvertedColorEffect_p.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\InvertedColorEffect_v.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\LinearDepthVisualizer_p.hlsl">
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\LinearDepthVisualizer_v.hlsl">
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VertexMain</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">VertexMain</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">VertexMain</EntryPointName>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\PixelizedEffect_p.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Pixel</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PixelMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\PixelizedEffect_v.hlsl">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">6.5</ShaderModel>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">true</TreatWarningAsError>
-      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</TreatWarningAsError>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Renderer\Materials\Shaders\Binaries\%(Filename).cso</ObjectFileOutput>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">Vertex</ShaderType>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VertexMain</EntryPointName>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='FastBreak|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">
-      </PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PreprocessorDefinitions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='DebugInline|x64'">-Qembed_debug %(AdditionalOptions)</AdditionalOptions>
-    </FxCompile>
     <None Include="packages.config" />
-    <None Include="Renderer\Materials\Shaders\ColorBandEffect.hlsli">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="Renderer\Materials\Shaders\Common\Math.hlsli">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="Renderer\Materials\Shaders\Default.hlsli" />
-    <None Include="Renderer\Materials\Shaders\DefaultDiffuse.hlsli" />
-    <None Include="Renderer\Materials\Shaders\DistanceFogEffect.hlsli" />
-    <None Include="Renderer\Materials\Shaders\DownsampleDepthBuffer.hlsli" />
-    <None Include="Renderer\Materials\Shaders\effect.hlsli" />
-    <None Include="Renderer\Materials\Shaders\FirstTriangle.hlsli" />
-    <None Include="Renderer\Materials\Shaders\GrayScaleEffect.hlsli" />
-    <None Include="Renderer\Materials\Shaders\InvertedColorEffect.hlsli" />
-    <None Include="Renderer\Materials\Shaders\LinearDepthVisualizer.hlsli" />
-    <None Include="Renderer\Materials\Shaders\PixelizedEffect.hlsli" />
-    <None Include="Renderer\Materials\Shaders\Skybox.hlsli" />
-    <None Include="Renderer\Materials\Shaders\SSAO.hlsli" />
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="Renderer\Materials\ColorBandFXMaterial.xml" />
-    <Xml Include="Renderer\Materials\DebugAlwaysMaterial.xml" />
-    <Xml Include="Renderer\Materials\DebugDepthMaterial.xml" />
-    <Xml Include="Renderer\Materials\DebugXRayMaterial.xml" />
-    <Xml Include="Renderer\Materials\Default2DMaterial.xml" />
-    <Xml Include="Renderer\Materials\Default3DDiffuseMaterial.xml" />
-    <Xml Include="Renderer\Materials\Default3DMaterial.xml" />
-    <Xml Include="Renderer\Materials\DistanceFogFXMaterial.xml" />
-    <Xml Include="Renderer\Materials\FirstTriangleMaterial.xml" />
-    <Xml Include="Renderer\Materials\GrayScaleFXMaterial.xml" />
-    <Xml Include="Renderer\Materials\InvertedColorFXMaterial.xml" />
-    <Xml Include="Renderer\Materials\LinearDepthVisualizer.xml" />
-    <Xml Include="Renderer\Materials\PixelizedFXMaterial.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

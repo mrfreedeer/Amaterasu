@@ -5,10 +5,7 @@
 
 #undef OPAQUE
 
-enum class DescriptorHeapFlags {
-	None,
-	ShaderVisible
-};
+
 
 #define DX_SAFE_RELEASE(dxObject)			\
 {											\

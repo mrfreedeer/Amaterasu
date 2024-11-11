@@ -41,37 +41,19 @@
     <Filter Include="ThirdParty\ImGUI">
       <UniqueIdentifier>{236cceba-7e03-422e-ae4a-30d70099432b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\D3D11">
-      <UniqueIdentifier>{3be082df-efe1-44e6-8486-fd82c1eff92c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer\D3D12">
       <UniqueIdentifier>{4fa813ba-13b9-41a6-b9ff-25dac1f745a4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\Materials">
-      <UniqueIdentifier>{8157c02b-3462-41a7-878c-f7d9ab51e905}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Materials\Shaders">
-      <UniqueIdentifier>{10bec793-ac90-4da9-b44c-ed40f783f438}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Materials\Shaders\Stages">
-      <UniqueIdentifier>{143a3874-4d69-45fc-acdf-8f1aa0209619}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Materials\Shaders\Common">
-      <UniqueIdentifier>{1b74a793-4323-4db8-a65f-23bfa004a36e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ThirdParty\WinPixEventRuntime">
       <UniqueIdentifier>{c225c49a-8c06-423f-8098-6deacf5bf946}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Interfaces">
+      <UniqueIdentifier>{00d5e20a-28c9-4e5f-b73f-d0d21ebd9d7d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Math\Vec2.cpp">
       <Filter>Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Renderer.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Camera.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Math\Vec3.cpp">
       <Filter>Math</Filter>
@@ -121,9 +103,6 @@
     <ClCompile Include="Audio\AudioSystem.cpp">
       <Filter>Audio</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\SimpleTriangleFont.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="Window\Window.cpp">
       <Filter>Window</Filter>
     </ClCompile>
@@ -138,9 +117,6 @@
     </ClCompile>
     <ClCompile Include="Math\OBB2.cpp">
       <Filter>Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Texture.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Core\Image.cpp">
       <Filter>Core</Filter>
@@ -193,24 +169,6 @@
     <ClCompile Include="Math\ConvexPoly2D.cpp">
       <Filter>Math</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Billboard.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\BitmapFont.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\DebugShape.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\DebugRendererSystem.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\ConstantBuffer.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\VertexBuffer.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="Math\EulerAngles.cpp">
       <Filter>Math</Filter>
     </ClCompile>
@@ -229,26 +187,14 @@
     <ClCompile Include="..\ThirdParty\Squirrel\RawNoise.cpp">
       <Filter>ThirdParty\Squirrel</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\IndexBuffer.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="..\ThirdParty\TinyXML2\tinyxml2.cpp">
       <Filter>ThirdParty\TinyXML2</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Material.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Math\RaycastUtils.cpp">
       <Filter>Math</Filter>
     </ClCompile>
     <ClCompile Include="Core\JobSystem.cpp">
       <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Mesh.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\OrbitCamera.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Core\ProfileLogScope.cpp">
       <Filter>Core</Filter>
@@ -295,12 +241,6 @@
     <ClCompile Include="..\ThirdParty\ImGUI\imgui_demo.cpp">
       <Filter>ThirdParty\ImGUI</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\StreamOutputBuffer.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\UnorderedAccessBuffer.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="Math\Plane2D.cpp">
       <Filter>Math</Filter>
     </ClCompile>
@@ -322,52 +262,49 @@
     <ClCompile Include="Core\Buffer.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\MaterialSystem.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="..\ThirdParty\ImGUI\imgui_impl_dx12.cpp">
       <Filter>ThirdParty\ImGUI</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\GraphicsCommon.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\ImmediateContext.cpp">
-      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\D3D12\D3D12TypeConversions.cpp">
       <Filter>Renderer\D3D12</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\D3D12\DescriptorHeap.cpp">
-      <Filter>Renderer\D3D12</Filter>
+    <ClCompile Include="Renderer\Billboard.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\D3D11\D3D11TypeConversions.cpp">
-      <Filter>Renderer\D3D11</Filter>
+    <ClCompile Include="Renderer\Camera.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\D3D12\Resource.cpp">
-      <Filter>Renderer\D3D12</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\ResourceView.cpp">
-      <Filter>Renderer\D3D12</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\D3D12\Fence.cpp">
-      <Filter>Renderer\D3D12</Filter>
+    <ClCompile Include="Renderer\GraphicsCommon.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\PixEventReporter.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Renderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Texture.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Interfaces\Fence.cpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Interfaces\Resource.cpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Interfaces\CommandList.cpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Interfaces\DescriptorHeap.cpp">
+      <Filter>Renderer\Interfaces</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math\Vec2.hpp">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Renderer.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="Core\EngineCommon.hpp">
       <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Camera.hpp">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Math\Vec3.hpp">
       <Filter>Math</Filter>
@@ -444,9 +381,6 @@
     <ClInclude Include="..\ThirdParty\fmod\fmod_output.h">
       <Filter>ThirdParty\fmod</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\SimpleTriangleFont.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="Window\Window.hpp">
       <Filter>Window</Filter>
     </ClInclude>
@@ -462,9 +396,6 @@
     <ClInclude Include="Math\OBB2.hpp">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Texture.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Image.hpp">
       <Filter>Core</Filter>
     </ClInclude>
@@ -477,32 +408,14 @@
     <ClInclude Include="Math\AABB3.hpp">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Billboard.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\BitmapFont.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="Math\Capsule2.hpp">
       <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\ConstantBuffer.hpp">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Math\ConvexPoly2D.hpp">
       <Filter>Math</Filter>
     </ClInclude>
     <ClInclude Include="Math\Curves.hpp">
       <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\DebugRendererSystem.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\DebugShape.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\DefaultShader.hpp">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Core\DevConsole.hpp">
       <Filter>Core</Filter>
@@ -527,18 +440,6 @@
     </ClInclude>
     <ClInclude Include="..\ThirdParty\Squirrel\RawNoise.hpp">
       <Filter>ThirdParty\Squirrel</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\VertexBuffer.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\IndexBuffer.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\SpriteSheet.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Material.hpp">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Core\EventSystem.hpp">
       <Filter>Core</Filter>
@@ -572,12 +473,6 @@
     </ClInclude>
     <ClInclude Include="Core\JobSystem.hpp">
       <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Mesh.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\OrbitCamera.hpp">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Core\ProfileLogScope.hpp">
       <Filter>Core</Filter>
@@ -630,15 +525,6 @@
     <ClInclude Include="..\ThirdParty\ImGUI\imstb_truetype.h">
       <Filter>ThirdParty\ImGUI</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\StreamOutputBuffer.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\UnorderedAccessBuffer.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D11\D3D11TypeConversions.hpp">
-      <Filter>Renderer\D3D11</Filter>
-    </ClInclude>
     <ClInclude Include="Math\Plane2D.hpp">
       <Filter>Math</Filter>
     </ClInclude>
@@ -656,9 +542,6 @@
     </ClInclude>
     <ClInclude Include="Math\Sampling.hpp">
       <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\GraphicsCommon.hpp">
-      <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\D3D12\d3dx12.h">
       <Filter>Renderer\D3D12</Filter>
@@ -699,174 +582,44 @@
     <ClInclude Include="Renderer\D3D12\D3D12TypeConversions.hpp">
       <Filter>Renderer\D3D12</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\MaterialSystem.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="..\ThirdParty\ImGUI\imgui_impl_dx12.h">
       <Filter>ThirdParty\ImGUI</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\ImmediateContext.hpp">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\DescriptorHeap.hpp">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\Resource.hpp">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\ResourceView.hpp">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\Fence.hpp">
-      <Filter>Renderer\D3D12</Filter>
     </ClInclude>
     <ClInclude Include="..\ThirdParty\WinPixEventRuntime\Include\pix3.h">
       <Filter>ThirdParty\WinPixEventRuntime</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Billboard.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Camera.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\GraphicsCommon.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer\PixEventReporter.hpp">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Renderer.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Texture.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Interfaces\Fence.hpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Interfaces\Resource.hpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Interfaces\CommandList.hpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Interfaces\DescriptorHeap.hpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Renderer\Materials\Shaders\Default.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\DefaultDiffuse.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\DistanceFogEffect.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\DownsampleDepthBuffer.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\effect.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\GrayScaleEffect.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\InvertedColorEffect.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\PixelizedEffect.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\Skybox.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\SSAO.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\LinearDepthVisualizer.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\Common\Math.hlsli">
-      <Filter>Renderer\Materials\Shaders\Common</Filter>
-    </None>
-    <None Include="Renderer\Materials\Shaders\ColorBandEffect.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
     <None Include="packages.config" />
-    <None Include="Renderer\Materials\Shaders\FirstTriangle.hlsli">
-      <Filter>Renderer\Materials\Shaders</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="Renderer\Materials\Default2DMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\Default3DMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\DebugAlwaysMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\DebugDepthMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\DebugXRayMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\ColorBandFXMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\DistanceFogFXMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\GrayScaleFXMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\InvertedColorFXMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\PixelizedFXMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\Default3DDiffuseMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\LinearDepthVisualizer.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-    <Xml Include="Renderer\Materials\FirstTriangleMaterial.xml">
-      <Filter>Renderer\Materials</Filter>
-    </Xml>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\Default_p.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\Default_v.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\ColorBandEffect_p.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\ColorBandEffect_v.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\GrayScaleEffect_p.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\GrayScaleEffect_v.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\DistanceFogEffect_p.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\DistanceFogEffect_v.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\InvertedColorEffect_p.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\InvertedColorEffect_v.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\PixelizedEffect_p.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\PixelizedEffect_v.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\DefaultDiffuse_p.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\DefaultDiffuse_v.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\LinearDepthVisualizer_p.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\LinearDepthVisualizer_v.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\FirstTriangle_p.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
-    <FxCompile Include="Renderer\Materials\Shaders\Stages\FirstTriangle_v.hlsl">
-      <Filter>Renderer\Materials\Shaders\Stages</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

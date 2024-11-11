@@ -77,36 +77,4 @@
   <ItemGroup>
     <Xml Include="..\..\Run\Data\GameConfig.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="..\..\Run\Data\Shaders\Default.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\effect.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\GrayScaleEffect.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\InvertedColorEffect.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\PixelizedEffect.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\ColorBandEffect.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\DistanceFogEffect.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\SSAO.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\DownsampleDepthBuffer.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="..\..\Run\Data\Shaders\DefaultDiffuse.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-  </ItemGroup>
 </Project>
