@@ -71,6 +71,48 @@ D3D12_VERTEX_BUFFER_VIEW LocalToD3D12(BufferView const& bufferView)
 	return {bufferView.m_bufferLocation, (UINT)bufferView.m_sizeInBytes, (UINT)bufferView.m_strideInBytes};
 }
 
+D3D12_DESCRIPTOR_HEAP_TYPE LocalToD3D12(DescriptorHeapType heapType)
+{
+	switch (heapType)
+	{
+	case DescriptorHeapType::CBV_SRV_UAV:
+		return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	case DescriptorHeapType::Sampler:
+		return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+	case DescriptorHeapType::RenderTargetView:
+		return D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+	case DescriptorHeapType::DepthStencilView:
+		return D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+	default:
+		ERROR_AND_DIE(Stringf("UNRECOGNIZED HEAP TYPE: %d", (heapType)));
+		break;
+	}
+}
+
+D3D12_COMMAND_LIST_TYPE LocalToD3D12(CommandListType cmdListType)
+{
+	switch (cmdListType)
+	{
+	case CommandListType::DIRECT:
+		return D3D12_COMMAND_LIST_TYPE_DIRECT;
+	case CommandListType::COMPUTE:
+		return D3D12_COMMAND_LIST_TYPE_COMPUTE;
+	case CommandListType::BUNDLE:
+		return D3D12_COMMAND_LIST_TYPE_BUNDLE;
+	case CommandListType::COPY:
+		return D3D12_COMMAND_LIST_TYPE_COPY;
+	case CommandListType::VIDEO_DECODE:
+		return D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE;
+	case CommandListType::VIDEO_PROCESS:
+		return D3D12_COMMAND_LIST_TYPE_VIDEO_PROCESS;
+	case CommandListType::VIDEO_ENCODE:
+		return D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE;
+	default:
+		ERROR_AND_DIE("UNRECOGNIZED COMMAND LIST %d", (int)cmdListType);
+		break;
+	}
+}
+
 DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat)
 {
 	switch (textureFormat) {
@@ -81,41 +123,41 @@ DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat)
 }
 
 
-D3D12_RESOURCE_FLAGS LocalToD3D12(ResourceBindFlag flags)
-{
-	D3D12_RESOURCE_FLAGS result = D3D12_RESOURCE_FLAG_NONE;
-
-	if (flags & ResourceBindFlagBit::RESOURCE_BIND_SHADER_RESOURCE_BIT) {
-		result |= D3D12_RESOURCE_FLAG_NONE;
-	}
-
-	if (flags & ResourceBindFlagBit::RESOURCE_BIND_RENDER_TARGET_BIT) {
-		result |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	}
-
-	if (flags & ResourceBindFlagBit::RESOURCE_BIND_DEPTH_STENCIL_BIT) {
-		result |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-	}
-
-	if (flags & ResourceBindFlagBit::RESOURCE_BIND_UNORDERED_ACCESS_VIEW_BIT) {
-		result |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-	}
-
-	return result;
-}
+//D3D12_RESOURCE_FLAGS LocalToD3D12(ResourceBindFlag flags)
+//{
+//	D3D12_RESOURCE_FLAGS result = D3D12_RESOURCE_FLAG_NONE;
+//
+//	if (flags & ResourceBindFlagBit::RESOURCE_BIND_SHADER_RESOURCE_BIT) {
+//		result |= D3D12_RESOURCE_FLAG_NONE;
+//	}
+//
+//	if (flags & ResourceBindFlagBit::RESOURCE_BIND_RENDER_TARGET_BIT) {
+//		result |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+//	}
+//
+//	if (flags & ResourceBindFlagBit::RESOURCE_BIND_DEPTH_STENCIL_BIT) {
+//		result |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+//	}
+//
+//	if (flags & ResourceBindFlagBit::RESOURCE_BIND_UNORDERED_ACCESS_VIEW_BIT) {
+//		result |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+//	}
+//
+//	return result;
+//}
 
 
 D3D12_DESCRIPTOR_HEAP_TYPE LocalToD3D12(DescriptorHeapType dHeapType)
 {
 	switch (dHeapType)
 	{
-	case DescriptorHeapType::SRV_UAV_CBV:
+	case DescriptorHeapType::CBV_SRV_UAV:
 		return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	case DescriptorHeapType::RTV:
+	case DescriptorHeapType::RenderTargetView:
 		return D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	case DescriptorHeapType::SAMPLER:
+	case DescriptorHeapType::Sampler:
 		return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-	case DescriptorHeapType::DSV:
+	case DescriptorHeapType::DepthStencilView:
 		return D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 	}
 	ERROR_AND_DIE("UNKNOWN DESCRIPTOR HEAP TYPE");

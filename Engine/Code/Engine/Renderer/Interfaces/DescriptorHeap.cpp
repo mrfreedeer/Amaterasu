@@ -2,7 +2,7 @@
 #include <d3d12.h>
 #include <lib/d3dx12.h>
 
-using namespace ResourceTable;
+
 DescriptorHeap::DescriptorHeap(DescriptorHeapDesc const& desc):
 	m_config(desc),
 	m_remainingDescriptors(desc.m_numDescriptors)
@@ -19,7 +19,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::GetNextCPUHandle()
 
 	D3D12_CPU_DESCRIPTOR_HANDLE returnHandle = {};
 	returnHandle.ptr = m_currentDescriptor;
-	m_currentDescriptor += m_config.m_handleSize;
+	m_currentDescriptor += m_handleSize;
 	m_remainingDescriptors--;
 
 	return returnHandle;
@@ -27,14 +27,14 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::GetNextCPUHandle()
 
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::GetCPUHandleAtOffset(size_t offset)
 {
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handleToReturn(m_descriptorHeap->GetCPUDescriptorHandleForHeapStart(), (UINT)offset, (UINT)m_config.m_handleSize);
+	CD3DX12_CPU_DESCRIPTOR_HANDLE handleToReturn(m_descriptorHeap->GetCPUDescriptorHandleForHeapStart(), (UINT)offset, (UINT)m_handleSize);
 
 	return handleToReturn;
 }
 
 D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::GetGPUHandleAtOffset(size_t offset)
 {
-	CD3DX12_GPU_DESCRIPTOR_HANDLE handleToReturn(m_descriptorHeap->GetGPUDescriptorHandleForHeapStart(), (UINT)offset, (UINT)m_config.m_handleSize);
+	CD3DX12_GPU_DESCRIPTOR_HANDLE handleToReturn(m_descriptorHeap->GetGPUDescriptorHandleForHeapStart(), (UINT)offset, (UINT)m_handleSize);
 
 	return handleToReturn;
 }

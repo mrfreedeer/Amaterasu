@@ -116,8 +116,13 @@ enum class TopologyType {// Transformed directly to DX12 (if standard changes, u
 };
 
 enum class CommandListType {
-	DEFAULT,
-	RESOURCES,
+	DIRECT = 0,
+	BUNDLE = 1,
+	COMPUTE = 2,
+	COPY = 3,
+	VIDEO_DECODE = 4,
+	VIDEO_PROCESS = 5,
+	VIDEO_ENCODE = 6,
 	NUM_COMMAND_LIST_TYPES
 };
 

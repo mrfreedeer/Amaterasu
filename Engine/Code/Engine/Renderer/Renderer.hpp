@@ -1,5 +1,11 @@
 #pragma once
-#include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
+
+struct DescriptorHeapDesc;
+struct CommandListDesc;
+
+
+class DescriptorHeap;
+class CommandList;
 
 struct RendererConfig {
 
@@ -42,5 +48,6 @@ private:
 
 private:
 	RendererConfig m_config = {};
+	ID3D12Device11* m_device = nullptr;
 
 };
