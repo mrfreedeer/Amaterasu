@@ -1,8 +1,15 @@
 #pragma once
+#include <stdint.h>
+
 
 struct PipelineState;
+struct IntVec3;
+struct Rgba8;
 struct ID3D12CommandAllocator;
 struct ID3D12GraphicsCommandList6;
+class Resource;
+class Texture;
+class Buffer;
 
 enum class CommandListType {
 	DIRECT = 0,
@@ -24,10 +31,18 @@ struct CommandListDesc {
 
 class CommandList {
 	friend class Renderer;
-public:
-
-private:
 	CommandList(CommandListDesc const& desc);
+public:
+	CommandList& Reset(PipelineState* initialState = nullptr);
+	CommandList& Close();
+	CommandList& ClearDepthStencilView(Texture* depth, float clearValue, uint8_t stencilClearValue = 0, bool clearStencil = false);
+	CommandList& ClearRenderTargetView(Texture* rt, Rgba8 const& clearValue);
+	CommandList& Dispatch(IntVec3 threads);
+	CommandList& SetVertexBuffers(Buffer** buffers, unsigned int bufferCount, unsigned int startSlot = 0);
+	CommandList& SetIndexBuffer(Buffer* indexBuffer);
+	CommandList& DrawIndexedInstanced(unsigned int instanceIndexCount, unsigned int instanceCount, unsigned int startIndex, unsigned int startVertex, unsigned int startInstance);
+	CommandList& DrawInstance(unsigned int instanceVertexCount, unsigned int instanceCount, unsigned int startVertex, unsigned int startInstance);
+private:
 
 private:
 	CommandListDesc m_desc = {};

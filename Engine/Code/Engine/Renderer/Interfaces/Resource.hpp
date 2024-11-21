@@ -1,44 +1,35 @@
 #pragma once
 #include <vector>
 #include "Engine/Renderer/GraphicsCommon.hpp"
+#include <d3d12.h>
 
+class Resource;
 
-constexpr unsigned int CBUFFER_BIND_SHIFT = 0;
-constexpr unsigned int PIXEL_SHADER_BIND_SHIFT = 1;
-constexpr unsigned int ALL_SHADERS_BIND_SHIFT = 2;
-
-enum ResourceBindState : unsigned int {
-	VERTEX_AND_CONSTANT_BUFFER = (1 << CBUFFER_BIND_SHIFT),
-	PIXEL_SHADER = (1 << PIXEL_SHADER_BIND_SHIFT),
-	ALL_SHADER = (1 << ALL_SHADERS_BIND_SHIFT),
-	LAST = ALL_SHADER
+struct ResourceView {
+	Resource* m_owner = nullptr;
+	D3D12_CPU_DESCRIPTOR_HANDLE m_descriptor = {};
 };
-
-struct ID3D12Resource2;
-struct ID3D12GraphicsCommandList;
-enum D3D12_RESOURCE_STATES : int;
-struct D3D12_RESOURCE_BARRIER;
-
-struct ID3D12Device2;
 
 class Resource {
 	friend class Renderer;
-	friend class Texture;
-	friend class Buffer;
+	friend class CommandList;
 public:
-	void TransitionTo(D3D12_RESOURCE_STATES newState, ID3D12GraphicsCommandList* commList);
-	void TransitionTo(D3D12_RESOURCE_STATES newState, ComPtr<ID3D12GraphicsCommandList> commList);
-	bool AddResourceBarrierToList(D3D12_RESOURCE_STATES newState, std::vector< D3D12_RESOURCE_BARRIER>& rscBarriers);
-	bool AddUAVResourceBarrierToList(std::vector< D3D12_RESOURCE_BARRIER>& rscBarriers);
-
-	void Map(void*& dataMap);
+	ResourceView* GetDepthStencilView() const { return m_dsv; }
+	ResourceView* GetShaderResourceView() const { return m_srv; }
+	ResourceView* GetRenderTargetView() const { return m_rtv; }
+	ResourceView* GetUnorderedAccessView() const { return m_uav; }
+	size_t GetGPUAddress() const { return m_rsc->GetGPUVirtualAddress();}
+	void Map(void*& mapSource, size_t beginRange, size_t endRange);
 	void Unmap();
 
 private:
-	Resource(ID3D12Device2* device);
+	Resource(char const* debugName): m_debugName(debugName) {}
 	~Resource();
-
-	ID3D12Resource2* m_resource = nullptr;
-	ID3D12Device2* m_device = nullptr;
-	int m_currentState = 0;
+private:
+	ID3D12Resource1* m_rsc = nullptr;
+	ResourceView* m_dsv = nullptr;
+	ResourceView* m_uav = nullptr;
+	ResourceView* m_srv = nullptr;
+	ResourceView* m_rtv = nullptr;
+	char const* m_debugName = nullptr;
 };

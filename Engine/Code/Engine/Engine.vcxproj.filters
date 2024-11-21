@@ -298,6 +298,12 @@
     <ClCompile Include="Renderer\Interfaces\DescriptorHeap.cpp">
       <Filter>Renderer\Interfaces</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Interfaces\PipelineState.cpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Interfaces\Buffer.cpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math\Vec2.hpp">
@@ -616,6 +622,12 @@
       <Filter>Renderer\Interfaces</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Interfaces\DescriptorHeap.hpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Interfaces\PipelineState.hpp">
+      <Filter>Renderer\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Interfaces\Buffer.hpp">
       <Filter>Renderer\Interfaces</Filter>
     </ClInclude>
   </ItemGroup>
