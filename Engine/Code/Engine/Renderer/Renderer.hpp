@@ -2,10 +2,12 @@
 
 struct DescriptorHeapDesc;
 struct CommandListDesc;
-
+struct ID3D12Device8;
 
 class DescriptorHeap;
 class CommandList;
+class Texture;
+class Buffer;
 
 struct RendererConfig {
 
@@ -14,6 +16,7 @@ struct RendererConfig {
 class Renderer {
 public:
 	// All public methods to return instance to Renderer for chaining purposes
+	// Creation methods, which require the device, are all here 
 	Renderer(RendererConfig const& config);
 
 	/// <summary>
@@ -39,6 +42,13 @@ public:
 	/// <returns></returns>
 	DescriptorHeap* CreateDescriptorHeap(DescriptorHeapDesc const& desc);
 	CommandList* CreateCommandList(CommandListDesc const& desc);
+	ResourceView* CreateRenderTargetView(size_t descriptor, Texture* renderTarget);
+	ResourceView* CreateShaderResourceView(size_t descriptor, Buffer* buffer);
+	ResourceView* CreateShaderResourceView(size_t descriptor, Texture* texture);
+	ResourceView* CreateDepthStencilView(size_t descriptor, Texture* depthTexture);
+	ResourceView* CreateConstantBufferView(size_t descriptor, Buffer* cBuffer);
+
+
 private:
 	// ImGui
 	void InitializeImGui();
@@ -48,6 +58,6 @@ private:
 
 private:
 	RendererConfig m_config = {};
-	ID3D12Device11* m_device = nullptr;
+	ID3D12Device8* m_device = nullptr;
 
 };
