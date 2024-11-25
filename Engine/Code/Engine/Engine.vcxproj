@@ -631,9 +631,6 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Renderer\Texture.hpp" />
     <ClInclude Include="Window\Window.hpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(SolutionDir)packages\Microsoft.Direct3D.DXC.1.8.2403.24\build\native\Microsoft.Direct3D.DXC.targets" Condition="Exists('$(SolutionDir)packages\Microsoft.Direct3D.DXC.1.8.2403.24\build\native\Microsoft.Direct3D.DXC.targets')" />
