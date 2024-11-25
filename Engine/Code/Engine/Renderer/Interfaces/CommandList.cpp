@@ -33,7 +33,7 @@ CommandList& CommandList::ClearDepthStencilView(Texture* depth, float clearValue
 	D3D12_CLEAR_FLAGS clearFlags = D3D12_CLEAR_FLAG_DEPTH;
 	if(clearStencil) clearFlags |= D3D12_CLEAR_FLAG_STENCIL;
 
-	ResourceView* dsv = depth->GetResource()->GetDepthStencilView();
+	ResourceView* dsv = depth->GetDepthStencilView();
 	if(!dsv) ERROR_AND_DIE("DEPTH STENCIL VIEW IS NULL FOR RSC: %s", depth->m_debugName);
 	m_cmdList->ClearDepthStencilView(dsv->m_descriptor, clearFlags, clearValue, stencilClearValue, 0, NULL);
 	return *this;
@@ -44,12 +44,13 @@ CommandList& CommandList::ClearRenderTargetView(Texture* rt, Rgba8 const& clearV
 	float clearArray[4] = {};
 	clearValue.GetAsFloats(clearArray);
 
-	ResourceView* rtv = rt->GetResource()->GetRenderTargetView();
+	ResourceView* rtv = rt->GetRenderTargetView();
 
 	m_cmdList->ClearRenderTargetView(rtv->m_descriptor, clearArray, 0, NULL);
 
 	return *this;
 }
+
 
 CommandList& CommandList::Dispatch(IntVec3 threads)
 {
@@ -90,6 +91,32 @@ CommandList& CommandList::DrawIndexedInstanced(unsigned int instanceIndexCount, 
 CommandList& CommandList::DrawInstance(unsigned int instanceVertexCount, unsigned int instanceCount, unsigned int startVertex, unsigned int startInstance)
 {
 	m_cmdList->DrawInstanced(instanceVertexCount, instanceCount, startVertex, startInstance);
+	return *this;
+}
+
+CommandList& CommandList::SetRenderTargets(unsigned int rtCount, Texture** renderTargets, bool singleDescriptor, Texture* depthRenderTarget)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE* handleArray = new D3D12_CPU_DESCRIPTOR_HANDLE[rtCount];
+
+	handleArray[0] = renderTargets[0]->GetRenderTargetView()->m_descriptor;
+
+	if (!singleDescriptor) {
+		for (int rtIndex = 1; rtIndex < rtCount; rtIndex++) {
+			D3D12_CPU_DESCRIPTOR_HANDLE& handle = handleArray[rtIndex];
+			Texture* currentRt = renderTargets[rtIndex];
+			ResourceView* rtView = currentRt->GetRenderTargetView();
+			handle = rtView->m_descriptor;
+		}
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE* dsvDescriptor = nullptr;
+	if (depthRenderTarget) {
+		ResourceView* dsvView = depthRenderTarget->GetDepthStencilView();
+		dsvDescriptor = &dsvView->m_descriptor;
+	}
+
+
+	m_cmdList->OMSetRenderTargets(rtCount, handleArray, singleDescriptor, dsvDescriptor);
 	return *this;
 }
 

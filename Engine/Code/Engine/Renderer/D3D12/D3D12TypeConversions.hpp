@@ -1,9 +1,9 @@
+#include <d3d12.h>
 #include <dxgiformat.h>
 #include "Engine/Renderer/Texture.hpp"
 #include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
 #include "Engine/Renderer/Interfaces/CommandList.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
-#include <d3d12.h>
 
 struct BufferView;
 typedef unsigned int        UINT;

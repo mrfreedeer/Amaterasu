@@ -35,6 +35,8 @@ class CommandList {
 public:
 	CommandList& Reset(PipelineState* initialState = nullptr);
 	CommandList& Close();
+	
+	// Textures
 	CommandList& ClearDepthStencilView(Texture* depth, float clearValue, uint8_t stencilClearValue = 0, bool clearStencil = false);
 	CommandList& ClearRenderTargetView(Texture* rt, Rgba8 const& clearValue);
 	CommandList& Dispatch(IntVec3 threads);
@@ -42,6 +44,10 @@ public:
 	CommandList& SetIndexBuffer(Buffer* indexBuffer);
 	CommandList& DrawIndexedInstanced(unsigned int instanceIndexCount, unsigned int instanceCount, unsigned int startIndex, unsigned int startVertex, unsigned int startInstance);
 	CommandList& DrawInstance(unsigned int instanceVertexCount, unsigned int instanceCount, unsigned int startVertex, unsigned int startInstance);
+	CommandList& SetRenderTargets(unsigned int rtCount, Texture** renderTargets, bool singleDescriptor, Texture* depthRenderTarget);
+
+
+
 private:
 
 private:
