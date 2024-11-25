@@ -5,8 +5,6 @@
 
 #undef OPAQUE
 
-
-
 #define DX_SAFE_RELEASE(dxObject)			\
 {											\
 	if (( dxObject) != nullptr)				\
@@ -124,32 +122,6 @@ enum class CommandListType {
 	VIDEO_PROCESS = 5,
 	VIDEO_ENCODE = 6,
 	NUM_COMMAND_LIST_TYPES
-};
-
-enum class ConstantBufferType {
-	CAMERA,
-	MODEL,
-	LIGHT,
-	NUM_CONSTANT_BUFFER_TYPES
-};
-
-enum class PipelineType {
-	Graphics,
-	Mesh,
-	Compute
-};
-
-/// <summary>
-/// P: Position
-/// C: Color
-/// U: UV
-/// N: Normal
-/// B: Bitangent
-/// T: Tangent
-/// </summary>
-enum class VertexType {
-	PCU, // Unlit 
-	PNCU
 };
 
 constexpr char const* EnumToString(BlendMode blendMode) {

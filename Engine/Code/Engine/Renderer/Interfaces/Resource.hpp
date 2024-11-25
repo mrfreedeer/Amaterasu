@@ -16,9 +16,10 @@ class Resource {
 public:
 	ResourceView* GetDepthStencilView() const { return m_dsv; }
 	ResourceView* GetShaderResourceView() const { return m_srv; }
+	ResourceView* GetConstantBufferView() const { return m_cbv; }
 	ResourceView* GetRenderTargetView() const { return m_rtv; }
 	ResourceView* GetUnorderedAccessView() const { return m_uav; }
-	size_t GetGPUAddress() const { return m_rsc->GetGPUVirtualAddress();}
+	size_t GetGPUAddress() const { return m_rawRsc->GetGPUVirtualAddress();}
 	void Map(void*& mapSource, size_t beginRange, size_t endRange);
 	void Unmap();
 
@@ -26,10 +27,11 @@ private:
 	Resource(char const* debugName): m_debugName(debugName) {}
 	~Resource();
 private:
-	ID3D12Resource1* m_rsc = nullptr;
+	ID3D12Resource1* m_rawRsc = nullptr;
 	ResourceView* m_dsv = nullptr;
 	ResourceView* m_uav = nullptr;
 	ResourceView* m_srv = nullptr;
 	ResourceView* m_rtv = nullptr;
+	ResourceView* m_cbv = nullptr;
 	char const* m_debugName = nullptr;
 };
