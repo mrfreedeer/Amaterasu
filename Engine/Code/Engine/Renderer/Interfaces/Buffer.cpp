@@ -13,12 +13,26 @@ void Buffer::Unmap()
 
 BufferView Buffer::GetBufferView() const
 {
-	return { m_rsc->GetGPUAddress(), m_desc.m_stride, m_desc.m_size };
+	BufferView retView = {};
+	retView.m_bufferAddr = m_rsc->GetGPUAddress();
+	retView.m_stride.m_strideBytes = m_desc.m_stride.m_strideBytes;
+	retView.m_sizeBytes = m_desc.m_size;
+	retView.m_elemCount = m_elemCount;
+	return retView;
+}
+
+BufferView Buffer::GetIndexBufferView() const
+{
+	BufferView retView = {};
+	retView.m_bufferAddr = m_rsc->GetGPUAddress();
+	retView.m_stride.m_format = m_desc.m_stride.m_format;
+	retView.m_sizeBytes = m_desc.m_size;
+	return retView;
 }
 
 Buffer::Buffer(BufferDesc const& bufferDesc, Resource* bufferRsc) :
 	m_desc(bufferDesc),
 	m_rsc(bufferRsc)
 {
-
+	m_elemCount = m_desc.m_size / m_desc.m_stride.m_strideBytes;
 }
