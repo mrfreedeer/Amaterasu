@@ -1,14 +1,170 @@
 #include "Engine/Renderer/Renderer.hpp"
+#include <Engine/Renderer/D3D12/lib/d3d12.h>
+#include <Engine/Renderer/D3D12/lib/d3dcommon.h>
+#include <dxgi1_6.h>
+#include <dxcapi.h>
+#include <d3d12shader.h>
+#include <dxgidebug.h>
+#include "Game/EngineBuildPreferences.hpp"
 #include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
 #include "Engine/Renderer/Interfaces/CommandList.hpp"
 #include "Engine/Renderer/Interfaces/Resource.hpp"
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
-#include "Engine/Renderer/D3D12/lib/d3d12.h"
+
 #include "Engine/Renderer/D3D12/D3D12TypeConversions.hpp"
+#include "Engine/Renderer/GraphicsCommon.hpp"
+
+
+#pragma comment (lib, "Engine/Renderer/D3D12/lib/dxcompiler.lib")
+#pragma comment (lib, "d3d12.lib")
+#pragma comment (lib, "dxgi.lib")
+#pragma comment (lib, "dxguid.lib")
+#pragma message("ENGINE_DIR == " ENGINE_DIR)
+
+
+void GetHardwareAdapter(
+	IDXGIFactory1* pFactory,
+	IDXGIAdapter1** ppAdapter,
+	bool requestHighPerformanceAdapter)
+{
+	*ppAdapter = nullptr;
+
+	ComPtr<IDXGIAdapter1> adapter;
+
+	ComPtr<IDXGIFactory6> factory6;
+	if (SUCCEEDED(pFactory->QueryInterface(IID_PPV_ARGS(&factory6))))
+	{
+		for (
+			UINT adapterIndex = 0;
+			SUCCEEDED(factory6->EnumAdapterByGpuPreference(
+				adapterIndex,
+				requestHighPerformanceAdapter == true ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_UNSPECIFIED,
+				IID_PPV_ARGS(&adapter)));
+			++adapterIndex)
+		{
+			DXGI_ADAPTER_DESC1 desc;
+			adapter->GetDesc1(&desc);
+
+			if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+			{
+				// Don't select the Basic Render Driver adapter.
+				// If you want a software adapter, pass in "/warp" on the command line.
+				continue;
+			}
+
+			// Check to see whether the adapter supports Direct3D 12, but don't create the
+			// actual device yet.
+			if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+			{
+				break;
+			}
+		}
+	}
+
+	if (adapter.Get() == nullptr)
+	{
+		for (UINT adapterIndex = 0; SUCCEEDED(pFactory->EnumAdapters1(adapterIndex, &adapter)); ++adapterIndex)
+		{
+			DXGI_ADAPTER_DESC1 desc;
+			adapter->GetDesc1(&desc);
+
+			if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+			{
+				// Don't select the Basic Render Driver adapter.
+				// If you want a software adapter, pass in "/warp" on the command line.
+				continue;
+			}
+
+			// Check to see whether the adapter supports Direct3D 12, but don't create the
+			// actual device yet.
+			if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+			{
+				break;
+			}
+		}
+	}
+
+	*ppAdapter = adapter.Detach();
+}
 
 Renderer::Renderer(RendererConfig const& config)
 {
 
+}
+
+Renderer& Renderer::Startup()
+{
+	EnableDebugLayer();
+	CreateDevice();
+
+	return *this;
+}
+
+void Renderer::CreateDevice()
+{
+	UINT dxgiFactoryFlags = 0;
+
+#if defined(_DEBUG)
+	// Enable additional debug layers.
+	dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+#endif
+	ThrowIfFailed(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&m_DXGIFactory)), "FAILED TO CREATE DXGI FACTORY");
+
+
+	ComPtr<IDXGIAdapter1> hardwareAdapter;
+	GetHardwareAdapter(m_DXGIFactory, &hardwareAdapter, false);
+
+	ThrowIfFailed(D3D12CreateDevice(
+		hardwareAdapter.Get(),
+		D3D_FEATURE_LEVEL_12_2,
+		IID_PPV_ARGS(&m_device)
+	), "FAILED TO CREATE DEVICE");
+
+	SetDebugName(m_DXGIFactory, "DXGI FACTORY");
+	SetDebugName(m_device, "DEVICE");
+
+#if defined(_DEBUG)
+	ID3D12InfoQueue* d3dInfoQueue;
+	m_device->QueryInterface(&d3dInfoQueue);
+	if (d3dInfoQueue)
+	{
+		D3D12_MESSAGE_ID hide[] =
+		{
+			D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+			D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
+		};
+		D3D12_INFO_QUEUE_FILTER filter = {};
+		filter.DenyList.NumIDs = _countof(hide);
+		filter.DenyList.pIDList = hide;
+		d3dInfoQueue->AddStorageFilterEntries(&filter);
+	}
+#endif
+}
+
+void Renderer::SetDebugName(IDXGIObject* object, char const* name)
+{
+	if (!object) return;
+#if defined(ENGINE_DEBUG_RENDER)
+	object->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)strlen(name), name);
+#else
+	UNUSED(object);
+	UNUSED(name);
+#endif
+}
+
+void Renderer::EnableDebugLayer()
+{
+#if defined(_DEBUG)
+	// Enable the debug layer (requires the Graphics Tools "optional feature").
+	// NOTE: Enabling the debug layer after device creation will invalidate the active device.
+	{
+		ComPtr<ID3D12Debug> debugController;
+		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+		{
+			debugController->EnableDebugLayer();
+		}
+	}
+#endif
 }
 
 DescriptorHeap* Renderer::CreateDescriptorHeap(DescriptorHeapDesc const& desc)
@@ -138,7 +294,6 @@ ResourceView* Renderer::CreateConstantBufferView(size_t handle, Buffer* cBuffer)
 	rsc->m_cbv = newCBV;
 
 	m_device->CreateConstantBufferView(&cBufferView, newCBV->m_descriptor);
-
 
 	return cBuffer->GetConstantBufferView();
 }

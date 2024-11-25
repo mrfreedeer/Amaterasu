@@ -3,6 +3,8 @@
 struct DescriptorHeapDesc;
 struct CommandListDesc;
 struct ID3D12Device8;
+struct IDXGIFactory4;
+struct ID3D12Object;
 
 class DescriptorHeap;
 class CommandList;
@@ -42,14 +44,19 @@ public:
 	/// <returns></returns>
 	DescriptorHeap* CreateDescriptorHeap(DescriptorHeapDesc const& desc);
 	CommandList* CreateCommandList(CommandListDesc const& desc);
-	ResourceView* CreateRenderTargetView(size_t descriptor, Texture* renderTarget);
-	ResourceView* CreateShaderResourceView(size_t descriptor, Buffer* buffer);
-	ResourceView* CreateShaderResourceView(size_t descriptor, Texture* texture);
-	ResourceView* CreateDepthStencilView(size_t descriptor, Texture* depthTexture);
-	ResourceView* CreateConstantBufferView(size_t descriptor, Buffer* cBuffer);
+	ResourceView* CreateRenderTargetView(size_t handle, Texture* renderTarget);
+	ResourceView* CreateShaderResourceView(size_t handle, Buffer* buffer);
+	ResourceView* CreateShaderResourceView(size_t handle, Texture* texture);
+	ResourceView* CreateDepthStencilView(size_t handle, Texture* depthTexture);
+	ResourceView* CreateConstantBufferView(size_t handle, Buffer* cBuffer);
 
 
 private:
+
+	void EnableDebugLayer();
+	void CreateDevice();
+	void SetDebugName(ID3D12Object* object, char const* name);
+	void SetDebugName(IDXGIObject* object, char const* name);
 	// ImGui
 	void InitializeImGui();
 	void ShutdownImGui();
@@ -59,5 +66,6 @@ private:
 private:
 	RendererConfig m_config = {};
 	ID3D12Device8* m_device = nullptr;
+	IDXGIFactory4* m_DXGIFactory = nullptr;
 
 };
