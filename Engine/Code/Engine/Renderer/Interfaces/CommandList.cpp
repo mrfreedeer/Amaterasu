@@ -2,6 +2,7 @@
 #include "Engine/Renderer/Interfaces/PipelineState.hpp"
 #include "Engine/Renderer/Interfaces/Resource.hpp"
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
+#include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
 #include "Engine/Renderer/Texture.hpp"
 #include "Engine/Core/Rgba8.hpp"
 #include "Engine/Math/IntVec3.hpp"
@@ -117,6 +118,17 @@ CommandList& CommandList::SetRenderTargets(unsigned int rtCount, Texture** rende
 
 
 	m_cmdList->OMSetRenderTargets(rtCount, handleArray, singleDescriptor, dsvDescriptor);
+	return *this;
+}
+
+CommandList& CommandList::SetDescriptorHeaps(unsigned int heapCount, DescriptorHeap** descriptorHeaps)
+{
+	ID3D12DescriptorHeap** heapArray = new ID3D12DescriptorHeap*[heapCount];
+	for (int heapIndex = 0; heapIndex < heapCount; heapIndex++) {
+		heapArray[heapIndex] = descriptorHeaps[heapIndex]->m_descriptorHeap;
+	}
+	m_cmdList->SetDescriptorHeaps(heapCount, heapArray);
+
 	return *this;
 }
 

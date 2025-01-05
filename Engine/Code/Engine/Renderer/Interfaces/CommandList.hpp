@@ -10,6 +10,7 @@ struct ID3D12GraphicsCommandList6;
 class Resource;
 class Texture;
 class Buffer;
+class DescriptorHeap;
 
 enum class CommandListType {
 	DIRECT = 0,
@@ -45,7 +46,7 @@ public:
 	CommandList& DrawIndexedInstanced(unsigned int instanceIndexCount, unsigned int instanceCount, unsigned int startIndex, unsigned int startVertex, unsigned int startInstance);
 	CommandList& DrawInstance(unsigned int instanceVertexCount, unsigned int instanceCount, unsigned int startVertex, unsigned int startInstance);
 	CommandList& SetRenderTargets(unsigned int rtCount, Texture** renderTargets, bool singleDescriptor, Texture* depthRenderTarget);
-
+	CommandList& SetDescriptorHeaps(unsigned int heapCount, DescriptorHeap** descriptorHeaps);
 
 
 private:
