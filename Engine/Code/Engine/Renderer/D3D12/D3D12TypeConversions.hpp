@@ -10,7 +10,7 @@ typedef unsigned int        UINT;
 
 DXGI_FORMAT LocalToD3D12(TextureFormat textureFormat);
 DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat);
-//D3D12_RESOURCE_FLAGS LocalToD3D12(ResourceBindFlag flags);
+D3D12_RESOURCE_FLAGS LocalToD3D12(ResourceBindFlag flags);
 D3D12_DESCRIPTOR_HEAP_TYPE LocalToD3D12(DescriptorHeapType dHeapType);
 D3D12_FILL_MODE LocalToD3D12(FillMode fillMode);
 D3D12_CULL_MODE LocalToD3D12(CullMode cullMode);

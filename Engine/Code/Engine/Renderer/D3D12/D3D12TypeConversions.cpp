@@ -1,7 +1,7 @@
 #include "Engine/Renderer/D3D12/D3D12TypeConversions.hpp"
 #include "Engine/Core/ErrorWarningAssert.hpp"
 #include "Engine/Core/StringUtils.hpp"
-#include "Engine/Core/Buffer.hpp"
+#include "Engine/Renderer/Interfaces/Buffer.hpp"
 
 DXGI_FORMAT LocalToD3D12(TextureFormat textureFormat)
 {
@@ -68,7 +68,7 @@ D3D12_COMPARISON_FUNC LocalToD3D12(DepthFunc depthTest)
 
 D3D12_VERTEX_BUFFER_VIEW LocalToD3D12(BufferView const& bufferView)
 {
-	return {bufferView.m_bufferLocation, (UINT)bufferView.m_sizeInBytes, (UINT)bufferView.m_strideInBytes};
+	return {bufferView.m_bufferAddr, (UINT)bufferView.m_sizeBytes, (UINT)bufferView.m_stride.m_strideBytes};
 }
 
 D3D12_DESCRIPTOR_HEAP_TYPE LocalToD3D12(DescriptorHeapType heapType)
@@ -123,28 +123,28 @@ DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat)
 }
 
 
-//D3D12_RESOURCE_FLAGS LocalToD3D12(ResourceBindFlag flags)
-//{
-//	D3D12_RESOURCE_FLAGS result = D3D12_RESOURCE_FLAG_NONE;
-//
-//	if (flags & ResourceBindFlagBit::RESOURCE_BIND_SHADER_RESOURCE_BIT) {
-//		result |= D3D12_RESOURCE_FLAG_NONE;
-//	}
-//
-//	if (flags & ResourceBindFlagBit::RESOURCE_BIND_RENDER_TARGET_BIT) {
-//		result |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-//	}
-//
-//	if (flags & ResourceBindFlagBit::RESOURCE_BIND_DEPTH_STENCIL_BIT) {
-//		result |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-//	}
-//
-//	if (flags & ResourceBindFlagBit::RESOURCE_BIND_UNORDERED_ACCESS_VIEW_BIT) {
-//		result |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-//	}
-//
-//	return result;
-//}
+D3D12_RESOURCE_FLAGS LocalToD3D12(ResourceBindFlag flags)
+{
+	D3D12_RESOURCE_FLAGS result = D3D12_RESOURCE_FLAG_NONE;
+
+	if (flags & ResourceBindFlagBit::RESOURCE_BIND_SHADER_RESOURCE_BIT) {
+		result |= D3D12_RESOURCE_FLAG_NONE;
+	}
+
+	if (flags & ResourceBindFlagBit::RESOURCE_BIND_RENDER_TARGET_BIT) {
+		result |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+	}
+
+	if (flags & ResourceBindFlagBit::RESOURCE_BIND_DEPTH_STENCIL_BIT) {
+		result |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	}
+
+	if (flags & ResourceBindFlagBit::RESOURCE_BIND_UNORDERED_ACCESS_VIEW_BIT) {
+		result |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	}
+
+	return result;
+}
 
 
 D3D12_DESCRIPTOR_HEAP_TYPE LocalToD3D12(DescriptorHeapType dHeapType)
