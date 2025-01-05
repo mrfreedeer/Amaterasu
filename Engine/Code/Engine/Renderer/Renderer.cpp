@@ -10,9 +10,14 @@
 #include "Engine/Renderer/Interfaces/CommandList.hpp"
 #include "Engine/Renderer/Interfaces/Resource.hpp"
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
+#include "Engine/Core/Image.hpp"
 
 #include "Engine/Renderer/D3D12/D3D12TypeConversions.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
+#include "Engine/Window/Window.hpp"
+#include <ThirdParty/ImGUI/imgui_impl_win32.h>
+#include <ThirdParty/ImGUI/imgui_impl_dx12.h>
+#include <Engine/Renderer/D3D12/lib/d3dx12_resource_helpers.h>
 
 
 #pragma comment (lib, "Engine/Renderer/D3D12/lib/dxcompiler.lib")
@@ -96,7 +101,29 @@ Renderer& Renderer::Startup()
 {
 	EnableDebugLayer();
 	CreateDevice();
+	CreateCommandQueue();
+	CreateSwapChain();
 
+	CommandListDesc rscCmdDesc = {};
+	rscCmdDesc.m_initialState = nullptr;
+	rscCmdDesc.m_type = CommandListType::DIRECT;
+
+	m_rscCmdList = CreateCommandList(rscCmdDesc);
+
+	return *this;
+}
+
+Renderer& Renderer::Shutdown()
+{
+	ShutdownImGui();
+	
+
+	return *this;
+}
+
+Renderer& Renderer::BeginFrame()
+{
+	BeginFrameImGui();
 	return *this;
 }
 
@@ -141,6 +168,52 @@ void Renderer::CreateDevice()
 #endif
 }
 
+void Renderer::CreateCommandQueue()
+{
+	// Describe and create the command queue.
+	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)), "FAILED TO CREATE COMMANDQUEUE");
+}
+
+void Renderer::CreateSwapChain()
+{
+	Window* window = Window::GetWindowContext();
+	IntVec2 windowDims = window->GetClientDimensions();
+
+	m_viewport = D3D12_VIEWPORT{0.0f, 0.0f, float(windowDims.x), float(windowDims.y), 0.0f, 1.0f};
+	m_scissorRect = D3D12_RECT{0, 0, LONG(windowDims.x), LONG(windowDims.y)};
+
+	HWND windowHandle = (HWND)window->m_osWindowHandle;
+	// Describe and create the swap chain.
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+	swapChainDesc.BufferCount = 2;
+	swapChainDesc.Width = windowDims.x;
+	swapChainDesc.Height = windowDims.y;
+	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc.SampleDesc.Count = 1;
+
+	ComPtr<IDXGISwapChain1> swapChain;
+	ThrowIfFailed(m_DXGIFactory->CreateSwapChainForHwnd(
+		m_commandQueue,        // Swap chain needs the queue so that it can force a flush on it.
+		windowHandle,
+		&swapChainDesc,
+		nullptr,
+		nullptr,
+		&swapChain
+	), "Failed to create swap chain");
+
+	// This sample does not support full screen transitions.
+	ThrowIfFailed(m_DXGIFactory->MakeWindowAssociation(windowHandle, DXGI_MWA_NO_ALT_ENTER), "Failed to make window association");
+
+	ThrowIfFailed(swapChain->QueryInterface(&m_swapChain), "Failed to get Swap Chain");
+	m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
+}
+
 void Renderer::SetDebugName(IDXGIObject* object, char const* name)
 {
 	if (!object) return;
@@ -150,6 +223,126 @@ void Renderer::SetDebugName(IDXGIObject* object, char const* name)
 	UNUSED(object);
 	UNUSED(name);
 #endif
+}
+
+void Renderer::SetDebugName(ID3D12Object* object, char const* name)
+{
+#if defined(ENGINE_DEBUG_RENDER)
+	object->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)strlen(name), name);
+#else
+	UNUSED(object);
+	UNUSED(name);
+#endif
+}
+
+void Renderer::InitializeImGui()
+{
+#if defined(ENGINE_USE_IMGUI)
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	Window* window = Window::GetWindowContext();
+
+
+	{
+		DescriptorHeapDesc desc = {};
+		desc.m_flags = DescriptorHeapFlags::ShaderVisible;
+		desc.m_numDescriptors = 1;
+		desc.m_type = DescriptorHeapType::CBV_SRV_UAV;
+	
+		m_ImGuiSrvDescHeap = CreateDescriptorHeap(desc, "ImGuiDescriptorHeap");
+	}
+
+	HWND windowHandle = (HWND)window->m_osWindowHandle;
+	ImGui_ImplWin32_Init(windowHandle);
+	ImGui_ImplDX12_Init(m_device, m_config.m_backBuffersCount,
+		DXGI_FORMAT_R8G8B8A8_UNORM, m_ImGuiSrvDescHeap->m_descriptorHeap,
+		m_ImGuiSrvDescHeap->GetCPUHandleHeapStart(),
+		m_ImGuiSrvDescHeap->GetGPUHandleHeapStart());
+#endif
+}
+
+void Renderer::ShutdownImGui()
+{
+#if defined(ENGINE_USE_IMGUI)
+
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
+	delete m_ImGuiSrvDescHeap;
+	m_ImGuiSrvDescHeap = nullptr;
+#endif
+}
+
+void Renderer::BeginFrameImGui()
+{
+#if defined(ENGINE_USE_IMGUI)
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	//ImGui::ShowDemoWindow();
+#endif
+}
+
+Texture* Renderer::GetTextureForFileName(char const* imageFilePath)
+{
+	Texture* textureToGet = nullptr;
+
+	for (Texture*& loadedTexture : m_loadedTextures) {
+		if (loadedTexture->GetSource() == imageFilePath) {
+			return loadedTexture;
+		}
+	}
+	return textureToGet;
+}
+
+Texture* Renderer::CreateTextureFromImage(Image const& image)
+{
+	TextureCreateInfo ci{};
+	ci.m_owner = this;
+	ci.m_name = image.GetImageFilePath();
+	ci.m_source = image.GetImageFilePath().c_str();
+	ci.m_dimensions = image.GetDimensions();
+	ci.m_initialData = image.GetRawData();
+	ci.m_stride = sizeof(Rgba8);
+
+	Texture* newTexture = CreateTexture(ci);
+	SetDebugName(newTexture->m_rsc->m_rawRsc, ci.m_source);
+
+	return newTexture;
+}
+
+Texture* Renderer::CreateTextureFromFile(char const* imageFilePath)
+{
+	Image loadedImage(imageFilePath);
+	Texture* newTexture = CreateTextureFromImage(loadedImage);
+
+	return newTexture;
+}
+
+Renderer& Renderer::RenderImGui(CommandList& cmdList, Texture* renderTarget)
+{
+#if defined(ENGINE_USE_IMGUI)
+	
+	ResourceView* rtView = renderTarget->GetRenderTargetView();
+	D3D12_CPU_DESCRIPTOR_HANDLE currentRTVHandle = rtView->m_descriptor;
+
+	ImGui::Render();
+	cmdList.SetRenderTargets(1, &renderTarget, true, nullptr);
+	cmdList.SetDescriptorHeaps(1, &m_ImGuiSrvDescHeap);
+
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cmdList.m_cmdList);
+#endif
+
+	return *this;
 }
 
 void Renderer::EnableDebugLayer()
@@ -167,7 +360,13 @@ void Renderer::EnableDebugLayer()
 #endif
 }
 
-DescriptorHeap* Renderer::CreateDescriptorHeap(DescriptorHeapDesc const& desc)
+Renderer& Renderer::EndFrame()
+{
+	
+	return *this;
+}
+
+DescriptorHeap* Renderer::CreateDescriptorHeap(DescriptorHeapDesc const& desc, char const* debugName)
 {
 	DescriptorHeap* newHeap = new DescriptorHeap(desc);
 
@@ -176,8 +375,13 @@ DescriptorHeap* Renderer::CreateDescriptorHeap(DescriptorHeapDesc const& desc)
 	heapDesc.Type = LocalToD3D12(desc.m_type);
 	heapDesc.Flags = (D3D12_DESCRIPTOR_HEAP_FLAGS)static_cast<uint8_t>(desc.m_flags);
 
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&newHeap->m_descriptorHeap)), "FAILED TO CREATE DESCRIPTOR HEAP");
+	char const* errorString = Stringf("FAILED TO CRATE DESCRIPTOR HEAP %s", debugName).c_str();
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&newHeap->m_descriptorHeap)), errorString);
 	newHeap->m_handleSize = m_device->GetDescriptorHandleIncrementSize(heapDesc.Type);
+
+	if (debugName) {
+		SetDebugName(newHeap->m_descriptorHeap, debugName);
+	}
 
 	return newHeap;
 
@@ -296,5 +500,109 @@ ResourceView* Renderer::CreateConstantBufferView(size_t handle, Buffer* cBuffer)
 	m_device->CreateConstantBufferView(&cBufferView, newCBV->m_descriptor);
 
 	return cBuffer->GetConstantBufferView();
+}
+
+Texture* Renderer::CreateOrGetTextureFromFile(char const* imageFilePath)
+{
+	Texture* existingTexture = GetTextureForFileName(imageFilePath);
+	if (existingTexture)
+	{
+		return existingTexture;
+	}
+
+	// Never seen this texture before!  Let's load it.
+	Texture* newTexture = CreateTextureFromFile(imageFilePath);
+	return newTexture;
+}
+
+Texture* Renderer::CreateTexture(TextureCreateInfo& creationInfo)
+{
+	Resource*& handle = creationInfo.m_handle;
+	ID3D12Resource2* textureUploadHeap = nullptr;
+
+	if (handle) {
+		handle->m_rawRsc->AddRef();
+	}
+	else {
+		D3D12_RESOURCE_DESC textureDesc = {};
+		textureDesc.Width = (UINT64)creationInfo.m_dimensions.x;
+		textureDesc.Height = (UINT64)creationInfo.m_dimensions.y;
+		textureDesc.MipLevels = 1;
+		textureDesc.DepthOrArraySize = 1;
+		textureDesc.Format = LocalToD3D12(creationInfo.m_format);
+		textureDesc.Flags = LocalToD3D12(creationInfo.m_bindFlags);
+		textureDesc.SampleDesc.Count = 1;
+		textureDesc.SampleDesc.Quality = 0;
+		textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+
+		CD3DX12_HEAP_PROPERTIES heapType(D3D12_HEAP_TYPE_DEFAULT);
+		D3D12_RESOURCE_STATES initialResourceState = D3D12_RESOURCE_STATE_COMMON;
+
+		handle = new Resource(creationInfo.m_name.c_str());
+		handle->m_currentState = initialResourceState;
+
+		D3D12_CLEAR_VALUE clearValueTex = {};
+		D3D12_CLEAR_VALUE* clearValue = NULL;
+
+		// If it can be bound as RT then it needs the clear colour, otherwise it's null
+		if (creationInfo.m_bindFlags & RESOURCE_BIND_RENDER_TARGET_BIT) {
+			creationInfo.m_clearColour.GetAsFloats(clearValueTex.Color);
+			clearValueTex.Format = LocalToD3D12(creationInfo.m_clearFormat);
+			clearValue = &clearValueTex;
+		}
+		else if (creationInfo.m_bindFlags & RESOURCE_BIND_DEPTH_STENCIL_BIT) {
+			creationInfo.m_clearColour.GetAsFloats(clearValueTex.Color);
+			clearValueTex.Format = LocalToD3D12(creationInfo.m_clearFormat);
+			clearValue = &clearValueTex;
+		}
+
+		HRESULT textureCreateHR = m_device->CreateCommittedResource(
+			&heapType,
+			D3D12_HEAP_FLAG_NONE,
+			&textureDesc,
+			initialResourceState,
+			clearValue,
+			IID_PPV_ARGS(&handle->m_rawRsc)
+		);
+
+		if (creationInfo.m_initialData) {
+			UINT64  const uploadBufferSize = GetRequiredIntermediateSize(handle->m_rawRsc, 0, 1);
+			CD3DX12_RESOURCE_DESC uploadHeapDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+			CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_UPLOAD);
+
+			HRESULT createUploadHeap = m_device->CreateCommittedResource(
+				&heapProperties,
+				D3D12_HEAP_FLAG_NONE,
+				&uploadHeapDesc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(&textureUploadHeap));
+
+			ThrowIfFailed(createUploadHeap, "FAILED TO CREATE TEXTURE UPLOAD HEAP");
+			SetDebugName(textureUploadHeap, "Texture Upload Heap");
+
+			D3D12_SUBRESOURCE_DATA imageData = {};
+			imageData.pData = creationInfo.m_initialData;
+			imageData.RowPitch = creationInfo.m_stride * creationInfo.m_dimensions.x;
+			imageData.SlicePitch = creationInfo.m_stride * creationInfo.m_dimensions.y * creationInfo.m_dimensions.x;
+
+			UpdateSubresources(m_rscCmdList->m_cmdList, handle->m_rawRsc, textureUploadHeap, 0, 0, 1, &imageData);
+		}
+
+		std::string const errorMsg = Stringf("COULD NOT CREATE TEXTURE WITH NAME %s", creationInfo.m_name.c_str());
+		ThrowIfFailed(textureCreateHR, errorMsg.c_str());
+		handle->m_currentState = D3D12_RESOURCE_STATE_COPY_DEST;
+	}
+	Texture* newTexture = new Texture(creationInfo);
+	if (textureUploadHeap) {
+		newTexture->m_uploadRsc = new Resource(Stringf("UploadRsc: %s", creationInfo.m_name).c_str());
+		newTexture->m_uploadRsc->m_rawRsc = textureUploadHeap;
+	}
+	newTexture->m_rsc = handle;
+	SetDebugName(newTexture->m_rsc->m_rawRsc, creationInfo.m_name.c_str());
+
+	m_loadedTextures.push_back(newTexture);
+
+	return newTexture;
 }
 
