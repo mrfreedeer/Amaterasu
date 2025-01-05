@@ -24,6 +24,7 @@ typedef unsigned int ResourceBindFlag;
 
 struct TextureCreateInfo {
 	std::string m_name = "Unnamed Texture";
+	char const* m_source = "";
 	Renderer* m_owner = nullptr;
 	Resource* m_handle = nullptr;
 	void* m_initialData = nullptr;
@@ -49,12 +50,14 @@ public:
 	bool IsShaderResourceCompatible() const { return m_info.m_bindFlags & RESOURCE_BIND_SHADER_RESOURCE_BIT; }
 	bool IsDepthStencilCompatible() const { return m_info.m_bindFlags & RESOURCE_BIND_DEPTH_STENCIL_BIT; }
 	bool IsUnorderedAccessCompatible() const { return m_info.m_bindFlags & RESOURCE_BIND_UNORDERED_ACCESS_VIEW_BIT; }
+	char const* GetSource() const { return m_info.m_source; }
 private:
 	Texture();
 	Texture(TextureCreateInfo const& createInfo);
 	~Texture();
 private:
 	Resource* m_rsc = nullptr;
+	Resource* m_uploadRsc = nullptr;
 	TextureCreateInfo m_info = {};
 
 };

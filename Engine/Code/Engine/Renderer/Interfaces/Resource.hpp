@@ -27,11 +27,12 @@ private:
 	Resource(char const* debugName): m_debugName(debugName) {}
 	~Resource();
 private:
-	ID3D12Resource1* m_rawRsc = nullptr;
+	ID3D12Resource2* m_rawRsc = nullptr;
 	ResourceView* m_dsv = nullptr;
 	ResourceView* m_uav = nullptr;
 	ResourceView* m_srv = nullptr;
 	ResourceView* m_rtv = nullptr;
 	ResourceView* m_cbv = nullptr;
 	char const* m_debugName = nullptr;
+	int m_currentState = 0;
 };

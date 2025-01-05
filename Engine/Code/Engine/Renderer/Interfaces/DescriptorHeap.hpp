@@ -30,6 +30,7 @@ struct DescriptorHeapDesc {
 class DescriptorHeap {
 	// Renderer owns device, so only it can create DescriptorHeaps
 	friend class Renderer;
+	friend class CommandList;
 public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetNextCPUHandle();
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandleAtOffset(size_t offset);
