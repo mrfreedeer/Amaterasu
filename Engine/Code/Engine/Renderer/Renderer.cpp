@@ -1,5 +1,4 @@
 #include "Engine/Renderer/Renderer.hpp"
-#include <Engine/Renderer/D3D12/lib/d3d12.h>
 #include <Engine/Renderer/D3D12/lib/d3dcommon.h>
 #include <dxgi1_6.h>
 #include <dxcapi.h>
@@ -10,6 +9,8 @@
 #include "Engine/Renderer/Interfaces/CommandList.hpp"
 #include "Engine/Renderer/Interfaces/Resource.hpp"
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
+#include "Engine/Renderer/Interfaces/CommandQueue.hpp"
+#include "Engine/Renderer/Interfaces/Fence.hpp"
 #include "Engine/Core/Image.hpp"
 
 #include "Engine/Renderer/D3D12/D3D12TypeConversions.hpp"
@@ -99,9 +100,13 @@ Renderer::Renderer(RendererConfig const& config)
 
 Renderer& Renderer::Startup()
 {
+	CommandQueueDesc queueDesc = {};
+	queueDesc.m_flags = QueueFlags::None;
+	queueDesc.m_listType = CommandListType::DIRECT;
+
 	EnableDebugLayer();
 	CreateDevice();
-	CreateCommandQueue();
+	m_commandQueue = CreateCommandQueue(queueDesc);
 	CreateSwapChain();
 
 	CommandListDesc rscCmdDesc = {};
@@ -116,7 +121,35 @@ Renderer& Renderer::Startup()
 Renderer& Renderer::Shutdown()
 {
 	ShutdownImGui();
-	
+
+	delete m_rscCmdList;
+	m_rscCmdList = nullptr;
+
+	DX_SAFE_RELEASE(m_DXGIFactory);
+	DX_SAFE_RELEASE(m_swapChain);
+
+	delete m_ImGuiSrvDescHeap;
+	delete m_commandQueue;
+
+	DX_SAFE_RELEASE(m_device);
+
+	RendererConfig m_config = {};
+	ID3D12Device8* m_device = nullptr;
+	IDXGIFactory4* m_DXGIFactory = nullptr;
+	D3D12_VIEWPORT m_viewport = {};
+	D3D12_RECT m_scissorRect = {};
+	IDXGISwapChain4* m_swapChain = nullptr;
+	DescriptorHeap* m_ImGuiSrvDescHeap = nullptr;
+	CommandQueue* m_commandQueue = nullptr;
+
+	unsigned int m_currentBackBuffer = 0;
+
+	// Game Resources
+	std::vector<Texture*> m_loadedTextures;
+	std::vector<BitmapFont*> m_loadedFonts;
+
+	// Internal Command Lists (For uploading singleton resources like textures)
+	CommandList* m_rscCmdList = nullptr;
 
 	return *this;
 }
@@ -168,16 +201,6 @@ void Renderer::CreateDevice()
 #endif
 }
 
-void Renderer::CreateCommandQueue()
-{
-	// Describe and create the command queue.
-	D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-	queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-	queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-
-	ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)), "FAILED TO CREATE COMMANDQUEUE");
-}
-
 void Renderer::CreateSwapChain()
 {
 	Window* window = Window::GetWindowContext();
@@ -199,7 +222,7 @@ void Renderer::CreateSwapChain()
 
 	ComPtr<IDXGISwapChain1> swapChain;
 	ThrowIfFailed(m_DXGIFactory->CreateSwapChainForHwnd(
-		m_commandQueue,        // Swap chain needs the queue so that it can force a flush on it.
+		m_commandQueue->m_queue,        // Swap chain needs the queue so that it can force a flush on it.
 		windowHandle,
 		&swapChainDesc,
 		nullptr,
@@ -398,6 +421,19 @@ CommandList* Renderer::CreateCommandList(CommandListDesc const& desc)
 	m_device->CreateCommandList1(0, cmdListType, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&newCmdList->m_cmdList));
 
 	return newCmdList;
+}
+
+CommandQueue* Renderer::CreateCommandQueue(CommandQueueDesc const& desc)
+{
+	CommandQueue* newCmdQueue = new CommandQueue(desc);
+	
+	D3D12_COMMAND_QUEUE_DESC cmdQueueDesc = {};
+	cmdQueueDesc.Flags = LocalToD3D12(desc.m_flags);
+	cmdQueueDesc.Type = LocalToD3D12(desc.m_listType);
+
+	m_device->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(&newCmdQueue->m_queue));
+
+	return newCmdQueue;
 }
 
 ResourceView* Renderer::CreateRenderTargetView(size_t handle, Texture* renderTarget)
@@ -604,5 +640,28 @@ Texture* Renderer::CreateTexture(TextureCreateInfo& creationInfo)
 	m_loadedTextures.push_back(newTexture);
 
 	return newTexture;
+}
+
+Fence* Renderer::CreateFence(CommandQueue* fenceManager, unsigned int initialValue /* = 0*/)
+{
+	Fence* outFence = new Fence(initialValue);
+
+	ThrowIfFailed(m_device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&outFence->m_fence)), "FAILED CREATING FENCE");
+
+	// Create an event handle to use for frame synchronization.
+	outFence->m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (outFence->m_fenceEvent == nullptr)
+	{
+		ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), "FAILED GETTING LAST ERROR");
+	}
+
+	outFence->m_commandQueue = fenceManager;
+
+}
+
+Renderer& Renderer::UploadTexturesToGPU()
+{
+	m_rscCmdList->Close();
+	m_commandQueue->ExecuteCommandLists(1, m_rscCmdList);
 }
 

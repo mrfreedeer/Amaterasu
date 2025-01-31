@@ -3,6 +3,7 @@
 #include "Engine/Renderer/Texture.hpp"
 #include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
 #include "Engine/Renderer/Interfaces/CommandList.hpp"
+#include "Engine/Renderer/Interfaces/CommandQueue.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
 
 struct BufferView;
@@ -19,3 +20,4 @@ BOOL LocalToD3D12(WindingOrder windingOrder);
 D3D12_VERTEX_BUFFER_VIEW LocalToD3D12(BufferView const& bufferView);
 D3D12_DESCRIPTOR_HEAP_TYPE LocalToD3D12(DescriptorHeapType heapType);
 D3D12_COMMAND_LIST_TYPE LocalToD3D12(CommandListType cmdListType);
+D3D12_COMMAND_QUEUE_FLAGS LocalToD3D12(QueueFlags queueFlags);

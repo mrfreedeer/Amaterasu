@@ -113,6 +113,18 @@ D3D12_COMMAND_LIST_TYPE LocalToD3D12(CommandListType cmdListType)
 	}
 }
 
+D3D12_COMMAND_QUEUE_FLAGS LocalToD3D12(QueueFlags queueFlags)
+{
+	switch (queueFlags)
+	{
+	case QueueFlags::DisableGPUTimeOut:
+		return D3D12_COMMAND_QUEUE_FLAG_DISABLE_GPU_TIMEOUT;
+	case QueueFlags::None:
+	default:
+		return D3D12_COMMAND_QUEUE_FLAG_NONE;
+	}
+}
+
 DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat)
 {
 	switch (textureFormat) {

@@ -1,19 +1,24 @@
 #pragma once
+#include <Engine/Renderer/D3D12/lib/d3d12.h>
 
 struct DescriptorHeapDesc;
 struct CommandListDesc;
+struct CommandQueueDesc;
 struct ResourceView;
-struct ID3D12Device8;
+struct TextureCreateInfo;
+
 struct IDXGIFactory4;
-struct ID3D12Object;
+struct IDXGIObject;
 struct IDXGISwapChain4;
 
 
 class DescriptorHeap;
 class CommandList;
+class CommandQueue;
 class Texture;
 class Buffer;
 class Image;
+class Fence;
 class BitmapFont;
 
 struct RendererConfig {
@@ -26,7 +31,7 @@ public:
 	// Creation methods, which require the device, are all here 
 	Renderer(RendererConfig const& config);
 
-	/// <summary>
+	/// <summary>+
 	/// Handles initialization of all the rendering system, including creation and 
 	/// initialization of all API's objects
 	/// </summary>
@@ -49,6 +54,7 @@ public:
 	/// <returns></returns>
 	DescriptorHeap* CreateDescriptorHeap(DescriptorHeapDesc const& desc, char const* debugName = nullptr);
 	CommandList* CreateCommandList(CommandListDesc const& desc);
+	CommandQueue* CreateCommandQueue(CommandQueueDesc const& desc);
 	ResourceView* CreateRenderTargetView(size_t handle, Texture* renderTarget);
 	ResourceView* CreateShaderResourceView(size_t handle, Buffer* buffer);
 	ResourceView* CreateShaderResourceView(size_t handle, Texture* texture);
@@ -56,13 +62,20 @@ public:
 	ResourceView* CreateConstantBufferView(size_t handle, Buffer* cBuffer);
 	Texture* CreateOrGetTextureFromFile(char const* imageFilePath);
 	Texture* CreateTexture(TextureCreateInfo& creationInfo);
+	Fence* CreateFence(CommandQueue* fenceManager, unsigned int initialValue = 0);
+
+	/// <summary>
+	/// When textures are created, they still need to be uploaded to the GPU
+	/// The exact moment this happens, is left for the user to decide
+	/// </summary>
+	/// <returns></returns>
+	Renderer& UploadTexturesToGPU();
 
 	Renderer& RenderImGui(CommandList& cmdList, Texture* renderTarget);
 private:
 
 	void EnableDebugLayer();
 	void CreateDevice();
-	void CreateCommandQueue();
 	void CreateSwapChain();
 	void SetDebugName(ID3D12Object* object, char const* name);
 	void SetDebugName(IDXGIObject* object, char const* name);
@@ -82,9 +95,9 @@ private:
 	IDXGIFactory4* m_DXGIFactory = nullptr;
 	D3D12_VIEWPORT m_viewport = {};
 	D3D12_RECT m_scissorRect = {};
-	DescriptorHeap* m_ImGuiSrvDescHeap = nullptr;
 	IDXGISwapChain4* m_swapChain = nullptr;
-	ID3D12CommandQueue* m_commandQueue = nullptr;
+	DescriptorHeap* m_ImGuiSrvDescHeap = nullptr;
+	CommandQueue* m_commandQueue = nullptr;
 
 	unsigned int m_currentBackBuffer = 0;
 

@@ -1,19 +1,21 @@
 #pragma once
 struct ID3D12Fence1;
-struct ID3D12Device2;
-struct ID3D12CommandQueue;
+
+class CommandQueue;
 
 class Fence {
 friend class Renderer;
+friend class CommandQueue;
 public:
-	Fence(ID3D12Device2* device, ID3D12CommandQueue* commandQueue, unsigned int initialValue = 0);
+	Fence(CommandQueue* fenceManager, unsigned int initialValue = 0);
 	~Fence();
 
 	void Signal();
-	void Wait();
+	void Wait(unsigned int waitValue);
+	unsigned int GetFenceValue() const { return m_fenceValue; }
 private:
 	ID3D12Fence1* m_fence = nullptr;
-	ID3D12CommandQueue* m_commandQueue = nullptr;
+	CommandQueue* m_commandQueue = nullptr;
 	void* m_fenceEvent = nullptr;
 	unsigned int m_fenceValue = 0;
 

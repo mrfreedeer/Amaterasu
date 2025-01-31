@@ -1,20 +1,13 @@
 #include "Engine/Renderer/Interfaces/Fence.hpp"
+#include "Engine/Renderer/Interfaces/CommandQueue.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
 #include <d3d12.h>
 
-Fence::Fence(ID3D12Device2* device, ID3D12CommandQueue* commandQueue, unsigned int initialValue /*= 0*/):
+Fence::Fence(CommandQueue* commandQueue, unsigned int initialValue /*= 0*/):
 	m_fenceValue(initialValue),
 	m_commandQueue(commandQueue)
 {
-	ThrowIfFailed(device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)), "FAILED CREATING FENCE");
-
-	// Create an event handle to use for frame synchronization.
-	m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-	if (m_fenceEvent == nullptr)
-	{
-		ThrowIfFailed(HRESULT_FROM_WIN32(GetLastError()), "FAILED GETTING LAST ERROR");
-	}
-
+	
 
 }
 
@@ -26,14 +19,15 @@ Fence::~Fence()
 void Fence::Signal()
 {
 	m_fenceValue++;
-	ThrowIfFailed(m_commandQueue->Signal(m_fence, m_fenceValue), "FAILED TO SIGNAL FENCE");
+	m_commandQueue->Signal(this, m_fenceValue);
 }
 
-void Fence::Wait()
+void Fence::Wait(unsigned int waitValue)
 {
-	if (m_fence->GetCompletedValue() < m_fenceValue)
+	if (m_fence->GetCompletedValue() < waitValue)
 	{
 		ThrowIfFailed(m_fence->SetEventOnCompletion(m_fenceValue, m_fenceEvent), "FAILED TO SET EVENT ON COMPLETION");
 		WaitForSingleObject(m_fenceEvent, INFINITE);
 	}
 }
+
