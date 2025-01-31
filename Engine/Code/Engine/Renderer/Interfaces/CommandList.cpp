@@ -14,6 +14,12 @@ CommandList::CommandList(CommandListDesc const& desc) :
 
 }
 
+CommandList::~CommandList()
+{
+	DX_SAFE_RELEASE(m_cmdAllocator);
+	DX_SAFE_RELEASE(m_cmdList);
+}
+
 CommandList& CommandList::Reset(PipelineState* initialState /*= nullptr*/)
 {
 	m_cmdAllocator->Reset();

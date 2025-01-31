@@ -6,5 +6,6 @@ struct PipelineStateDesc {
 };
 
 struct PipelineState {
+	~PipelineState();
 	ID3D12PipelineState* m_pso = nullptr;
 };

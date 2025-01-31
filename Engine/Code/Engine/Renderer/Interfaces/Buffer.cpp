@@ -1,6 +1,12 @@
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
 #include "Engine/Renderer/Interfaces/Resource.hpp"
 
+Buffer::~Buffer()
+{
+	delete m_rsc;
+	m_rsc = nullptr;
+}
+
 void Buffer::Map(void*& mapSource)
 {
 	m_rsc->Map(mapSource, 0, m_desc.m_size);

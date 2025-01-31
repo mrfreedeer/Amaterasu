@@ -32,7 +32,9 @@ struct CommandListDesc {
 
 class CommandList {
 	friend class Renderer;
+	friend class CommandQueue;
 	CommandList(CommandListDesc const& desc);
+	~CommandList();
 public:
 	CommandList& Reset(PipelineState* initialState = nullptr);
 	CommandList& Close();

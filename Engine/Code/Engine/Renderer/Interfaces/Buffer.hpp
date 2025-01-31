@@ -32,6 +32,7 @@ struct BufferView {
 class Buffer {
 	friend class Renderer;
 public:
+	~Buffer();
 	void Map(void*& mapSource);
 	void Unmap();
 	/// <summary>

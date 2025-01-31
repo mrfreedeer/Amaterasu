@@ -32,6 +32,7 @@ class DescriptorHeap {
 	friend class Renderer;
 	friend class CommandList;
 public:
+	~DescriptorHeap();
 	D3D12_CPU_DESCRIPTOR_HANDLE GetNextCPUHandle();
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandleAtOffset(size_t offset);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandleAtOffset(size_t offset);

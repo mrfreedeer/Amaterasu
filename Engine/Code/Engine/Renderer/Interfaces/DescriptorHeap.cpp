@@ -13,6 +13,11 @@ DescriptorHeap::DescriptorHeap(DescriptorHeapDesc const& desc):
 }
 
 
+DescriptorHeap::~DescriptorHeap()
+{
+	DX_SAFE_RELEASE(m_descriptorHeap);
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::GetNextCPUHandle()
 {
 	if ((!m_descriptorHeap) || (m_remainingDescriptors <= 0)) ERROR_AND_DIE("RAN OUT OF DESCRIPTORS");

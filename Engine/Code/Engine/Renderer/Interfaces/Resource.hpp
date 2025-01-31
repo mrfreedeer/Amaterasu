@@ -14,6 +14,7 @@ class Resource {
 	friend class Renderer;
 	friend class CommandList;
 public:
+	~Resource();
 	ResourceView* GetDepthStencilView() const { return m_dsv; }
 	ResourceView* GetShaderResourceView() const { return m_srv; }
 	ResourceView* GetConstantBufferView() const { return m_cbv; }
@@ -25,7 +26,6 @@ public:
 
 private:
 	Resource(char const* debugName): m_debugName(debugName) {}
-	~Resource();
 private:
 	ID3D12Resource2* m_rawRsc = nullptr;
 	ResourceView* m_dsv = nullptr;
