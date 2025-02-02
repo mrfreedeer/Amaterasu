@@ -53,7 +53,7 @@ void AttractScreenMode::Render() const
 		Vertex_PCU(Vec3(0.0f, 0.25f, 0.0f), Rgba8(255, 255, 255, 255), Vec2(0.5f, 1.0f))
 	};
 
-	g_theRenderer->BeginCamera(m_UICamera);
+	m_renderContext->BeginCamera(m_UICamera);
 	{
 		g_theRenderer->ClearScreen(Rgba8::BLACK);
 		Material* def2DMat = g_theRenderer->GetDefaultMaterial(false);
@@ -73,7 +73,7 @@ void AttractScreenMode::Render() const
 
 
 	}
-	g_theRenderer->EndCamera(m_UICamera);
+	m_renderContext->EndCamera(m_UICamera);
 
 	DebugRenderWorld(m_worldCamera);
 	RenderUI();
