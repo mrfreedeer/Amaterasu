@@ -448,7 +448,6 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClCompile Include="..\ThirdParty\Squirrel\SmoothNoise.cpp" />
     <ClCompile Include="..\ThirdParty\TinyXML2\tinyxml2.cpp" />
     <ClCompile Include="Audio\AudioSystem.cpp" />
-    <ClCompile Include="Core\Buffer.cpp" />
     <ClCompile Include="Core\BufferUtils.cpp" />
     <ClCompile Include="Core\Clock.cpp" />
     <ClCompile Include="Core\DevConsole.cpp" />
@@ -508,6 +507,8 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClCompile Include="Renderer\BitmapFont.cpp" />
     <ClCompile Include="Renderer\Camera.cpp" />
     <ClCompile Include="Renderer\D3D12\D3D12TypeConversions.cpp" />
+    <ClCompile Include="Renderer\DebugRendererSystem.cpp" />
+    <ClCompile Include="Renderer\DebugShape.cpp" />
     <ClCompile Include="Renderer\GraphicsCommon.cpp" />
     <ClCompile Include="Renderer\Interfaces\Buffer.cpp" />
     <ClCompile Include="Renderer\Interfaces\CommandList.cpp" />
@@ -547,7 +548,6 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="..\ThirdParty\TinyXML2\tinyxml2.h" />
     <ClInclude Include="..\ThirdParty\WinPixEventRuntime\Include\pix3.h" />
     <ClInclude Include="Audio\AudioSystem.hpp" />
-    <ClInclude Include="Core\Buffer.hpp" />
     <ClInclude Include="Core\BufferUtils.hpp" />
     <ClInclude Include="Core\Clock.hpp" />
     <ClInclude Include="Core\DevConsole.hpp" />
@@ -621,6 +621,8 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Renderer\D3D12\d3dx12_resource_helpers.h" />
     <ClInclude Include="Renderer\D3D12\d3dx12_root_signature.h" />
     <ClInclude Include="Renderer\D3D12\d3dx12_state_object.h" />
+    <ClInclude Include="Renderer\DebugRendererSystem.hpp" />
+    <ClInclude Include="Renderer\DebugShape.hpp" />
     <ClInclude Include="Renderer\GraphicsCommon.hpp" />
     <ClInclude Include="Renderer\Interfaces\Buffer.hpp" />
     <ClInclude Include="Renderer\Interfaces\CommandList.hpp" />

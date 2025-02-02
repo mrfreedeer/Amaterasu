@@ -253,9 +253,6 @@
     <ClCompile Include="Math\Sampling.cpp">
       <Filter>Math</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Buffer.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="..\ThirdParty\ImGUI\imgui_impl_dx12.cpp">
       <Filter>ThirdParty\ImGUI</Filter>
     </ClCompile>
@@ -309,6 +306,12 @@
     </ClCompile>
     <ClCompile Include="Core\Vertex_PNCU.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\DebugRendererSystem.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\DebugShape.cpp">
+      <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -582,9 +585,6 @@
     <ClInclude Include="Renderer\D3D12\d3dx12_state_object.h">
       <Filter>Renderer\D3D12</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Buffer.hpp">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\D3D12\D3D12TypeConversions.hpp">
       <Filter>Renderer\D3D12</Filter>
     </ClInclude>
@@ -644,6 +644,12 @@
     </ClInclude>
     <ClInclude Include="Core\Vertex_PNCU.hpp">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\DebugRendererSystem.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\DebugShape.hpp">
+      <Filter>Renderer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
