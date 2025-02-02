@@ -5,7 +5,6 @@
 #include "Engine/Network/RemoteConsole.hpp"
 #include "Engine/Core/XmlUtils.hpp"
 #include "Engine/Core/FileUtils.hpp"
-#include <filesystem>
 #include "Game//EngineBuildPreferences.hpp"
 
 Rgba8 const DevConsole::ERROR_COLOR = Rgba8(255, 0, 0, 255);

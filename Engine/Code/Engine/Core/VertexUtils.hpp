@@ -2,6 +2,7 @@
 #include "Engine/Math/Vec2.hpp"
 #include "Engine/Core/Vertex_PCU.hpp"
 #include "Engine/Core/Vertex_PNCU.hpp"
+#include "Engine/Core/Rgba8.hpp"
 #include "Engine/Math/AABB2.hpp"	
 #include "Engine/Math/AABB3.hpp"
 #include "Engine/Math/LineSegment2.hpp"

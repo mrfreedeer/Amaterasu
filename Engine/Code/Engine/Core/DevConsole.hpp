@@ -5,6 +5,7 @@
 #include "Engine/Core/EventSystem.hpp"
 #include "Engine/Core/Clock.hpp"
 #include "Engine/Core/Stopwatch.hpp"
+#include <filesystem>
 
 #include <string>
 #include <vector>
