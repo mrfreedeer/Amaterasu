@@ -13,6 +13,7 @@ enum class DescriptorHeapFlags : uint8_t {
 };
 
 enum class DescriptorHeapType : uint8_t {
+	UNDEFINED = -1,
 	CBV_SRV_UAV = 0,
 	Sampler,
 	RenderTargetView,
@@ -23,8 +24,9 @@ enum class DescriptorHeapType : uint8_t {
 
 struct DescriptorHeapDesc {
 	unsigned int m_numDescriptors = 0;
-	DescriptorHeapType m_type = DescriptorHeapType::CBV_SRV_UAV;
+	DescriptorHeapType m_type = DescriptorHeapType::UNDEFINED;
 	DescriptorHeapFlags m_flags = DescriptorHeapFlags::None;
+	char const* m_debugName = nullptr;
 };
 
 class DescriptorHeap {

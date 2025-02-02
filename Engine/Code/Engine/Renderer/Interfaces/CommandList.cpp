@@ -4,6 +4,7 @@
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
 #include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
 #include "Engine/Renderer/Texture.hpp"
+#include "Engine/Renderer/Camera.hpp"
 #include "Engine/Core/Rgba8.hpp"
 #include "Engine/Math/IntVec3.hpp"
 #include "Engine/Renderer/D3D12/D3D12TypeConversions.hpp"
@@ -101,7 +102,7 @@ CommandList& CommandList::DrawInstance(unsigned int instanceVertexCount, unsigne
 	return *this;
 }
 
-CommandList& CommandList::SetRenderTargets(unsigned int rtCount, Texture** renderTargets, bool singleDescriptor, Texture* depthRenderTarget)
+CommandList& CommandList::SetRenderTargets(unsigned int rtCount, Texture* const* renderTargets, bool singleDescriptor, Texture* depthRenderTarget)
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE* handleArray = new D3D12_CPU_DESCRIPTOR_HANDLE[rtCount];
 
@@ -135,6 +136,12 @@ CommandList& CommandList::SetDescriptorHeaps(unsigned int heapCount, DescriptorH
 	}
 	m_cmdList->SetDescriptorHeaps(heapCount, heapArray);
 
+	return *this;
+}
+
+CommandList& CommandList::SetBlendFactor(float* blendFactors)
+{
+	m_cmdList->OMSetBlendFactor(blendFactors);
 	return *this;
 }
 
