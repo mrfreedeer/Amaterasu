@@ -1,5 +1,7 @@
 #pragma once
 #include <Engine/Renderer/D3D12/lib/d3d12.h>
+#include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
+#include "Engine/Renderer/Interfaces/CommandList.hpp"
 
 struct DescriptorHeapDesc;
 struct CommandListDesc;
@@ -17,6 +19,7 @@ class CommandList;
 class CommandQueue;
 class Texture;
 class Buffer;
+class Camera;
 class Image;
 class Fence;
 class BitmapFont;
@@ -25,6 +28,13 @@ struct RendererConfig {
 	unsigned int m_backBuffersCount = 0;
 };
 
+/// <summary>
+/// Object that reports all live objects
+/// NEEDS TO BE THE LAST DESTROYED THING, OTHERWISE IT REPORTS FALSE POSITIVES
+/// </summary>
+struct LiveObjectReporter {
+	~LiveObjectReporter();
+};
 class Renderer {
 public:
 	// All public methods to return instance to Renderer for chaining purposes
@@ -55,14 +65,24 @@ public:
 	DescriptorHeap* CreateDescriptorHeap(DescriptorHeapDesc const& desc, char const* debugName = nullptr);
 	CommandList* CreateCommandList(CommandListDesc const& desc);
 	CommandQueue* CreateCommandQueue(CommandQueueDesc const& desc);
+	Fence* CreateFence(CommandQueue* fenceManager, unsigned int initialValue = 0);
+
+	//-------------------------- Resource views --------------------------
 	ResourceView* CreateRenderTargetView(size_t handle, Texture* renderTarget);
 	ResourceView* CreateShaderResourceView(size_t handle, Buffer* buffer);
 	ResourceView* CreateShaderResourceView(size_t handle, Texture* texture);
 	ResourceView* CreateDepthStencilView(size_t handle, Texture* depthTexture);
 	ResourceView* CreateConstantBufferView(size_t handle, Buffer* cBuffer);
+
+	//----------------------------- Textures -----------------------------
 	Texture* CreateOrGetTextureFromFile(char const* imageFilePath);
 	Texture* CreateTexture(TextureCreateInfo& creationInfo);
-	Fence* CreateFence(CommandQueue* fenceManager, unsigned int initialValue = 0);
+	Texture* GetActiveBackBuffer();
+	Texture* GetBackUpBackBuffer();
+	Texture* GetDefaultTexture();
+
+	BitmapFont* CreateOrGetBitmapFont(char const* sourcePath);
+	Renderer& AddBackBufferToTextures();
 
 	/// <summary>
 	/// When textures are created, they still need to be uploaded to the GPU
@@ -88,18 +108,24 @@ private:
 	Texture* GetTextureForFileName(char const* imageFilePath);
 	Texture* CreateTextureFromImage(Image const& image);
 	Texture* CreateTextureFromFile(char const* imageFilePath);
+	void DestroyTexture(Texture* texture);
+
+	BitmapFont* CreateBitmapFont(char const* sourcePath);
 
 private:
+	// LiveObjectReporter must be first ALWAYS!!!!!
+	LiveObjectReporter m_liveObjectReporter;
 	RendererConfig m_config = {};
 	ID3D12Device8* m_device = nullptr;
 	IDXGIFactory4* m_DXGIFactory = nullptr;
-	D3D12_VIEWPORT m_viewport = {};
-	D3D12_RECT m_scissorRect = {};
 	IDXGISwapChain4* m_swapChain = nullptr;
 	DescriptorHeap* m_ImGuiSrvDescHeap = nullptr;
 	CommandQueue* m_commandQueue = nullptr;
 
 	unsigned int m_currentBackBuffer = 0;
+
+	Texture* m_defaultTexture = nullptr;
+	Texture** m_backBuffers = nullptr;
 
 	// Game Resources
 	std::vector<Texture*> m_loadedTextures;
@@ -107,4 +133,25 @@ private:
 
 	// Internal Command Lists (For uploading singleton resources like textures)
 	CommandList* m_rscCmdList = nullptr;
+};
+
+struct RenderContextConfig {
+	Renderer* m_renderer = nullptr;
+	DescriptorHeapDesc m_descriptorHeapDescs[(int)DescriptorHeapType::NUM_TYPES] = {};
+	CommandListDesc m_cmdListDesc = {};
+};
+class RenderContext {
+public:
+	RenderContext(RenderContextConfig const& config);
+	~RenderContext();
+
+	RenderContext& BeginCamera(Camera const& camera);
+	RenderContext& EndCamera(Camera const& camera);
+private:
+	RenderContextConfig m_config = {};
+	D3D12_VIEWPORT m_viewport = {};
+	D3D12_RECT m_scissorRect = {};
+	CommandList* m_cmdList = nullptr;
+	DescriptorHeap* m_descriptorHeaps[(int)DescriptorHeapType::NUM_TYPES] = { nullptr };
+	Camera const* m_currentCamera = nullptr;
 };

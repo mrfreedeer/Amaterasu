@@ -14,16 +14,18 @@ Texture::~Texture()
 
 ResourceView* Texture::GetRenderTargetView() const
 {
-	return m_rsc->GetRenderTargetView();
+	ResourceView* rtView = m_rsc->GetRenderTargetView();
+	return (rtView->m_valid) ? rtView : nullptr;
 }
 
 ResourceView* Texture::GetDepthStencilView() const
 {
-	return m_rsc->GetDepthStencilView();
+	ResourceView* dsvView = m_rsc->GetDepthStencilView();
+	return (dsvView->m_valid) ? dsvView : nullptr;
 }
 
 ResourceView* Texture::GetShaderResourceView() const
 {
-	return m_rsc->GetShaderResourceView();
+	ResourceView* srvView = m_rsc->GetShaderResourceView();
+	return(srvView->m_valid) ? srvView : nullptr;
 }
-

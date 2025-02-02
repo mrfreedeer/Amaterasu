@@ -2,14 +2,14 @@
 #include "Engine/Renderer/Texture.hpp"
 
 
-void Camera::SetColorTarget(Texture* color)
+void Camera::SetColorTarget(Texture* color, unsigned int slot /*= 0*/)
 {
-	m_colorTarget = color;
+	m_colorTargets[slot] = color;
 }
 
-Texture* Camera::GetRenderTarget() const
+Texture* Camera::GetRenderTarget(unsigned int slot) const
 {
-	return m_colorTarget;
+	return m_colorTargets[slot];
 }
 
 void Camera::SetDepthTarget(Texture* depth)

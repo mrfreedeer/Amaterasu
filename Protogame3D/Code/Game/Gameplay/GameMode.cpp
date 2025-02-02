@@ -10,7 +10,9 @@ GameMode::~GameMode()
 
 void GameMode::Startup()
 {
-	g_theRenderer->SetBlendMode(BlendMode::ALPHA);
+	RenderContextConfig renderCtxConfig = {};
+	renderCtxConfig.m_renderer = g_theRenderer;
+	m_renderContext = new RenderContext(renderCtxConfig);
 
 	m_isCursorHidden = false;
 	m_isCursorClipped = false;
@@ -54,6 +56,8 @@ void GameMode::Shutdown()
 		g_theAudio->StopSound(playbackId);
 	}
 
+	delete m_renderContext;
+	m_renderContext = nullptr;
 }
 
 void GameMode::UpdateDeveloperCheatCodes(float deltaSeconds)

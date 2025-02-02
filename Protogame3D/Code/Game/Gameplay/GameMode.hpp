@@ -29,6 +29,7 @@ protected:
 	virtual void RenderUI() const;
 protected:
 	Game* m_game = nullptr;
+	RenderContext* m_renderContext = nullptr;
 	Camera m_worldCamera;
 	Camera m_UICamera;
 	Vec2 m_UISize = {};

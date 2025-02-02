@@ -15,12 +15,11 @@ enum class CameraMode {
 };
 
 class Camera {
-
+	friend class RenderContext;
 public:
 
-
-	void SetColorTarget(Texture* color);
-	Texture* GetRenderTarget() const;
+	void SetColorTarget(Texture* color, unsigned int slot = 0);
+	Texture* GetRenderTarget(unsigned int slot = 0) const;
 
 	void SetDepthTarget(Texture* depth);
 	Texture* GetDepthTarget() const;
@@ -77,7 +76,6 @@ protected:
 
 	AABB2 m_viewPort = AABB2::ZERO_TO_ONE;
 
-
-	Texture* m_colorTarget = nullptr;
+	Texture* m_colorTargets[8] = {};
 	Texture* m_depthTarget = nullptr;
 };

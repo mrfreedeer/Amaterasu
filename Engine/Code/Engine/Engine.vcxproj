@@ -505,6 +505,7 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClCompile Include="Network\TCPServer.cpp" />
     <ClCompile Include="Network\TCPSocket.cpp" />
     <ClCompile Include="Renderer\Billboard.cpp" />
+    <ClCompile Include="Renderer\BitmapFont.cpp" />
     <ClCompile Include="Renderer\Camera.cpp" />
     <ClCompile Include="Renderer\D3D12\D3D12TypeConversions.cpp" />
     <ClCompile Include="Renderer\GraphicsCommon.cpp" />
@@ -606,6 +607,7 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Network\TCPServer.hpp" />
     <ClInclude Include="Network\TCPSocket.hpp" />
     <ClInclude Include="Renderer\Billboard.hpp" />
+    <ClInclude Include="Renderer\BitmapFont.hpp" />
     <ClInclude Include="Renderer\Camera.hpp" />
     <ClInclude Include="Renderer\D3D12\D3D12TypeConversions.hpp" />
     <ClInclude Include="Renderer\D3D12\d3dx12.h" />
@@ -630,6 +632,7 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Renderer\PixEventReporter.hpp" />
     <ClInclude Include="Renderer\Renderer.hpp" />
     <ClInclude Include="Renderer\SpriteAnimDefinition.hpp" />
+    <ClInclude Include="Renderer\SpriteSheet.hpp" />
     <ClInclude Include="Renderer\Texture.hpp" />
     <ClInclude Include="Window\Window.hpp" />
   </ItemGroup>

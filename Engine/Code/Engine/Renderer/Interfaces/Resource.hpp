@@ -8,6 +8,8 @@ class Resource;
 struct ResourceView {
 	Resource* m_owner = nullptr;
 	D3D12_CPU_DESCRIPTOR_HANDLE m_descriptor = {};
+	// Flag to know whether this is a valid descriptor
+	bool m_valid = false;
 };
 
 class Resource {

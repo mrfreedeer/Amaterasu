@@ -61,9 +61,6 @@
     <ClCompile Include="Core\Rgba8.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Vertex_PCU.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="Math\MathUtils.cpp">
       <Filter>Math</Filter>
     </ClCompile>
@@ -149,9 +146,6 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Core\Stopwatch.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Vertex_PNCU.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Math\Easing.cpp">
@@ -307,6 +301,15 @@
     <ClCompile Include="Renderer\Interfaces\CommandQueue.cpp">
       <Filter>Renderer\Interfaces</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\BitmapFont.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Vertex_PCU.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Vertex_PNCU.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math\Vec2.hpp">
@@ -319,9 +322,6 @@
       <Filter>Math</Filter>
     </ClInclude>
     <ClInclude Include="Core\Rgba8.hpp">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Vertex_PCU.hpp">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Math\MathUtils.hpp">
@@ -469,9 +469,6 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Core\XmlUtils.hpp">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Vertex_PNCU.hpp">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="..\ThirdParty\TinyXML2\tinyxml2.h">
@@ -635,6 +632,18 @@
     </ClInclude>
     <ClInclude Include="Renderer\Interfaces\CommandQueue.hpp">
       <Filter>Renderer\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\BitmapFont.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\SpriteSheet.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Vertex_PCU.hpp">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Vertex_PNCU.hpp">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
