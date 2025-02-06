@@ -35,6 +35,19 @@ inline void ThrowIfFailed(long hr, char const* errorMsg) {
 	}
 }
 
+enum ShaderType : unsigned int {
+	InvalidShader = UINT_MAX,
+	Vertex = 0,
+	Pixel,
+	Geometry,
+	Mesh,
+	Hull,
+	Domain,
+	Compute,
+	NUM_SHADER_TYPES
+};
+
+
 enum class TextureFormat : int {
 	INVALID = -1,
 	R8G8B8A8_UNORM,
