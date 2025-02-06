@@ -3,6 +3,7 @@
 
 struct ID3D12PipelineState;
 
+
 struct PipelineStateDesc {
 	char const* m_debugName = nullptr;
 	bool m_depthEnable = false;
