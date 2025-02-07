@@ -2,9 +2,10 @@
 #include "Engine/Renderer/GraphicsCommon.hpp"
 
 struct ID3D12PipelineState;
-
+struct Shader;
 
 struct PipelineStateDesc {
+	PipelineType m_type = PipelineType::Graphics;
 	char const* m_debugName = nullptr;
 	bool m_depthEnable = false;
 	bool m_stencilEnable = false;
@@ -19,7 +20,6 @@ struct PipelineStateDesc {
 	TextureFormat m_renderTargetFormats[8] = { TextureFormat::R8G8B8A8_UNORM };
 	TextureFormat m_depthStencilFormat = TextureFormat::D24_UNORM_S8_UINT;
 	Shader* m_byteCodes[ShaderType::NUM_SHADER_TYPES] = { nullptr };
-
 };
 
 struct PipelineState {

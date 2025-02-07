@@ -22,7 +22,7 @@ enum ResourceBindFlagBit : unsigned int {
 
 typedef unsigned int ResourceBindFlag;
 
-struct TextureCreateInfo {
+struct TextureDesc {
 	std::string m_name = "Unnamed Texture";
 	char const* m_source = "";
 	Renderer* m_owner = nullptr;
@@ -53,11 +53,11 @@ public:
 	char const* GetSource() const { return m_info.m_source; }
 private:
 	Texture();
-	Texture(TextureCreateInfo const& createInfo);
+	Texture(TextureDesc const& createInfo);
 	~Texture();
 private:
 	Resource* m_rsc = nullptr;
 	Resource* m_uploadRsc = nullptr;
-	TextureCreateInfo m_info = {};
+	TextureDesc m_info = {};
 
 };

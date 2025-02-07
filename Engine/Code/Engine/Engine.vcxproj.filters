@@ -657,5 +657,14 @@
     <ClInclude Include="Renderer\Shader.hpp">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\dxcapi.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\dxcerrors.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\dxcisense.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

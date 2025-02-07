@@ -47,6 +47,12 @@ enum ShaderType : unsigned int {
 	NUM_SHADER_TYPES
 };
 
+enum class PipelineType {
+	Graphics,
+	Mesh,
+	Compute
+};
+
 
 enum class TextureFormat : int {
 	INVALID = -1,

@@ -622,6 +622,9 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Renderer\D3D12\d3dx12_resource_helpers.h" />
     <ClInclude Include="Renderer\D3D12\d3dx12_root_signature.h" />
     <ClInclude Include="Renderer\D3D12\d3dx12_state_object.h" />
+    <ClInclude Include="Renderer\D3D12\lib\dxcapi.h" />
+    <ClInclude Include="Renderer\D3D12\lib\dxcerrors.h" />
+    <ClInclude Include="Renderer\D3D12\lib\dxcisense.h" />
     <ClInclude Include="Renderer\DebugRendererSystem.hpp" />
     <ClInclude Include="Renderer\DebugShape.hpp" />
     <ClInclude Include="Renderer\GraphicsCommon.hpp" />

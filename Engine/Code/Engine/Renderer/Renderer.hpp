@@ -2,12 +2,16 @@
 #include <Engine/Renderer/D3D12/lib/d3d12.h>
 #include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
 #include "Engine/Renderer/Interfaces/CommandList.hpp"
+#include <vector>
 
 struct DescriptorHeapDesc;
 struct CommandListDesc;
 struct CommandQueueDesc;
 struct ResourceView;
-struct TextureCreateInfo;
+struct TextureDesc;
+struct ShaderDesc;
+struct Shader;
+struct PipelineStateDesc;
 
 struct IDXGIFactory4;
 struct IDXGIObject;
@@ -40,7 +44,7 @@ public:
 	// All public methods to return instance to Renderer for chaining purposes
 	// Creation methods, which require the device, are all here 
 	Renderer(RendererConfig const& config);
-
+	~Renderer(){};
 	/// <summary>+
 	/// Handles initialization of all the rendering system, including creation and 
 	/// initialization of all API's objects
@@ -76,10 +80,14 @@ public:
 
 	//----------------------------- Textures -----------------------------
 	Texture* CreateOrGetTextureFromFile(char const* imageFilePath);
-	Texture* CreateTexture(TextureCreateInfo& creationInfo);
+	Texture* CreateTexture(TextureDesc& creationInfo);
 	Texture* GetActiveBackBuffer();
 	Texture* GetBackUpBackBuffer();
 	Texture* GetDefaultTexture();
+
+	//--------------------------- Shaders/PSO ----------------------------
+	Shader* CreateOrGetShader(ShaderDesc const& desc);
+	PipelineState* CreatePipelineState(PipelineStateDesc const& desc);
 
 	BitmapFont* CreateOrGetBitmapFont(char const* sourcePath);
 	Renderer& AddBackBufferToTextures();
@@ -110,6 +118,13 @@ private:
 	Texture* CreateTextureFromFile(char const* imageFilePath);
 	void DestroyTexture(Texture* texture);
 
+	// Shaders & PSO
+	Shader* CreateShader(ShaderDesc const& shaderDesc);
+	PipelineState* CreateGraphicsPSO(PipelineStateDesc const& desc);
+	PipelineState* CreateMeshPSO(PipelineStateDesc const& desc);
+	PipelineState* CreateComputePSO(PipelineStateDesc const& desc);
+
+
 	BitmapFont* CreateBitmapFont(char const* sourcePath);
 
 private:
@@ -130,6 +145,7 @@ private:
 	// Game Resources
 	std::vector<Texture*> m_loadedTextures;
 	std::vector<BitmapFont*> m_loadedFonts;
+	std::vector<Shader*> m_loadedShaders;
 
 	// Internal Command Lists (For uploading singleton resources like textures)
 	CommandList* m_rscCmdList = nullptr;

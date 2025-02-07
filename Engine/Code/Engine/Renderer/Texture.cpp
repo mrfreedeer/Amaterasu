@@ -1,7 +1,7 @@
 #include "Engine/Renderer/Texture.hpp"
 #include "Engine/Renderer/Interfaces/Resource.hpp"
 
-Texture::Texture(TextureCreateInfo const& createInfo):
+Texture::Texture(TextureDesc const& createInfo):
 	m_info(createInfo)
 {
 

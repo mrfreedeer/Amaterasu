@@ -1,24 +1,28 @@
 #include "Engine/Renderer/Renderer.hpp"
 #include <Engine/Renderer/D3D12/lib/d3dcommon.h>
-#include <dxgi1_6.h>
-#include <dxcapi.h>
-#include <d3d12shader.h>
 #include <dxgidebug.h>
+#include <dxgi1_6.h>
+#include <d3dx12.h> // Notice the X. These are the helper structures not the DX12 header
+#include <d3d12shader.h>
 #include "Game/EngineBuildPreferences.hpp"
 #include "Engine/Renderer/Interfaces/Resource.hpp"
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
 #include "Engine/Renderer/Interfaces/CommandQueue.hpp"
 #include "Engine/Renderer/Interfaces/Fence.hpp"
+#include "Engine/Renderer/Interfaces/PipelineState.hpp"
 #include "Engine/Renderer/Camera.hpp"
 #include "Engine/Renderer/D3D12/D3D12TypeConversions.hpp"
 
 #include "Engine/Core/Image.hpp"
 #include "Engine/Renderer/BitmapFont.hpp"
+#include "Engine/Renderer/Shader.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
 #include "Engine/Window/Window.hpp"
 #include <ThirdParty/ImGUI/imgui_impl_win32.h>
 #include <ThirdParty/ImGUI/imgui_impl_dx12.h>
 #include <Engine/Renderer/D3D12/lib/d3dx12_resource_helpers.h>
+#include <Engine/Core/FileUtils.hpp>
+#include <Engine/Renderer/D3D12/lib/dxcapi.h>
 
 
 #pragma comment (lib, "Engine/Renderer/D3D12/lib/dxcompiler.lib")
@@ -27,6 +31,59 @@
 #pragma comment (lib, "dxguid.lib")
 #pragma message("ENGINE_DIR == " ENGINE_DIR)
 
+
+void CreateInputLayoutFromVS(std::vector<uint8_t>& shaderByteCode, std::vector<D3D12_SIGNATURE_PARAMETER_DESC>& elementsDescs, std::vector<std::string>& semanticNames)
+{
+	ComPtr<IDxcUtils> pUtils;
+	DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils));
+
+	ComPtr<IDxcBlobEncoding> sourceBlob{};
+	ComPtr<IDxcBlob> pShader;
+	HRESULT blobCreation = pUtils->CreateBlob(shaderByteCode.data(), (UINT32)shaderByteCode.size(), DXC_CP_ACP, &sourceBlob);
+	ThrowIfFailed(blobCreation, "COULD NOT CREATE BLOB FOR SHADER REFLECTION");
+	ComPtr<IDxcResult> results = {};
+
+	DxcBuffer bufferSource = {};
+	bufferSource.Ptr = sourceBlob->GetBufferPointer();
+	bufferSource.Size = sourceBlob->GetBufferSize();
+	bufferSource.Encoding = DXC_CP_ACP; // Assume BOM says UTF8 or UTF16 or this is ANSI text.
+
+	ComPtr<IDxcResult> pResults;
+	ID3D12ShaderReflection* pShaderReflection = NULL;
+	HRESULT reflectOp = pUtils->CreateReflection(&bufferSource, IID_PPV_ARGS(&pShaderReflection));
+	ThrowIfFailed(reflectOp, "FAILED TO GET REFLECTION OUT OF SHADER");
+
+	//// Get shader info
+	D3D12_SHADER_DESC shaderDesc;
+	pShaderReflection->GetDesc(&shaderDesc);
+
+
+	// Read input layout description from shader info
+	for (UINT i = 0; i < shaderDesc.InputParameters; i++)
+	{
+		D3D12_SIGNATURE_PARAMETER_DESC paramDesc;
+		pShaderReflection->GetInputParameterDesc(i, &paramDesc);
+		semanticNames.push_back(std::string(paramDesc.SemanticName));
+		//save element desc
+		//
+		elementsDescs.emplace_back(D3D12_SIGNATURE_PARAMETER_DESC{
+		paramDesc.SemanticName,			// Name of the semantic
+		paramDesc.SemanticIndex,		// Index of the semantic
+		paramDesc.Register,				// Number of member variables
+		paramDesc.SystemValueType,		// A predefined system value, or D3D_NAME_UNDEFINED if not applicable
+		paramDesc.ComponentType,		// Scalar type (e.g. uint, float, etc.)
+		paramDesc.Mask,					// Mask to indicate which components of the register
+										// are used (combination of D3D10_COMPONENT_MASK values)
+		paramDesc.ReadWriteMask,		// Mask to indicate whether a given component is 
+										// never written (if this is an output signature) or
+										// always read (if this is an input signature).
+										// (combination of D3D_MASK_* values)
+		paramDesc.Stream,			// Stream index
+		paramDesc.MinPrecision			// Minimum desired interpolation precision
+			});
+	}
+	DX_SAFE_RELEASE(pShaderReflection);
+}
 
 void GetHardwareAdapter(
 	IDXGIFactory1* pFactory,
@@ -153,6 +210,12 @@ Renderer& Renderer::Shutdown()
 		DestroyTexture(tex);
 	}
 	m_loadedTextures.clear();
+
+	for (int shaderInd = 0; shaderInd < m_loadedShaders.size(); shaderInd++) {
+		Shader* shader = m_loadedShaders[shaderInd];
+		delete shader;
+	}
+	m_loadedShaders.clear();
 
 	for (int fontInd = 0; fontInd < m_loadedFonts.size(); fontInd++) {
 		BitmapFont* font = m_loadedFonts[fontInd];
@@ -335,7 +398,7 @@ Texture* Renderer::GetTextureForFileName(char const* imageFilePath)
 
 Texture* Renderer::CreateTextureFromImage(Image const& image)
 {
-	TextureCreateInfo ci{};
+	TextureDesc ci{};
 	ci.m_owner = this;
 	ci.m_name = image.GetImageFilePath();
 	ci.m_source = image.GetImageFilePath().c_str();
@@ -371,6 +434,35 @@ void Renderer::DestroyTexture(Texture* texture)
 			delete uploadRsc;
 		}
 	}
+}
+
+Shader* Renderer::CreateShader(ShaderDesc const& shaderDesc)
+{
+	Shader* newShader = new Shader();
+	FileReadToBuffer(newShader->m_byteCode, shaderDesc.m_path);
+
+	newShader->m_name = shaderDesc.m_name;
+	newShader->m_path = shaderDesc.m_path;
+	newShader->m_type = shaderDesc.m_type;
+
+	return newShader;
+}
+
+PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
+{
+	std::vector<D3D12_SIGNATURE_PARAMETER_DESC> reflectInputDesc;
+	std::vector<std::string> nameStrings;
+
+}
+
+PipelineState* Renderer::CreateMeshPSO(PipelineStateDesc const& desc)
+{
+
+}
+
+PipelineState* Renderer::CreateComputePSO(PipelineStateDesc const& desc)
+{
+
 }
 
 BitmapFont* Renderer::CreateBitmapFont(char const* sourcePath)
@@ -593,7 +685,7 @@ Texture* Renderer::CreateOrGetTextureFromFile(char const* imageFilePath)
 	return newTexture;
 }
 
-Texture* Renderer::CreateTexture(TextureCreateInfo& creationInfo)
+Texture* Renderer::CreateTexture(TextureDesc& creationInfo)
 {
 	Resource*& handle = creationInfo.m_handle;
 	ID3D12Resource2* textureUploadHeap = nullptr;
@@ -699,6 +791,27 @@ Texture* Renderer::GetDefaultTexture()
 	return m_defaultTexture;
 }
 
+Shader* Renderer::CreateOrGetShader(ShaderDesc const& desc)
+{
+	for (int shaderInd = 0; shaderInd < m_loadedShaders.size(); shaderInd++){
+		Shader* shader = m_loadedShaders[shaderInd];
+		if (strcmp(desc.m_path, shader->m_path) == 0) {
+			return shader;
+		}
+	}
+}
+
+PipelineState* Renderer::CreatePipelineState(PipelineStateDesc const& desc)
+{
+	switch (desc.m_type)
+	{
+	case PipelineType::Graphics:	return CreateGraphicsPSO(desc);
+	case PipelineType::Mesh:		return CreateMeshPSO(desc);
+	case PipelineType::Compute:		return CreateComputePSO(desc);
+	default:						return nullptr;
+	}
+}
+
 BitmapFont* Renderer::CreateOrGetBitmapFont(char const* sourcePath)
 {
 	for (int loadedFontIndex = 0; loadedFontIndex < m_loadedFonts.size(); loadedFontIndex++) {
@@ -745,7 +858,7 @@ Renderer& Renderer::AddBackBufferToTextures()
 
 		D3D12_RESOURCE_DESC bufferTexDesc = bufferTex->GetDesc();
 
-		TextureCreateInfo backBufferTexInfo = {};
+		TextureDesc backBufferTexInfo = {};
 		backBufferTexInfo.m_bindFlags = ResourceBindFlagBit::RESOURCE_BIND_RENDER_TARGET_BIT;
 		backBufferTexInfo.m_dimensions = IntVec2((int)bufferTexDesc.Width, (int)bufferTexDesc.Height);
 		backBufferTexInfo.m_format = TextureFormat::R8G8B8A8_UNORM;
