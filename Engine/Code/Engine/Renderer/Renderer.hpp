@@ -126,6 +126,7 @@ private:
 
 
 	BitmapFont* CreateBitmapFont(char const* sourcePath);
+	void CompileShader(Shader* shader);
 
 private:
 	// LiveObjectReporter must be first ALWAYS!!!!!

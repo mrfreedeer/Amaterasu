@@ -2,7 +2,6 @@
 #include <Engine/Renderer/D3D12/lib/d3dcommon.h>
 #include <dxgidebug.h>
 #include <dxgi1_6.h>
-#include <d3dx12.h> // Notice the X. These are the helper structures not the DX12 header
 #include <d3d12shader.h>
 #include "Game/EngineBuildPreferences.hpp"
 #include "Engine/Renderer/Interfaces/Resource.hpp"
@@ -31,26 +30,95 @@
 #pragma comment (lib, "dxguid.lib")
 #pragma message("ENGINE_DIR == " ENGINE_DIR)
 
+void SetBlendModeSpecs(BlendMode const* blendModes, D3D12_BLEND_DESC& blendDesc) {
+	/*
+		WARNING!!!!!
+		IF THE RT IS SINGLE CHANNEL I.E: FLOATR_32,
+		PICKING ALPHA/ADDITIVE WILL GET THE SRC ALPHA (DOES NOT EXIST)
+		MAKES ALL WRITES TO RENDER TARGET INVALID!!!!
+	*/
+	blendDesc.IndependentBlendEnable = TRUE;
+	for (int rtIndex = 0; rtIndex < 8; rtIndex++) {
+		BlendMode currentRtBlendMode = blendModes[rtIndex];
+		D3D12_RENDER_TARGET_BLEND_DESC& rtBlendDesc = blendDesc.RenderTarget[rtIndex];
+		rtBlendDesc.BlendEnable = true;
+		rtBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+		rtBlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
+		rtBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+		rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
+		rtBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
 
-void CreateInputLayoutFromVS(std::vector<uint8_t>& shaderByteCode, std::vector<D3D12_SIGNATURE_PARAMETER_DESC>& elementsDescs, std::vector<std::string>& semanticNames)
+		switch (currentRtBlendMode) {
+		case BlendMode::ALPHA:
+			rtBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			rtBlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+			break;
+		case BlendMode::ADDITIVE:
+			rtBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			rtBlendDesc.DestBlend = D3D12_BLEND_ONE;
+			break;
+		case BlendMode::OPAQUE:
+			rtBlendDesc.SrcBlend = D3D12_BLEND_ONE;
+			rtBlendDesc.DestBlend = D3D12_BLEND_ZERO;
+			break;
+		default:
+			ERROR_AND_DIE(Stringf("Unknown / unsupported blend mode #%i", currentRtBlendMode));
+			break;
+		}
+	}
+}
+
+
+DXGI_FORMAT GetFormatForComponent(D3D_REGISTER_COMPONENT_TYPE componentType, char const* semanticnName, BYTE mask) {
+	// determine DXGI format
+	if (mask == 1)
+	{
+		if (componentType == D3D_REGISTER_COMPONENT_UINT32) return DXGI_FORMAT_R32_UINT;
+		else if (componentType == D3D_REGISTER_COMPONENT_SINT32) return DXGI_FORMAT_R32_SINT;
+		else if (componentType == D3D_REGISTER_COMPONENT_FLOAT32) return DXGI_FORMAT_R32_FLOAT;
+	}
+	else if (mask <= 3)
+	{
+		if (componentType == D3D_REGISTER_COMPONENT_UINT32) return DXGI_FORMAT_R32G32_UINT;
+		else if (componentType == D3D_REGISTER_COMPONENT_SINT32) return DXGI_FORMAT_R32G32_SINT;
+		else if (componentType == D3D_REGISTER_COMPONENT_FLOAT32) return DXGI_FORMAT_R32G32_FLOAT;
+	}
+	else if (mask <= 7)
+	{
+		if (componentType == D3D_REGISTER_COMPONENT_UINT32) return DXGI_FORMAT_R32G32B32_UINT;
+		else if (componentType == D3D_REGISTER_COMPONENT_SINT32) return DXGI_FORMAT_R32G32B32_SINT;
+		else if (componentType == D3D_REGISTER_COMPONENT_FLOAT32) return DXGI_FORMAT_R32G32B32_FLOAT;
+	}
+	else if (mask <= 15)
+	{
+		if (AreStringsEqualCaseInsensitive(semanticnName, "COLOR")) {
+			return DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+		else {
+			if (componentType == D3D_REGISTER_COMPONENT_UINT32) return DXGI_FORMAT_R32G32B32A32_UINT;
+			else if (componentType == D3D_REGISTER_COMPONENT_SINT32) return DXGI_FORMAT_R32G32B32A32_SINT;
+			else if (componentType == D3D_REGISTER_COMPONENT_FLOAT32) return DXGI_FORMAT_R32G32B32A32_FLOAT;
+		}
+	}
+
+	return DXGI_FORMAT_UNKNOWN;
+}
+
+
+void CreateInputLayoutFromVS(Shader* vs, std::vector<D3D12_SIGNATURE_PARAMETER_DESC>& elementsDescs, std::vector<std::string>& semanticNames)
 {
-	ComPtr<IDxcUtils> pUtils;
+	std::vector<uint8_t>& shaderByteCode = vs->m_byteCode;
+
+	IDxcUtils* pUtils;
 	DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils));
 
-	ComPtr<IDxcBlobEncoding> sourceBlob{};
-	ComPtr<IDxcBlob> pShader;
-	HRESULT blobCreation = pUtils->CreateBlob(shaderByteCode.data(), (UINT32)shaderByteCode.size(), DXC_CP_ACP, &sourceBlob);
-	ThrowIfFailed(blobCreation, "COULD NOT CREATE BLOB FOR SHADER REFLECTION");
-	ComPtr<IDxcResult> results = {};
+	DxcBuffer reflectionSource;
+	reflectionSource.Encoding = DXC_CP_ACP;
+	reflectionSource.Ptr = vs->m_reflection.data();
+	reflectionSource.Size = vs->m_reflection.size();
 
-	DxcBuffer bufferSource = {};
-	bufferSource.Ptr = sourceBlob->GetBufferPointer();
-	bufferSource.Size = sourceBlob->GetBufferSize();
-	bufferSource.Encoding = DXC_CP_ACP; // Assume BOM says UTF8 or UTF16 or this is ANSI text.
-
-	ComPtr<IDxcResult> pResults;
 	ID3D12ShaderReflection* pShaderReflection = NULL;
-	HRESULT reflectOp = pUtils->CreateReflection(&bufferSource, IID_PPV_ARGS(&pShaderReflection));
+	HRESULT reflectOp = pUtils->CreateReflection(&reflectionSource, IID_PPV_ARGS(&pShaderReflection));
 	ThrowIfFailed(reflectOp, "FAILED TO GET REFLECTION OUT OF SHADER");
 
 	//// Get shader info
@@ -83,6 +151,7 @@ void CreateInputLayoutFromVS(std::vector<uint8_t>& shaderByteCode, std::vector<D
 			});
 	}
 	DX_SAFE_RELEASE(pShaderReflection);
+	DX_SAFE_RELEASE(pUtils);
 }
 
 void GetHardwareAdapter(
@@ -439,11 +508,12 @@ void Renderer::DestroyTexture(Texture* texture)
 Shader* Renderer::CreateShader(ShaderDesc const& shaderDesc)
 {
 	Shader* newShader = new Shader();
-	FileReadToBuffer(newShader->m_byteCode, shaderDesc.m_path);
 
 	newShader->m_name = shaderDesc.m_name;
 	newShader->m_path = shaderDesc.m_path;
 	newShader->m_type = shaderDesc.m_type;
+
+	CompileShader(newShader);
 
 	return newShader;
 }
@@ -452,6 +522,90 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 {
 	std::vector<D3D12_SIGNATURE_PARAMETER_DESC> reflectInputDesc;
 	std::vector<std::string> nameStrings;
+	Shader* vs = desc.m_byteCodes[ShaderType::Vertex];
+
+	CreateInputLayoutFromVS(vs, reflectInputDesc, nameStrings);
+
+	// Const Char* copying from D3D12_SIGNATURE_PARAMETER_DESC is quite problematic
+	// so the string is kept alive
+	std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayoutDesc;
+	inputLayoutDesc.resize(reflectInputDesc.size());
+
+	for (int inputIndex = 0; inputIndex < reflectInputDesc.size(); inputIndex++) {
+		D3D12_INPUT_ELEMENT_DESC& elementDesc = inputLayoutDesc[inputIndex];
+		D3D12_SIGNATURE_PARAMETER_DESC& paramDesc = reflectInputDesc[inputIndex];
+		std::string& currentString = nameStrings[inputIndex];
+
+		paramDesc.SemanticName = currentString.c_str();
+		elementDesc.Format = GetFormatForComponent(paramDesc.ComponentType, currentString.c_str(), paramDesc.Mask);
+		elementDesc.SemanticName = currentString.c_str();
+		elementDesc.SemanticIndex = paramDesc.SemanticIndex;
+		elementDesc.InputSlot = 0;
+		elementDesc.AlignedByteOffset = (inputIndex == 0) ? 0 : D3D12_APPEND_ALIGNED_ELEMENT;
+		elementDesc.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+		elementDesc.InstanceDataStepRate = 0;
+	}
+
+	D3D12_RASTERIZER_DESC rasterizerDesc = CD3DX12_RASTERIZER_DESC(
+		LocalToD3D12(desc.m_fillMode),			// Fill mode
+		LocalToD3D12(desc.m_cullMode),			// Cull mode
+		LocalToD3D12(desc.m_windingOrder),		// Winding order
+		D3D12_DEFAULT_DEPTH_BIAS,					// Depth bias
+		D3D12_DEFAULT_DEPTH_BIAS_CLAMP,				// Bias clamp
+		D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS,		// Slope scaled bias
+		TRUE,										// Depth Clip enable
+		FALSE,										// Multi sample (MSAA)
+		FALSE,										// Anti aliased line enable
+		0,											// Force sample count
+		D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF	// Conservative Rasterization
+	);
+
+	D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	SetBlendModeSpecs(desc.m_blendModes, blendDesc);
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+	Shader* ps =  desc.m_byteCodes[ShaderType::Pixel];
+	Shader* gs =  desc.m_byteCodes[ShaderType::Geometry];
+	Shader* hs =  desc.m_byteCodes[ShaderType::Hull];
+	Shader* ds =  desc.m_byteCodes[ShaderType::Domain];
+
+	psoDesc.InputLayout.NumElements = (UINT)reflectInputDesc.size();
+	psoDesc.InputLayout.pInputElementDescs = inputLayoutDesc.data();
+
+	ID3D12RootSignature* pRootSignature = nullptr;
+	m_device->CreateRootSignature(0, vs->m_rootSignature.data(),vs->m_rootSignature.size(), IID_PPV_ARGS(&pRootSignature));
+
+	psoDesc.pRootSignature = pRootSignature;
+	psoDesc.PS = CD3DX12_SHADER_BYTECODE(ps->m_byteCode.data(), ps->m_byteCode.size());
+
+	psoDesc.VS = CD3DX12_SHADER_BYTECODE(vs->m_byteCode.data(), vs->m_byteCode.size());
+	if (gs) {
+		psoDesc.GS = CD3DX12_SHADER_BYTECODE(gs->m_byteCode.data(), gs->m_byteCode.size());
+	}
+
+	if (hs) {
+		psoDesc.HS = CD3DX12_SHADER_BYTECODE(hs->m_byteCode.data(), hs->m_byteCode.size());
+	}
+
+	if (ds) {
+		psoDesc.DS = CD3DX12_SHADER_BYTECODE(ds->m_byteCode.data(), ds->m_byteCode.size());
+	}
+
+	psoDesc.RasterizerState = rasterizerDesc;
+	psoDesc.BlendState = blendDesc;
+	psoDesc.DepthStencilState.DepthEnable = desc.m_depthEnable;
+	psoDesc.DepthStencilState.DepthFunc = LocalToD3D12(desc.m_depthFunc);
+	psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	psoDesc.DepthStencilState.StencilEnable = FALSE;
+	psoDesc.DepthStencilState.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
+	psoDesc.DepthStencilState.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+	const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = // a stencil operation structure, does not really matter since stencil testing is turned off
+	{ D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS };
+	psoDesc.DepthStencilState.FrontFace = defaultStencilOp; // both front and back facing polygons get the same treatment
+	psoDesc.DepthStencilState.BackFace = defaultStencilOp;
+	psoDesc.SampleMask = UINT_MAX;
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE(desc.m_topology);
+	psoDesc.NumRenderTargets = (UINT)desc.m_renderTargetCount;
 
 }
 
@@ -475,6 +629,102 @@ BitmapFont* Renderer::CreateBitmapFont(char const* sourcePath)
 
 	m_loadedFonts.push_back(newBitmapFont);
 	return newBitmapFont;
+}
+
+void Renderer::CompileShader(Shader* shader)
+{
+	IDxcUtils* pUtils = nullptr;
+	IDxcCompiler3* pCompiler = nullptr;
+	IDxcIncludeHandler* pIncludeHandler = nullptr;
+
+	DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils));
+	DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&pCompiler));
+
+	pUtils->CreateDefaultIncludeHandler(&pIncludeHandler);
+	char const* entryPoint = (shader->m_entryPoint) ? shader->m_entryPoint : Shader::GetDefaultEntryPoint(shader->m_type);
+
+	size_t shaderNameLength = strlen(shader->m_name) + 1;
+	size_t entryPointLength = strlen(entryPoint) + 1;
+	size_t srcLength = strlen(shader->m_path) + 1;
+	wchar_t* wShaderName = new wchar_t[shaderNameLength];
+	wchar_t* wEntryPoint = new wchar_t[entryPointLength];
+	wchar_t* wSrc = new wchar_t[srcLength];
+
+	size_t outNameLength = 0;
+	size_t outEntryPointLength = 0;
+	size_t outSrcLength = 0;
+
+	mbstowcs_s(&outNameLength, wShaderName, shaderNameLength, shader->m_name, shaderNameLength - 1);
+	mbstowcs_s(&outEntryPointLength, wEntryPoint, entryPointLength, entryPoint, entryPointLength - 1);
+	mbstowcs_s(&outSrcLength, wSrc, srcLength, shader->m_path, srcLength - 1);
+
+	LPCWSTR compileArgs[] =
+	{
+		wShaderName,            // Optional shader source file name for error reporting
+		L"-E", wEntryPoint,              // Entry point.
+		L"-T", L"ps_6_0",            // Target.
+		#if defined(_DEBUG)
+		L"-Zi",
+		#endif
+		L"-rootsig-define", L"LocalRootSignature"
+	};
+
+	IDxcBlobEncoding* pSource = nullptr;
+	pUtils->LoadFile(wSrc, nullptr, &pSource);
+	DxcBuffer source;
+	source.Ptr = pSource->GetBufferPointer();
+	source.Size = pSource->GetBufferSize();
+	source.Encoding = DXC_CP_ACP;
+
+	// Compile
+	IDxcResult* pResults = nullptr;
+	pCompiler->Compile(&source, compileArgs, _countof(compileArgs), pIncludeHandler, IID_PPV_ARGS(&pResults));
+
+	// Get errors
+	IDxcBlobUtf16* pErrors = nullptr;
+	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
+	if (pErrors != nullptr && pErrors->GetStringLength() != 0) {
+		char* error = new char[pErrors->GetStringLength()];
+		wcstombs(error, pErrors->GetStringPointer(), pErrors->GetStringLength());
+		ERROR_AND_DIE(error);
+		delete error;
+	}
+
+	// If compilation failed, then die
+	HRESULT hrStatus;
+	pResults->GetStatus(&hrStatus);
+	ThrowIfFailed(hrStatus, "COMPILATION FAILED");
+
+	IDxcBlob* pShader = nullptr;
+	pResults->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&pShader), nullptr);
+
+	shader->m_byteCode.resize(pShader->GetBufferSize());
+	memcpy(shader->m_byteCode.data(), pShader->GetBufferPointer(), pShader->GetBufferSize());
+
+	IDxcBlob* pReflection = nullptr;
+	pResults->GetOutput(DXC_OUT_REFLECTION, IID_PPV_ARGS(&pReflection), nullptr);
+
+	shader->m_reflection.resize(pReflection->GetBufferSize());
+	memcpy(shader->m_reflection.data(), pReflection->GetBufferPointer(), pReflection->GetBufferSize());
+
+	IDxcBlob* pRootSignature = nullptr;
+	pResults->GetOutput(DXC_OUT_ROOT_SIGNATURE, IID_PPV_ARGS(&pRootSignature), nullptr);
+	memcpy(shader->m_rootSignature.data(), pRootSignature->GetBufferPointer(), pRootSignature->GetBufferSize());
+
+
+	DX_SAFE_RELEASE(pUtils);
+	DX_SAFE_RELEASE(pCompiler);
+	DX_SAFE_RELEASE(pIncludeHandler);
+	DX_SAFE_RELEASE(pResults);
+	DX_SAFE_RELEASE(pShader);
+	DX_SAFE_RELEASE(pReflection);
+	DX_SAFE_RELEASE(pRootSignature);
+
+	delete wShaderName;
+	wShaderName = nullptr;
+
+	delete wEntryPoint;
+	wEntryPoint = nullptr;
 }
 
 Renderer& Renderer::RenderImGui(CommandList& cmdList, Texture* renderTarget)
@@ -793,7 +1043,7 @@ Texture* Renderer::GetDefaultTexture()
 
 Shader* Renderer::CreateOrGetShader(ShaderDesc const& desc)
 {
-	for (int shaderInd = 0; shaderInd < m_loadedShaders.size(); shaderInd++){
+	for (int shaderInd = 0; shaderInd < m_loadedShaders.size(); shaderInd++) {
 		Shader* shader = m_loadedShaders[shaderInd];
 		if (strcmp(desc.m_path, shader->m_path) == 0) {
 			return shader;
@@ -962,5 +1212,5 @@ RenderContext& RenderContext::BeginCamera(Camera const& camera)
 RenderContext& RenderContext::EndCamera(Camera const& camera)
 {
 	GUARANTEE_OR_DIE(m_currentCamera == &camera, "THE CAMERA WAS SWITCHED MID RENDER PASS")
-	return *this;
+		return *this;
 }
