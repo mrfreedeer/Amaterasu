@@ -50,6 +50,9 @@
     <Filter Include="Renderer\Interfaces">
       <UniqueIdentifier>{00d5e20a-28c9-4e5f-b73f-d0d21ebd9d7d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Shaders">
+      <UniqueIdentifier>{879bde83-7481-4487-97ad-5b9c5f4dfffb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Math\Vec2.cpp">
@@ -256,9 +259,6 @@
     <ClCompile Include="..\ThirdParty\ImGUI\imgui_impl_dx12.cpp">
       <Filter>ThirdParty\ImGUI</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\D3D12\D3D12TypeConversions.cpp">
-      <Filter>Renderer\D3D12</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Billboard.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
@@ -314,6 +314,9 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Shader.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\SimpleTriangleFont.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
@@ -555,42 +558,6 @@
     <ClInclude Include="Math\Sampling.hpp">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_barriers.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_check_feature_support.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_core.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_default.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_pipeline_state_stream.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_property_format_table.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_render_pass.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_resource_helpers.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_root_signature.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\d3dx12_state_object.h">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\D3D12\D3D12TypeConversions.hpp">
-      <Filter>Renderer\D3D12</Filter>
-    </ClInclude>
     <ClInclude Include="..\ThirdParty\ImGUI\imgui_impl_dx12.h">
       <Filter>ThirdParty\ImGUI</Filter>
     </ClInclude>
@@ -657,14 +624,52 @@
     <ClInclude Include="Renderer\Shader.hpp">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\D3D12\lib\dxcapi.h">
+    <ClInclude Include="Renderer\D3D12\lib\d3d12.h">
       <Filter>Renderer\D3D12</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\D3D12\lib\dxcerrors.h">
+    <ClInclude Include="Renderer\D3D12\lib\d3dcommon.h">
       <Filter>Renderer\D3D12</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\D3D12\lib\dxcisense.h">
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12.h">
       <Filter>Renderer\D3D12</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_barriers.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_check_feature_support.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_core.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_default.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_pipeline_state_stream.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_property_format_table.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_render_pass.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_resource_helpers.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_root_signature.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_state_object.h">
+      <Filter>Renderer\D3D12</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\SimpleTriangleFont.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Renderer\Shaders\DefaultFwdLegacy.hlsl">
+      <Filter>Renderer\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

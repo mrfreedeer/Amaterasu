@@ -284,7 +284,7 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, Renderer& renderer, Bitmap
 	m_linesMutex.unlock();
 	//#TODO DX12 FIXTHIS
 
-	renderer.BindTexture(nullptr);
+	/*renderer.BindTexture(nullptr);
 	renderer.SetBlendMode(BlendMode::ALPHA);
 	renderer.DrawVertexArray(blackOverlayVerts);
 	renderer.DrawVertexArray(whiteInputOverlayVerts);
@@ -292,7 +292,7 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, Renderer& renderer, Bitmap
 	Render_InputCaret(renderer, font, fontAspect, cellHeight);
 
 	renderer.BindTexture(&font.GetTexture());
-	renderer.DrawVertexArray(textVerts);
+	renderer.DrawVertexArray(textVerts);*/
 
 	Render_UserInput(renderer, font, fontAspect, cellHeight);
 
@@ -318,7 +318,7 @@ void DevConsole::Render_InputCaret(Renderer& renderer, BitmapFont& font, float f
 	AddVertsForAABB2D(caretVertexes, caretAABB2, caretColor);
 	//#TODO DX12 FIXTHIS
 
-	renderer.DrawVertexArray(caretVertexes);
+	//renderer.DrawVertexArray(caretVertexes);
 }
 
 void DevConsole::Render_UserInput(Renderer& renderer, BitmapFont& font, float fontAspect, float cellHeight) const
@@ -330,7 +330,7 @@ void DevConsole::Render_UserInput(Renderer& renderer, BitmapFont& font, float fo
 	font.AddVertsForTextInBox2D(userInputTextVerts, inputLineAABB2, cellHeight, m_inputText, Rgba8::CYAN, fontAspect, Vec2::ZERO, TextBoxMode::OVERRUN);
 	//#TODO DX12 FIXTHIS
 
-	renderer.DrawVertexArray(userInputTextVerts);
+	//renderer.DrawVertexArray(userInputTextVerts);
 }
 
 Strings DevConsole::ProcessCommandLine(std::string const& commandLine) const

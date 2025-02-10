@@ -44,7 +44,7 @@ void DebugRenderSetTimeDilation(double timeDilation)
 
 Clock const& DebugRenderGetClock()
 {
-	
+	return Clock();
 }
 
 void DebugRenderBeginFrame()

@@ -1,10 +1,5 @@
 #include "Engine/Renderer/Shader.hpp"
 
-
-Shader::~Shader()
-{
-}
-
 char const* Shader::GetDefaultEntryPoint(ShaderType shaderType)
 {
 	switch (shaderType)

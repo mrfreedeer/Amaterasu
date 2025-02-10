@@ -42,7 +42,7 @@ CommandList& CommandList::ClearDepthStencilView(Texture* depth, float clearValue
 	if(clearStencil) clearFlags |= D3D12_CLEAR_FLAG_STENCIL;
 
 	ResourceView* dsv = depth->GetDepthStencilView();
-	if(!dsv) ERROR_AND_DIE("DEPTH STENCIL VIEW IS NULL FOR RSC: %s", depth->m_debugName);
+	if(!dsv) ERROR_AND_DIE(Stringf("DEPTH STENCIL VIEW IS NULL FOR RSC: %s", depth->GetDebugName()).c_str());
 	m_cmdList->ClearDepthStencilView(dsv->m_descriptor, clearFlags, clearValue, stencilClearValue, 0, NULL);
 	return *this;
 }
@@ -71,7 +71,7 @@ CommandList& CommandList::SetVertexBuffers(Buffer** buffers, unsigned int buffer
 {
 	D3D12_VERTEX_BUFFER_VIEW* vBuffersDesc = new D3D12_VERTEX_BUFFER_VIEW[bufferCount];
 
-	for (int bufferIndex = 0; bufferIndex < bufferCount; bufferIndex++) {
+	for (unsigned int bufferIndex = 0; bufferIndex < bufferCount; bufferIndex++) {
 		BufferView bufferView = buffers[bufferIndex]->GetBufferView();
 		vBuffersDesc[bufferIndex] = {bufferView.m_bufferAddr, (UINT)bufferView.m_stride.m_strideBytes, (UINT)bufferView.m_sizeBytes};
 	}
@@ -85,7 +85,7 @@ CommandList& CommandList::SetVertexBuffers(Buffer** buffers, unsigned int buffer
 CommandList& CommandList::SetIndexBuffer(Buffer* indexBuffer)
 {
 	BufferView bufferView = indexBuffer->GetBufferView();
-	D3D12_INDEX_BUFFER_VIEW iBufferView = { bufferView.m_bufferAddr, bufferView.m_sizeBytes, LocalToD3D12(bufferView.m_stride.m_format)};
+	D3D12_INDEX_BUFFER_VIEW iBufferView = { bufferView.m_bufferAddr, (UINT)bufferView.m_sizeBytes, LocalToD3D12(bufferView.m_stride.m_format)};
 	m_cmdList->IASetIndexBuffer(&iBufferView);
 	return *this;
 }
@@ -109,7 +109,7 @@ CommandList& CommandList::SetRenderTargets(unsigned int rtCount, Texture* const*
 	handleArray[0] = renderTargets[0]->GetRenderTargetView()->m_descriptor;
 
 	if (!singleDescriptor) {
-		for (int rtIndex = 1; rtIndex < rtCount; rtIndex++) {
+		for (unsigned int rtIndex = 1; rtIndex < rtCount; rtIndex++) {
 			D3D12_CPU_DESCRIPTOR_HANDLE& handle = handleArray[rtIndex];
 			Texture* currentRt = renderTargets[rtIndex];
 			ResourceView* rtView = currentRt->GetRenderTargetView();
@@ -131,7 +131,7 @@ CommandList& CommandList::SetRenderTargets(unsigned int rtCount, Texture* const*
 CommandList& CommandList::SetDescriptorHeaps(unsigned int heapCount, DescriptorHeap** descriptorHeaps)
 {
 	ID3D12DescriptorHeap** heapArray = new ID3D12DescriptorHeap*[heapCount];
-	for (int heapIndex = 0; heapIndex < heapCount; heapIndex++) {
+	for (unsigned int heapIndex = 0; heapIndex < heapCount; heapIndex++) {
 		heapArray[heapIndex] = descriptorHeaps[heapIndex]->m_descriptorHeap;
 	}
 	m_cmdList->SetDescriptorHeaps(heapCount, heapArray);

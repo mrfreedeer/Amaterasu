@@ -18,7 +18,8 @@ Billboard::~Billboard()
 
 void Billboard::Render(Renderer* renderer, Camera const& camera, BillboardType billboardType) const
 {
-	renderer->SetSamplerMode(SamplerMode::POINTCLAMP);
+	//#TODO FIX DX12
+	/*renderer->SetSamplerMode(SamplerMode::POINTCLAMP);
 	renderer->SetRasterizerState(CullMode::NONE, FillMode::SOLID, WindingOrder::COUNTERCLOCKWISE);
 	renderer->SetDepthStencilState(DepthFunc::ALWAYS, false);
 	renderer->SetBlendMode(BlendMode::ALPHA);
@@ -27,7 +28,7 @@ void Billboard::Render(Renderer* renderer, Camera const& camera, BillboardType b
 
 	renderer->SetModelMatrix(billboardMatrix);
 	renderer->BindTexture(m_texture);
-	renderer->DrawVertexArray(m_verts);
+	renderer->DrawVertexArray(m_verts);*/
 
 }
 

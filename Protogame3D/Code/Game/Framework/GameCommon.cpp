@@ -52,7 +52,7 @@ void DebugDrawRing(Vec2 const& ringCenter, float radius, float thickness, Rgba8 
 		vertexes[j + 5] = Vertex_PCU(worldTop, color, Vec2());
 	}
 
-	g_theRenderer->DrawVertexArray(360, vertexes);
+	//g_theRenderer->DrawVertexArray(360, vertexes);
 
 }
 
@@ -81,7 +81,7 @@ void DebugDrawLine(Vec2 const& lineStart, Vec2 const& lineEnd, float thickness, 
 	vertexes[4] = Vertex_PCU(Vec3(startRight.x, startRight.y, 0.f), color, Vec2());
 	vertexes[5] = Vertex_PCU(Vec3(endRight.x, endRight.y, 0.f), color, Vec2());
 
-	g_theRenderer->DrawVertexArray(6, vertexes);
+	//g_theRenderer->DrawVertexArray(6, vertexes);
 }
 
 void DrawCircle(Vec2 const& circleCenter, float radius, Rgba8 const& color)
@@ -119,7 +119,7 @@ void DrawCircle(Vec2 const& circleCenter, float radius, Rgba8 const& color)
 		vertexes[j + 5] = Vertex_PCU(worldTop, color, Vec2());
 	}
 
-	g_theRenderer->DrawVertexArray(360, vertexes);
+	//g_theRenderer->DrawVertexArray(360, vertexes);
 }
 
 void PlaySound(GAME_SOUND gameSound, float volume, bool looped, float soundBalance) {

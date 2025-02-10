@@ -26,10 +26,12 @@ class Buffer;
 class Camera;
 class Image;
 class Fence;
+class Window;
 class BitmapFont;
 
 struct RendererConfig {
 	unsigned int m_backBuffersCount = 0;
+	Window* m_window = nullptr;
 };
 
 /// <summary>
@@ -150,6 +152,8 @@ private:
 
 	// Internal Command Lists (For uploading singleton resources like textures)
 	CommandList* m_rscCmdList = nullptr;
+	Shader* m_defaultLegacyShader = nullptr;
+
 };
 
 struct RenderContextConfig {

@@ -6,7 +6,7 @@
 struct PipelineState;
 struct IntVec3;
 struct Rgba8;
-struct Camera;
+class Camera;
 class Resource;
 class Texture;
 class Buffer;
@@ -14,17 +14,6 @@ class Buffer;
 struct ID3D12CommandAllocator;
 struct ID3D12GraphicsCommandList6;
 class DescriptorHeap;
-
-enum class CommandListType {
-	DIRECT = 0,
-	BUNDLE = 1,
-	COMPUTE = 2,
-	COPY = 3,
-	VIDEO_DECODE = 4,
-	VIDEO_PROCESS = 5,
-	VIDEO_ENCODE,
-	NONE
-};
 
 
 struct CommandListDesc {

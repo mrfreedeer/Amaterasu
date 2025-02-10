@@ -8,7 +8,7 @@
 
 Basic3DMode* pointerToSelf = nullptr;
 
-Basic3DMode::Basic3DMode(Game* game, Vec2 const& UISize):
+Basic3DMode::Basic3DMode(Game* game, Vec2 const& UISize) :
 	GameMode(game, UISize)
 {
 	m_worldCamera.SetPerspectiveView(g_theWindow->GetConfig().m_clientAspect, 60, 0.1f, 100.0f);
@@ -30,7 +30,6 @@ void Basic3DMode::Startup()
 	pointerToSelf = this;
 
 
-	g_theRenderer->SetBlendMode(BlendMode::OPAQUE);
 	Player* player = new Player(m_game, Vec3(27.0f, -12.0f, 14.0f), &m_worldCamera);
 	m_player = player;
 	m_player->m_orientation = EulerAngles(521.0f, 36.0f, 0.0f);
@@ -84,11 +83,11 @@ void Basic3DMode::Startup()
 	//colorInfo.m_bindFlags = TEXTURE_BIND_RENDER_TARGET_BIT | TEXTURE_BIND_SHADER_RESOURCE_BIT;
 	//colorInfo.m_memoryUsage = MemoryUsage::Default;
 
-	m_effectsMaterials[(int)MaterialEffect::ColorBanding] = g_theMaterialSystem->GetMaterialForName("ColorBandFX");
-	m_effectsMaterials[(int)MaterialEffect::Grayscale] = g_theMaterialSystem->GetMaterialForName("GrayScaleFX");
-	m_effectsMaterials[(int)MaterialEffect::Inverted] = g_theMaterialSystem->GetMaterialForName("InvertedColorFX");
-	m_effectsMaterials[(int)MaterialEffect::Pixelized] = g_theMaterialSystem->GetMaterialForName("PixelizedFX");
-	m_effectsMaterials[(int)MaterialEffect::DistanceFog] = g_theMaterialSystem->GetMaterialForName("DistanceFogFX");
+	//m_effectsMaterials[(int)MaterialEffect::ColorBanding] = g_theMaterialSystem->GetMaterialForName("ColorBandFX");
+	//m_effectsMaterials[(int)MaterialEffect::Grayscale] = g_theMaterialSystem->GetMaterialForName("GrayScaleFX");
+	//m_effectsMaterials[(int)MaterialEffect::Inverted] = g_theMaterialSystem->GetMaterialForName("InvertedColorFX");
+	//m_effectsMaterials[(int)MaterialEffect::Pixelized] = g_theMaterialSystem->GetMaterialForName("PixelizedFX");
+	//m_effectsMaterials[(int)MaterialEffect::DistanceFog] = g_theMaterialSystem->GetMaterialForName("DistanceFogFX");
 
 }
 
@@ -114,21 +113,22 @@ void Basic3DMode::Update(float deltaSeconds)
 
 void Basic3DMode::Render() const
 {
-	g_theRenderer->BeginCamera(m_worldCamera);
+
 	{
-		g_theRenderer->ClearScreen(Rgba8::BLACK);
-		g_theRenderer->BindMaterial(nullptr);
-		g_theRenderer->SetSamplerMode(SamplerMode::BILINEARWRAP);
-		g_theRenderer->BindTexture(nullptr, 1);
+		m_renderContext->BeginCamera(m_worldCamera);
+		/*	g_theRenderer->ClearScreen(Rgba8::BLACK);
+			g_theRenderer->BindMaterial(nullptr);
+			g_theRenderer->SetSamplerMode(SamplerMode::BILINEARWRAP);
+			g_theRenderer->BindTexture(nullptr, 1);*/
 		RenderEntities();
+		m_renderContext->EndCamera(m_worldCamera);
 	}
 
 
-	g_theRenderer->EndCamera(m_worldCamera);
 
 	for (int effectInd = 0; effectInd < (int)MaterialEffect::NUM_EFFECTS; effectInd++) {
 		if (m_applyEffects[effectInd]) {
-			g_theRenderer->ApplyEffect(m_effectsMaterials[effectInd], &m_worldCamera);
+			//g_theRenderer->ApplyEffect(m_effectsMaterials[effectInd], &m_worldCamera);
 		}
 	}
 

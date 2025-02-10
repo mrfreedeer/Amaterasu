@@ -55,21 +55,21 @@ void AttractScreenMode::Render() const
 
 	m_renderContext->BeginCamera(m_UICamera);
 	{
-		g_theRenderer->ClearScreen(Rgba8::BLACK);
-		Material* def2DMat = g_theRenderer->GetDefaultMaterial(false);
-		g_theRenderer->BindMaterial(def2DMat);
-		g_theRenderer->SetBlendMode(BlendMode::ALPHA);
-		if (m_useTextAnimation) {
-			RenderTextAnimation();
-		}
+		//g_theRenderer->ClearScreen(Rgba8::BLACK);
+		//Material* def2DMat = g_theRenderer->GetDefaultMaterial(false);
+		//g_theRenderer->BindMaterial(def2DMat);
+		//g_theRenderer->SetBlendMode(BlendMode::ALPHA);
+		//if (m_useTextAnimation) {
+		//	RenderTextAnimation();
+		//}
 
-		Texture* testTexture = g_theRenderer->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png");
-		std::vector<Vertex_PCU> testTextVerts;
-		AABB2 testTextureAABB2(740.0f, 150.0f, 1040.0f, 450.f);
-		AddVertsForAABB2D(testTextVerts, testTextureAABB2, Rgba8());
-		g_theRenderer->BindTexture(testTexture);
-		g_theRenderer->DrawVertexArray((int)testTextVerts.size(), testTextVerts.data());
-		//g_theRenderer->BindTexture(nullptr);
+		//Texture* testTexture = g_theRenderer->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png");
+		//std::vector<Vertex_PCU> testTextVerts;
+		//AABB2 testTextureAABB2(740.0f, 150.0f, 1040.0f, 450.f);
+		//AddVertsForAABB2D(testTextVerts, testTextureAABB2, Rgba8());
+		//g_theRenderer->BindTexture(testTexture);
+		//g_theRenderer->DrawVertexArray((int)testTextVerts.size(), testTextVerts.data());
+		////g_theRenderer->BindTexture(nullptr);
 
 
 	}
@@ -104,23 +104,26 @@ void AttractScreenMode::UpdateInput(float deltaSeconds)
 
 void AttractScreenMode::RenderUI() const
 {
-	g_theRenderer->BeginCamera(m_UICamera);
-
+	m_renderContext->BeginCamera(m_UICamera);
 	if (m_useTextAnimation) {
 
 		RenderTextAnimation();
 	}
 
-	AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
-	AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
+	//AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
+	//AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
 
-	Material* default2DMat = g_theMaterialSystem->GetMaterialForName("Default2DMaterial");
-	g_theRenderer->BindMaterial(default2DMat);
+	//Material* default2DMat = g_theMaterialSystem->GetMaterialForName("Default2DMaterial");
+	//g_theRenderer->BindMaterial(default2DMat);
 
-	std::vector<Vertex_PCU> gameInfoVerts;
+	//std::vector<Vertex_PCU> gameInfoVerts;
 
-	g_theConsole->Render(devConsoleBounds);
-	g_theRenderer->EndCamera(m_UICamera);
+	//g_theConsole->Render(devConsoleBounds);
+	//g_theRenderer->EndCamera(m_UICamera);
+
+	m_renderContext->EndCamera(m_UICamera);
+
+
 }
 
 void AttractScreenMode::UpdateTextAnimation(float deltaTime, std::string text, Vec2 textLocation)
@@ -160,8 +163,8 @@ void AttractScreenMode::UpdateTextAnimation(float deltaTime, std::string text, V
 void AttractScreenMode::RenderTextAnimation() const
 {
 	if (m_textAnimTriangles.size() > 0) {
-		g_theRenderer->BindTexture(&g_squirrelFont->GetTexture());
-		g_theRenderer->DrawVertexArray(int(m_textAnimTriangles.size()), m_textAnimTriangles.data());
+		//g_theRenderer->BindTexture(&g_squirrelFont->GetTexture());
+		//g_theRenderer->DrawVertexArray(int(m_textAnimTriangles.size()), m_textAnimTriangles.data());
 	}
 }
 

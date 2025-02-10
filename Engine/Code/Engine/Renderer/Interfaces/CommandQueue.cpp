@@ -17,7 +17,7 @@ CommandQueue::~CommandQueue()
 CommandQueue& CommandQueue::ExecuteCommandLists(unsigned int count, CommandList* cmdLists)
 {
 	ID3D12CommandList** rawCmdLists = new ID3D12CommandList*[count];
-	for (int cmdListIndex = 0; cmdListIndex < count; cmdListIndex++) {
+	for (unsigned int cmdListIndex = 0; cmdListIndex < count; cmdListIndex++) {
 		rawCmdLists[cmdListIndex] = cmdLists[cmdListIndex].m_cmdList;
 	}
 

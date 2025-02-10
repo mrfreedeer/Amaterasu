@@ -13,12 +13,12 @@ enum class DescriptorHeapFlags : uint8_t {
 };
 
 enum class DescriptorHeapType : uint8_t {
-	UNDEFINED = -1,
 	CBV_SRV_UAV = 0,
 	Sampler,
 	RenderTargetView,
 	DepthStencilView,
-	NUM_TYPES
+	NUM_TYPES,
+	UNDEFINED = 255,
 };
 
 

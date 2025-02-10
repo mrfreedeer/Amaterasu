@@ -249,6 +249,11 @@ Renderer& Renderer::Startup()
 	whiteTexelImg.m_imageFilePath = "DefaultTexture";
 	m_defaultTexture = CreateTextureFromImage(whiteTexelImg);
 
+	ShaderDesc legacyDefaultVs = {};
+	legacyDefaultVs.m_name = "LegacyDefaultVS";
+	legacyDefaultVs.m_path =  ENGINE_DIR "Renderer/Shaders/DefaultFwdLegacy.hlsl";
+	m_defaultLegacyShader = CreateShader(legacyDefaultVs);
+
 
 	return *this;
 }
@@ -607,16 +612,22 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE(desc.m_topology);
 	psoDesc.NumRenderTargets = (UINT)desc.m_renderTargetCount;
 
+	ID3D12PipelineState* pso = nullptr;
+	m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso));
+	PipelineState* newPso = new PipelineState(pso);
+	newPso->m_desc = desc;
+
+	return newPso;
 }
 
 PipelineState* Renderer::CreateMeshPSO(PipelineStateDesc const& desc)
 {
-
+	return nullptr;
 }
 
 PipelineState* Renderer::CreateComputePSO(PipelineStateDesc const& desc)
 {
-
+	return nullptr;
 }
 
 BitmapFont* Renderer::CreateBitmapFont(char const* sourcePath)
@@ -685,9 +696,9 @@ void Renderer::CompileShader(Shader* shader)
 	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
 	if (pErrors != nullptr && pErrors->GetStringLength() != 0) {
 		char* error = new char[pErrors->GetStringLength()];
-		wcstombs(error, pErrors->GetStringPointer(), pErrors->GetStringLength());
+		size_t outLenghtError = 0;
+		wcstombs_s(&outLenghtError, error, sizeof(error), pErrors->GetStringPointer(),  pErrors->GetStringLength());
 		ERROR_AND_DIE(error);
-		delete error;
 	}
 
 	// If compilation failed, then die
@@ -1089,6 +1100,7 @@ Fence* Renderer::CreateFence(CommandQueue* fenceManager, unsigned int initialVal
 
 	outFence->m_commandQueue = fenceManager;
 
+	return outFence;
 }
 
 Renderer& Renderer::AddBackBufferToTextures()
@@ -1128,6 +1140,8 @@ Renderer& Renderer::UploadTexturesToGPU()
 {
 	m_rscCmdList->Close();
 	m_commandQueue->ExecuteCommandLists(1, m_rscCmdList);
+
+	return *this;
 }
 
 LiveObjectReporter::~LiveObjectReporter()

@@ -1,14 +1,13 @@
 #pragma once
 #include "Engine/Core/EngineCommon.hpp"
+#include "Engine/Renderer/Interfaces/Resource.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
 
-class Resource;
 
 struct BufferDesc {
 	void* m_data = nullptr;
 	char const* m_debugName = nullptr;
 	size_t m_size = 0;
-	size_t m_stride = 0;
 	union StrideDesc
 	{
 		TextureFormat m_format = TextureFormat::INVALID;
@@ -23,7 +22,6 @@ struct BufferView {
 	{
 		TextureFormat m_format = TextureFormat::INVALID;
 		size_t m_strideBytes;
-
 	} m_stride;
 	size_t m_sizeBytes = 0;
 	size_t m_elemCount = 0;

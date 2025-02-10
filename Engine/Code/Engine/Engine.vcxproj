@@ -276,7 +276,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions);ENGINE_DIR=R"($(ProjectDir))";ENGINE_MAT_DIR=R"($(ProjectDir)Renderer\Materials\)";ENGINE_DIR=R"($(ProjectDir))";ENGINE_MAT_DIR=R"($(ProjectDir)Renderer\Materials\)"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions);ENGINE_DIR=R"($(ProjectDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Code/;$(SolutionDir)../Engine/Code/;$(SolutionDir)../Engine/Code/Engine/Renderer/D3D12/</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -506,7 +506,6 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClCompile Include="Renderer\Billboard.cpp" />
     <ClCompile Include="Renderer\BitmapFont.cpp" />
     <ClCompile Include="Renderer\Camera.cpp" />
-    <ClCompile Include="Renderer\D3D12\D3D12TypeConversions.cpp" />
     <ClCompile Include="Renderer\DebugRendererSystem.cpp" />
     <ClCompile Include="Renderer\DebugShape.cpp" />
     <ClCompile Include="Renderer\GraphicsCommon.cpp" />
@@ -520,6 +519,7 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClCompile Include="Renderer\PixEventReporter.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Renderer\Shader.cpp" />
+    <ClCompile Include="Renderer\SimpleTriangleFont.cpp" />
     <ClCompile Include="Renderer\SpriteAnimDefinition.cpp" />
     <ClCompile Include="Renderer\SpriteSheet.cpp" />
     <ClCompile Include="Renderer\Texture.cpp" />
@@ -610,21 +610,19 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Renderer\Billboard.hpp" />
     <ClInclude Include="Renderer\BitmapFont.hpp" />
     <ClInclude Include="Renderer\Camera.hpp" />
-    <ClInclude Include="Renderer\D3D12\D3D12TypeConversions.hpp" />
-    <ClInclude Include="Renderer\D3D12\d3dx12.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_barriers.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_check_feature_support.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_core.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_default.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_pipeline_state_stream.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_property_format_table.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_render_pass.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_resource_helpers.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_root_signature.h" />
-    <ClInclude Include="Renderer\D3D12\d3dx12_state_object.h" />
-    <ClInclude Include="Renderer\D3D12\lib\dxcapi.h" />
-    <ClInclude Include="Renderer\D3D12\lib\dxcerrors.h" />
-    <ClInclude Include="Renderer\D3D12\lib\dxcisense.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3d12.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dcommon.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_barriers.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_check_feature_support.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_core.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_default.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_pipeline_state_stream.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_property_format_table.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_render_pass.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_resource_helpers.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_root_signature.h" />
+    <ClInclude Include="Renderer\D3D12\lib\d3dx12_state_object.h" />
     <ClInclude Include="Renderer\DebugRendererSystem.hpp" />
     <ClInclude Include="Renderer\DebugShape.hpp" />
     <ClInclude Include="Renderer\GraphicsCommon.hpp" />
@@ -638,20 +636,23 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Renderer\PixEventReporter.hpp" />
     <ClInclude Include="Renderer\Renderer.hpp" />
     <ClInclude Include="Renderer\Shader.hpp" />
+    <ClInclude Include="Renderer\SimpleTriangleFont.hpp" />
     <ClInclude Include="Renderer\SpriteAnimDefinition.hpp" />
     <ClInclude Include="Renderer\SpriteSheet.hpp" />
     <ClInclude Include="Renderer\Texture.hpp" />
     <ClInclude Include="Window\Window.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Renderer\Shaders\DefaultFwdLegacy.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(SolutionDir)packages\Microsoft.Direct3D.DXC.1.8.2403.24\build\native\Microsoft.Direct3D.DXC.targets" Condition="Exists('$(SolutionDir)packages\Microsoft.Direct3D.DXC.1.8.2403.24\build\native\Microsoft.Direct3D.DXC.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)packages\Microsoft.Direct3D.DXC.1.8.2403.24\build\native\Microsoft.Direct3D.DXC.props')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\Microsoft.Direct3D.DXC.1.8.2403.24\build\native\Microsoft.Direct3D.DXC.props'))" />
-    <Error Condition="!Exists('$(SolutionDir)packages\Microsoft.Direct3D.DXC.1.8.2403.24\build\native\Microsoft.Direct3D.DXC.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)packages\Microsoft.Direct3D.DXC.1.8.2403.24\build\native\Microsoft.Direct3D.DXC.targets'))" />
   </Target>
 </Project>

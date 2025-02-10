@@ -124,9 +124,9 @@ void Prop::Update(float deltaSeconds)
 
 void Prop::Render() const
 {
-	g_theRenderer->SetModelColor(m_modelColor);
+	/*g_theRenderer->SetModelColor(m_modelColor);
 	Mat44 modelMatrix = GetModelMatrix();
-	g_theRenderer->SetModelMatrix(modelMatrix);
+	g_theRenderer->SetModelMatrix(modelMatrix);*/
 
 	switch (m_type) {
 	case PropRenderType::CUBE:
@@ -143,20 +143,20 @@ void Prop::Render() const
 
 void Prop::RenderMultiColoredCube() const
 {
-	g_theRenderer->BindTexture(g_textures[(int)GAME_TEXTURE::CompanionCube]);
-	g_theRenderer->DrawVertexArray(m_verts);
+	/*g_theRenderer->BindTexture(g_textures[(int)GAME_TEXTURE::CompanionCube]);
+	g_theRenderer->DrawVertexArray(m_verts);*/
 }
 
 void Prop::RenderGrid() const
 {
-	g_theRenderer->BindTexture(nullptr);
-	g_theRenderer->DrawVertexArray(m_verts);
+	//g_theRenderer->BindTexture(nullptr);
+	//g_theRenderer->DrawVertexArray(m_verts);
 
 }
 
 void Prop::RenderSphere() const
 {
-	g_theRenderer->BindTexture(g_textures[(int)GAME_TEXTURE::TestUV]);
-	//g_theRenderer->BindTexture(nullptr);
-	g_theRenderer->DrawVertexArray(m_verts);
+	//g_theRenderer->BindTexture(g_textures[(int)GAME_TEXTURE::TestUV]);
+	////g_theRenderer->BindTexture(nullptr);
+	//g_theRenderer->DrawVertexArray(m_verts);
 }

@@ -154,16 +154,17 @@ void GameMode::RenderEntities() const
 
 void GameMode::RenderUI() const
 {
-	g_theRenderer->BeginCamera(m_UICamera);
+	m_renderContext->BeginCamera(m_UICamera);
 
-	AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
-	AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
+	//AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
+	//AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
 
-	Material* default2DMat = g_theMaterialSystem->GetMaterialForName("Default2DMaterial");
-	g_theRenderer->BindMaterial(default2DMat);
+	//Material* default2DMat = g_theMaterialSystem->GetMaterialForName("Default2DMaterial");
+	//g_theRenderer->BindMaterial(default2DMat);
 
-	std::vector<Vertex_PCU> gameInfoVerts;
+	//std::vector<Vertex_PCU> gameInfoVerts;
 
-	g_theConsole->Render(devConsoleBounds);
-	g_theRenderer->EndCamera(m_UICamera);
+	//g_theConsole->Render(devConsoleBounds);
+	m_renderContext->EndCamera(m_UICamera);
+
 }
