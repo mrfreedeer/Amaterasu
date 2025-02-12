@@ -108,7 +108,7 @@ D3D12_COMMAND_LIST_TYPE LocalToD3D12(CommandListType cmdListType)
 	case CommandListType::VIDEO_ENCODE:
 		return D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE;
 	default:
-		ERROR_AND_DIE("UNRECOGNIZED COMMAND LIST %d", (int)cmdListType);
+		ERROR_AND_DIE(Stringf("UNRECOGNIZED COMMAND LIST %d", (int)cmdListType).c_str());
 		break;
 	}
 }
@@ -157,21 +157,3 @@ D3D12_RESOURCE_FLAGS LocalToD3D12(ResourceBindFlag flags)
 
 	return result;
 }
-
-
-D3D12_DESCRIPTOR_HEAP_TYPE LocalToD3D12(DescriptorHeapType dHeapType)
-{
-	switch (dHeapType)
-	{
-	case DescriptorHeapType::CBV_SRV_UAV:
-		return D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	case DescriptorHeapType::RenderTargetView:
-		return D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	case DescriptorHeapType::Sampler:
-		return D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-	case DescriptorHeapType::DepthStencilView:
-		return D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-	}
-	ERROR_AND_DIE("UNKNOWN DESCRIPTOR HEAP TYPE");
-}
-

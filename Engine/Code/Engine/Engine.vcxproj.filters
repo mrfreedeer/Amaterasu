@@ -319,6 +319,9 @@
     <ClCompile Include="Renderer\SimpleTriangleFont.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\D3D12\D3D12TypeConversions.cpp">
+      <Filter>Renderer\D3D12</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math\Vec2.hpp">
@@ -665,6 +668,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\SimpleTriangleFont.hpp">
       <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\D3D12\D3D12TypeConversions.hpp">
+      <Filter>Renderer\D3D12</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -23,8 +23,9 @@ CommandList::~CommandList()
 
 CommandList& CommandList::Reset(PipelineState* initialState /*= nullptr*/)
 {
+	ID3D12PipelineState* pso = (initialState) ? initialState->m_pso : nullptr;
 	m_cmdAllocator->Reset();
-	m_cmdList->Reset(m_cmdAllocator, initialState->m_pso);
+	m_cmdList->Reset(m_cmdAllocator, pso);
 	
 	return *this;
 }

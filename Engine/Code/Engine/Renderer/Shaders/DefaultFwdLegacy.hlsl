@@ -1,3 +1,8 @@
+#define LocalRootSignature "RootFlags( ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), " \
+              "DescriptorTable(CBV(b0, numDescriptors = 2), " \
+              "SRV(t0), " \
+              "Sampler(s0) " 
+
 struct vs_input_t
 {
     float3 localPosition : POSITION;
@@ -28,6 +33,7 @@ cbuffer ModelConstants : register(b3)
 Texture2D diffuseTexture : register(t0);
 SamplerState diffuseSampler : register(s0);
 
+[RootSignature(LocalRootSignature)]
 v2p_t VertexMain(vs_input_t input)
 {
     v2p_t v2p;
@@ -41,6 +47,7 @@ v2p_t VertexMain(vs_input_t input)
     return v2p;
 }
 
+[RootSignature(LocalRootSignature)]
 float4 PixelMain(v2p_t input) : SV_Target0
 {
     float4 resultingColor = diffuseTexture.Sample(diffuseSampler, input.uv) * input.color * ModelColor;

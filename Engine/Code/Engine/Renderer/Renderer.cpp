@@ -252,6 +252,7 @@ Renderer& Renderer::Startup()
 	ShaderDesc legacyDefaultVs = {};
 	legacyDefaultVs.m_name = "LegacyDefaultVS";
 	legacyDefaultVs.m_path =  ENGINE_DIR "Renderer/Shaders/DefaultFwdLegacy.hlsl";
+	legacyDefaultVs.m_type = ShaderType::Vertex;
 	m_defaultLegacyShader = CreateShader(legacyDefaultVs);
 
 
@@ -652,6 +653,7 @@ void Renderer::CompileShader(Shader* shader)
 	DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&pCompiler));
 
 	pUtils->CreateDefaultIncludeHandler(&pIncludeHandler);
+
 	char const* entryPoint = (shader->m_entryPoint) ? shader->m_entryPoint : Shader::GetDefaultEntryPoint(shader->m_type);
 
 	size_t shaderNameLength = strlen(shader->m_name) + 1;
@@ -660,6 +662,7 @@ void Renderer::CompileShader(Shader* shader)
 	wchar_t* wShaderName = new wchar_t[shaderNameLength];
 	wchar_t* wEntryPoint = new wchar_t[entryPointLength];
 	wchar_t* wSrc = new wchar_t[srcLength];
+	wchar_t const* wTarget = Shader::GetTarget(shader->m_type);
 
 	size_t outNameLength = 0;
 	size_t outEntryPointLength = 0;
@@ -673,11 +676,11 @@ void Renderer::CompileShader(Shader* shader)
 	{
 		wShaderName,            // Optional shader source file name for error reporting
 		L"-E", wEntryPoint,              // Entry point.
-		L"-T", L"ps_6_0",            // Target.
+		L"-T", wTarget,            // Target.
 		#if defined(_DEBUG)
 		L"-Zi",
 		#endif
-		L"-rootsig-define", L"LocalRootSignature"
+		//L"-rootsig-define", L"LocalRootSignature"
 	};
 
 	IDxcBlobEncoding* pSource = nullptr;
@@ -692,7 +695,7 @@ void Renderer::CompileShader(Shader* shader)
 	pCompiler->Compile(&source, compileArgs, _countof(compileArgs), pIncludeHandler, IID_PPV_ARGS(&pResults));
 
 	// Get errors
-	IDxcBlobUtf16* pErrors = nullptr;
+	IDxcBlobWide* pErrors = nullptr;
 	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
 	if (pErrors != nullptr && pErrors->GetStringLength() != 0) {
 		char* error = new char[pErrors->GetStringLength()];
@@ -804,8 +807,10 @@ CommandList* Renderer::CreateCommandList(CommandListDesc const& desc)
 	D3D12_COMMAND_LIST_TYPE cmdListType = LocalToD3D12(desc.m_type);
 
 
-	m_device->CreateCommandAllocator(cmdListType, IID_PPV_ARGS(&newCmdList->m_cmdList));
+	m_device->CreateCommandAllocator(cmdListType, IID_PPV_ARGS(&newCmdList->m_cmdAllocator));
 	m_device->CreateCommandList1(0, cmdListType, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&newCmdList->m_cmdList));
+
+	newCmdList->Reset();
 
 	return newCmdList;
 }

@@ -19,4 +19,5 @@ struct Shader {
 	std::vector<uint8_t> m_rootSignature;
 
 	static char const* GetDefaultEntryPoint(ShaderType shaderType);
+	static wchar_t const* GetTarget(ShaderType shaderType);
 };
