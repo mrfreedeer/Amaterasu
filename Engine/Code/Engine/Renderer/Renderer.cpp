@@ -674,13 +674,12 @@ void Renderer::CompileShader(Shader* shader)
 
 	LPCWSTR compileArgs[] =
 	{
-		wShaderName,            // Optional shader source file name for error reporting
 		L"-E", wEntryPoint,              // Entry point.
 		L"-T", wTarget,            // Target.
 		#if defined(_DEBUG)
 		L"-Zi",
+		L"-Qembed_debug"
 		#endif
-		//L"-rootsig-define", L"LocalRootSignature"
 	};
 
 	IDxcBlobEncoding* pSource = nullptr;
@@ -693,7 +692,6 @@ void Renderer::CompileShader(Shader* shader)
 	// Compile
 	IDxcResult* pResults = nullptr;
 	pCompiler->Compile(&source, compileArgs, _countof(compileArgs), pIncludeHandler, IID_PPV_ARGS(&pResults));
-
 	// Get errors
 	IDxcBlobWide* pErrors = nullptr;
 	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
@@ -701,6 +699,8 @@ void Renderer::CompileShader(Shader* shader)
 		char* error = new char[pErrors->GetStringLength()];
 		size_t outLenghtError = 0;
 		wcstombs_s(&outLenghtError, error, sizeof(error), pErrors->GetStringPointer(),  pErrors->GetStringLength());
+
+		
 		ERROR_AND_DIE(error);
 	}
 
@@ -723,9 +723,10 @@ void Renderer::CompileShader(Shader* shader)
 
 	IDxcBlob* pRootSignature = nullptr;
 	pResults->GetOutput(DXC_OUT_ROOT_SIGNATURE, IID_PPV_ARGS(&pRootSignature), nullptr);
+	shader->m_rootSignature.resize(pRootSignature->GetBufferSize());
 	memcpy(shader->m_rootSignature.data(), pRootSignature->GetBufferPointer(), pRootSignature->GetBufferSize());
 
-
+	// Release all temp assets
 	DX_SAFE_RELEASE(pUtils);
 	DX_SAFE_RELEASE(pCompiler);
 	DX_SAFE_RELEASE(pIncludeHandler);
@@ -739,6 +740,9 @@ void Renderer::CompileShader(Shader* shader)
 
 	delete wEntryPoint;
 	wEntryPoint = nullptr;
+
+	delete wSrc;
+	wSrc = nullptr;
 }
 
 Renderer& Renderer::RenderImGui(CommandList& cmdList, Texture* renderTarget)
