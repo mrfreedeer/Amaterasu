@@ -1,7 +1,7 @@
-#define LocalRootSignature "RootFlags( ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), " \
-              "DescriptorTable(CBV(b0, numDescriptors = 2), " \
+#define LocalRootSignature "RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), " \
+              "DescriptorTable(CBV(b0, numDescriptors = 2)), " \
               "SRV(t0), " \
-              "Sampler(s0) " 
+              "DescriptorTable(Sampler(s0))" 
 
 struct vs_input_t
 {
@@ -17,13 +17,13 @@ struct v2p_t
     float2 uv : TEXCOORD;
 };
 
-cbuffer CameraConstants : register(b2)
+cbuffer CameraConstants : register(b0)
 {
     float4x4 ProjectionMatrix;
     float4x4 ViewMatrix;
 };
 
-cbuffer ModelConstants : register(b3)
+cbuffer ModelConstants : register(b1)
 {
     float4x4 ModelMatrix;
     float4 ModelColor;
