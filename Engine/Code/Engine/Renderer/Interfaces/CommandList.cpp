@@ -91,6 +91,12 @@ CommandList& CommandList::SetIndexBuffer(Buffer* indexBuffer)
 	return *this;
 }
 
+CommandList& CommandList::BindPipelineState(PipelineState* pipelineState)
+{
+	m_cmdList->SetPipelineState(pipelineState->m_pso);
+	return *this;
+}
+
 CommandList& CommandList::DrawIndexedInstanced(unsigned int instanceIndexCount, unsigned int instanceCount, unsigned int startIndex, unsigned int startVertex, unsigned int startInstance)
 {
 	m_cmdList->DrawIndexedInstanced(instanceIndexCount, instanceCount, startIndex, startVertex, startInstance);

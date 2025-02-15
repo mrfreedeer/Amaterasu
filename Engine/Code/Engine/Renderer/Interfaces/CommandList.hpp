@@ -42,6 +42,7 @@ public:
 	CommandList& SetIndexBuffer(Buffer* indexBuffer);
 
 	// Draws/State
+	CommandList& BindPipelineState(PipelineState* pipelineState);
 	CommandList& DrawIndexedInstanced(unsigned int instanceIndexCount, unsigned int instanceCount, unsigned int startIndex, unsigned int startVertex, unsigned int startInstance);
 	CommandList& DrawInstance(unsigned int instanceVertexCount, unsigned int instanceCount, unsigned int startVertex, unsigned int startInstance);
 	CommandList& SetDescriptorHeaps(unsigned int heapCount, DescriptorHeap** descriptorHeaps);
