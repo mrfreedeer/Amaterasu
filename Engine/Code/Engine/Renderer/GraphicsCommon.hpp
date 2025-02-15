@@ -46,6 +46,9 @@ enum ShaderType : unsigned int {
 	Compute,
 	NUM_SHADER_TYPES
 };
+static const char* ShaderTypeStrings[] = { "VS", "PS", "GS", "MS", "HS", "DS", "CS"};
+
+
 
 enum class PipelineType {
 	Graphics,
@@ -169,4 +172,8 @@ constexpr char const* EnumToString(SamplerMode samplerMode) {
 
 constexpr char const* EnumToString(TopologyType topologyType) {
 	return TopologyTypeStrings[(int)topologyType];
+}
+
+constexpr char const* EnumToString(ShaderType shaderType) {
+	return ShaderTypeStrings[shaderType];
 }
