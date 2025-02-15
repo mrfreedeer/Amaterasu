@@ -14,7 +14,6 @@
 
 #include "Engine/Core/Image.hpp"
 #include "Engine/Renderer/BitmapFont.hpp"
-#include "Engine/Renderer/Shader.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
 #include "Engine/Window/Window.hpp"
 #include <ThirdParty/ImGUI/imgui_impl_win32.h>
@@ -107,8 +106,6 @@ DXGI_FORMAT GetFormatForComponent(D3D_REGISTER_COMPONENT_TYPE componentType, cha
 
 void CreateInputLayoutFromVS(Shader* vs, std::vector<D3D12_SIGNATURE_PARAMETER_DESC>& elementsDescs, std::vector<std::string>& semanticNames)
 {
-	std::vector<uint8_t>& shaderByteCode = vs->m_byteCode;
-
 	IDxcUtils* pUtils;
 	DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils));
 
@@ -219,7 +216,7 @@ void GetHardwareAdapter(
 	*ppAdapter = adapter.Detach();
 }
 
-Renderer::Renderer(RendererConfig const& config)
+Renderer::Renderer(RendererConfig const& config) : m_config(config)
 {
 
 }
@@ -249,11 +246,11 @@ Renderer& Renderer::Startup()
 	whiteTexelImg.m_imageFilePath = "DefaultTexture";
 	m_defaultTexture = CreateTextureFromImage(whiteTexelImg);
 
-	ShaderDesc legacyDefaultVs = {};
-	legacyDefaultVs.m_name = "LegacyDefaultVS";
-	legacyDefaultVs.m_path =  ENGINE_DIR "Renderer/Shaders/DefaultFwdLegacy.hlsl";
-	legacyDefaultVs.m_type = ShaderType::Vertex;
-	m_defaultLegacyShader = CreateShader(legacyDefaultVs);
+	ShaderPipelineDesc legacyDefaultDesc = {};
+	legacyDefaultDesc.m_name = "LegacyDefault";
+	legacyDefaultDesc.m_path =  ENGINE_DIR "Renderer/Shaders/DefaultFwdLegacy.hlsl";
+	legacyDefaultDesc.m_firstShaderType =  ShaderType::Vertex;
+	m_defaultLegacyShaders = CreateOrGetShaderPipeline(legacyDefaultDesc);
 
 
 	return *this;
@@ -677,7 +674,8 @@ void Renderer::CompileShader(Shader* shader)
 		L"-E", wEntryPoint,              // Entry point.
 		L"-T", wTarget,            // Target.
 		#if defined(_DEBUG)
-		L"-Zi",
+		DXC_ARG_DEBUG,
+		DXC_ARG_SKIP_OPTIMIZATIONS,
 		L"-Qembed_debug"
 		#endif
 	};
@@ -692,16 +690,18 @@ void Renderer::CompileShader(Shader* shader)
 	// Compile
 	IDxcResult* pResults = nullptr;
 	pCompiler->Compile(&source, compileArgs, _countof(compileArgs), pIncludeHandler, IID_PPV_ARGS(&pResults));
+
 	// Get errors
-	IDxcBlobWide* pErrors = nullptr;
+	// If UTF16 is used, pErrors is always null with current settings
+	IDxcBlobUtf8* pErrors = nullptr;
 	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
 	if (pErrors != nullptr && pErrors->GetStringLength() != 0) {
-		char* error = new char[pErrors->GetStringLength()];
-		size_t outLenghtError = 0;
-		wcstombs_s(&outLenghtError, error, sizeof(error), pErrors->GetStringPointer(),  pErrors->GetStringLength());
 
-		
-		ERROR_AND_DIE(error);
+		DebuggerPrintf("\n-------------- SHADER COMPILATION ERRORS --------------\n");
+		DebuggerPrintf(pErrors->GetStringPointer());
+		DebuggerPrintf("-------------------------------------------------------\n");
+
+		ERROR_AND_DIE("COMPILATION FAILED! SEE OUTPUT FOR MORE DETAILS");
 	}
 
 	// If compilation failed, then die
@@ -709,6 +709,7 @@ void Renderer::CompileShader(Shader* shader)
 	pResults->GetStatus(&hrStatus);
 	ThrowIfFailed(hrStatus, "COMPILATION FAILED");
 
+	
 	IDxcBlob* pShader = nullptr;
 	pResults->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&pShader), nullptr);
 
@@ -882,7 +883,7 @@ ResourceView* Renderer::CreateShaderResourceView(size_t handle, Buffer* buffer)
 
 	srvDesc.Buffer.FirstElement = 0;
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-	srvDesc.Buffer.NumElements = viewDesc.m_elemCount;
+	srvDesc.Buffer.NumElements = (UINT)viewDesc.m_elemCount;
 	srvDesc.Buffer.StructureByteStride = (UINT)viewDesc.m_stride.m_strideBytes;
 	srvDesc.Format = LocalToD3D12(TextureFormat::UNKNOWN);
 	srvDesc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 1, 2, 3);
@@ -1035,7 +1036,7 @@ Texture* Renderer::CreateTexture(TextureDesc& creationInfo)
 	}
 	Texture* newTexture = new Texture(creationInfo);
 	if (textureUploadHeap) {
-		newTexture->m_uploadRsc = new Resource(Stringf("UploadRsc: %s", creationInfo.m_name).c_str());
+		newTexture->m_uploadRsc = new Resource(Stringf("UploadRsc: %s", creationInfo.m_name.c_str()).c_str());
 		newTexture->m_uploadRsc->m_rawRsc = textureUploadHeap;
 	}
 	newTexture->m_rsc = handle;
@@ -1069,6 +1070,37 @@ Shader* Renderer::CreateOrGetShader(ShaderDesc const& desc)
 			return shader;
 		}
 	}
+
+	return CreateShader(desc);
+}
+
+ShaderPipeline Renderer::CreateOrGetShaderPipeline(ShaderPipelineDesc const& desc)
+{
+	GUARANTEE_OR_DIE(desc.m_firstShaderType != ShaderType::InvalidShader, "FIRST SHADER TYPE IS INVALID");
+
+	ShaderDesc firstShaderDsc = {};
+	std::string firstShaderName = desc.m_name;
+	std::string secShaderName = desc.m_name;
+	firstShaderName += "| " + std::string(EnumToString(desc.m_firstShaderType));
+	secShaderName += "| PS";
+
+	firstShaderDsc.m_path = desc.m_path;
+	firstShaderDsc.m_type = desc.m_firstShaderType;
+	firstShaderDsc.m_entryPoint = desc.m_firstEntryPoint;
+	firstShaderDsc.m_name = firstShaderName.c_str();
+
+	ShaderDesc secShaderDesc = {};
+	secShaderDesc.m_path = desc.m_path;
+	secShaderDesc.m_type = ShaderType::Pixel;
+	secShaderDesc.m_name = secShaderName.c_str();
+	secShaderDesc.m_entryPoint = desc.m_secEntryPoint;
+
+
+	ShaderPipeline newPipeline = {};
+	newPipeline.m_firstShader = CreateOrGetShader(firstShaderDsc);
+	newPipeline.m_pixelShader = CreateOrGetShader(secShaderDesc);
+
+	return newPipeline;
 }
 
 PipelineState* Renderer::CreatePipelineState(PipelineStateDesc const& desc)
@@ -1142,7 +1174,7 @@ Renderer& Renderer::AddBackBufferToTextures()
 		DX_SAFE_RELEASE(bufferTex);
 	}
 
-
+	return *this;
 }
 
 Renderer& Renderer::UploadTexturesToGPU()

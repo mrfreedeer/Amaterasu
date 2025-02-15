@@ -2,6 +2,7 @@
 #include <Engine/Renderer/D3D12/lib/d3d12.h>
 #include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
 #include "Engine/Renderer/Interfaces/CommandList.hpp"
+#include "Engine/Renderer/Shader.hpp"
 #include <vector>
 
 struct DescriptorHeapDesc;
@@ -89,6 +90,7 @@ public:
 
 	//--------------------------- Shaders/PSO ----------------------------
 	Shader* CreateOrGetShader(ShaderDesc const& desc);
+	ShaderPipeline CreateOrGetShaderPipeline(ShaderPipelineDesc const& desc);
 	PipelineState* CreatePipelineState(PipelineStateDesc const& desc);
 
 	BitmapFont* CreateOrGetBitmapFont(char const* sourcePath);
@@ -152,7 +154,7 @@ private:
 
 	// Internal Command Lists (For uploading singleton resources like textures)
 	CommandList* m_rscCmdList = nullptr;
-	Shader* m_defaultLegacyShader = nullptr;
+	ShaderPipeline m_defaultLegacyShaders = {};
 
 };
 
