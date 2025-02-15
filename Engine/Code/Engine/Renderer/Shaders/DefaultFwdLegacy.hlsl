@@ -1,6 +1,6 @@
 #define LocalRootSignature "RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), " \
               "DescriptorTable(CBV(b0, numDescriptors = 2)), " \
-              "SRV(t0), " \
+              "DescriptorTable(SRV(t0)), " \
               "DescriptorTable(Sampler(s0))" 
 
 struct vs_input_t
