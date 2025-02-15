@@ -611,6 +611,7 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Renderer\Billboard.hpp" />
     <ClInclude Include="Renderer\BitmapFont.hpp" />
     <ClInclude Include="Renderer\Camera.hpp" />
+    <ClInclude Include="Renderer\ConstantBuffers.hpp" />
     <ClInclude Include="Renderer\D3D12\D3D12TypeConversions.hpp" />
     <ClInclude Include="Renderer\D3D12\lib\d3d12.h" />
     <ClInclude Include="Renderer\D3D12\lib\d3dcommon.h" />

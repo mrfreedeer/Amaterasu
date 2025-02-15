@@ -672,6 +672,9 @@
     <ClInclude Include="Renderer\D3D12\D3D12TypeConversions.hpp">
       <Filter>Renderer\D3D12</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\ConstantBuffers.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Renderer\Shaders\DefaultFwdLegacy.hlsl">
