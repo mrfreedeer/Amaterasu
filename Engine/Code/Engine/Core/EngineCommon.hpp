@@ -28,8 +28,9 @@ extern NetworkSystem* g_theNetwork;
 
 
 enum class MemoryUsage {
-	Default,	// Buffer made to read from multiple times but CPU cannot write to. 
-	Upload,		// Buffer that can be read/write from both GPU and CPU. 
+	Default,		// Buffer made to read from multiple times but CPU cannot write to. 
+	Dynamic,		// Buffer that can be read/write from both GPU and CPU. 
+	Readback		// Buffer that can be read back from GPU
 };
 
 

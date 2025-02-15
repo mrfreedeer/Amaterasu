@@ -88,10 +88,14 @@ public:
 	Texture* GetBackUpBackBuffer();
 	Texture* GetDefaultTexture();
 
+	//-----------------------------' Buffers -----------------------------
+	Buffer* CreateBuffer(BufferDesc const& desc);
+
 	//--------------------------- Shaders/PSO ----------------------------
 	Shader* CreateOrGetShader(ShaderDesc const& desc);
 	ShaderPipeline CreateOrGetShaderPipeline(ShaderPipelineDesc const& desc);
 	PipelineState* CreatePipelineState(PipelineStateDesc const& desc);
+	ShaderPipeline GetEngineShader(EngineShaderPipelines shader);
 
 	BitmapFont* CreateOrGetBitmapFont(char const* sourcePath);
 	Renderer& AddBackBufferToTextures();
@@ -123,6 +127,7 @@ private:
 	void DestroyTexture(Texture* texture);
 
 	// Shaders & PSO
+	void LoadEngineShaders();
 	Shader* CreateShader(ShaderDesc const& shaderDesc);
 	PipelineState* CreateGraphicsPSO(PipelineStateDesc const& desc);
 	PipelineState* CreateMeshPSO(PipelineStateDesc const& desc);
@@ -154,8 +159,7 @@ private:
 
 	// Internal Command Lists (For uploading singleton resources like textures)
 	CommandList* m_rscCmdList = nullptr;
-	ShaderPipeline m_defaultLegacyShaders = {};
-
+	ShaderPipeline m_engineShaders[(int)EngineShaderPipelines::NUM_ENGINE_SHADERS] = {};
 };
 
 struct RenderContextConfig {

@@ -31,7 +31,8 @@ class Buffer {
 	friend class Renderer;
 public:
 	~Buffer();
-	void Map(void*& mapSource);
+	void CopyToBuffer(void* data, size_t size);
+	void Map(void* mapSource, size_t beginRange = 0, size_t endRange = 0);
 	void Unmap();
 	/// <summary>
 	/// Get size in bytes

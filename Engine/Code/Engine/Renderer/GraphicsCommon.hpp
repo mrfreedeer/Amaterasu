@@ -35,6 +35,13 @@ inline void ThrowIfFailed(long hr, char const* errorMsg) {
 	}
 }
 
+// Default shaders offered by the Engine
+enum EngineShaderPipelines {
+	LegacyForward,
+	NUM_ENGINE_SHADERS
+};
+
+
 enum ShaderType : unsigned int {
 	InvalidShader = UINT_MAX,
 	Vertex = 0,

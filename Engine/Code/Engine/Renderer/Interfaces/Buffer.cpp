@@ -7,9 +7,22 @@ Buffer::~Buffer()
 	m_rsc = nullptr;
 }
 
-void Buffer::Map(void*& mapSource)
+void Buffer::CopyToBuffer(void* data, size_t size)
 {
-	m_rsc->Map(mapSource, 0, m_desc.m_size);
+	if (m_desc.m_memoryUsage != MemoryUsage::Dynamic) {
+		ERROR_RECOVERABLE("BUFFER IS NOT MEANT TO BE COPIED TO FROM CPU");
+		return;
+	}
+
+	UINT8* pMap;
+	Map(pMap);
+	memcpy(pMap, data, size);
+	Unmap();
+}
+
+void Buffer::Map(void* mapSource, size_t beginRange = 0, size_t endRange = 0)
+{
+	m_rsc->Map(mapSource, beginRange, endRange);
 }
 
 void Buffer::Unmap()

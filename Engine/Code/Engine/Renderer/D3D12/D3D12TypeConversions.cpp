@@ -125,6 +125,18 @@ D3D12_COMMAND_QUEUE_FLAGS LocalToD3D12(QueueFlags queueFlags)
 	}
 }
 
+D3D12_HEAP_TYPE LocalToD3D12(MemoryUsage memoryUsage)
+{
+	switch (memoryUsage)
+	{
+	case MemoryUsage::Default:	return D3D12_HEAP_TYPE_DEFAULT;
+	case MemoryUsage::Dynamic:	return D3D12_HEAP_TYPE_UPLOAD;
+	case MemoryUsage::Readback: return D3D12_HEAP_TYPE_READBACK;
+	default:
+		ERROR_AND_DIE("UNRECOGNIZED MEMORY USAGE");
+	}
+}
+
 DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat)
 {
 	switch (textureFormat) {

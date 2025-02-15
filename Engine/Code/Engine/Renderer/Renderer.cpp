@@ -246,11 +246,8 @@ Renderer& Renderer::Startup()
 	whiteTexelImg.m_imageFilePath = "DefaultTexture";
 	m_defaultTexture = CreateTextureFromImage(whiteTexelImg);
 
-	ShaderPipelineDesc legacyDefaultDesc = {};
-	legacyDefaultDesc.m_name = "LegacyDefault";
-	legacyDefaultDesc.m_path =  ENGINE_DIR "Renderer/Shaders/DefaultFwdLegacy.hlsl";
-	legacyDefaultDesc.m_firstShaderType =  ShaderType::Vertex;
-	m_defaultLegacyShaders = CreateOrGetShaderPipeline(legacyDefaultDesc);
+	LoadEngineShaders();
+
 
 
 	return *this;
@@ -508,6 +505,16 @@ void Renderer::DestroyTexture(Texture* texture)
 	}
 }
 
+void Renderer::LoadEngineShaders()
+{
+	ShaderPipelineDesc legacyDefaultDesc = {};
+	legacyDefaultDesc.m_name = "LegacyDefault";
+	legacyDefaultDesc.m_path = ENGINE_DIR "Renderer/Shaders/DefaultFwdLegacy.hlsl";
+	legacyDefaultDesc.m_firstShaderType = ShaderType::Vertex;
+
+	m_engineShaders[(int)EngineShaderPipelines::LegacyForward] = CreateOrGetShaderPipeline(legacyDefaultDesc);
+}
+
 Shader* Renderer::CreateShader(ShaderDesc const& shaderDesc)
 {
 	Shader* newShader = new Shader();
@@ -518,6 +525,7 @@ Shader* Renderer::CreateShader(ShaderDesc const& shaderDesc)
 
 	CompileShader(newShader);
 
+	m_loadedShaders.push_back(newShader);
 	return newShader;
 }
 
@@ -567,16 +575,16 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 	SetBlendModeSpecs(desc.m_blendModes, blendDesc);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	Shader* ps =  desc.m_byteCodes[ShaderType::Pixel];
-	Shader* gs =  desc.m_byteCodes[ShaderType::Geometry];
-	Shader* hs =  desc.m_byteCodes[ShaderType::Hull];
-	Shader* ds =  desc.m_byteCodes[ShaderType::Domain];
+	Shader* ps = desc.m_byteCodes[ShaderType::Pixel];
+	Shader* gs = desc.m_byteCodes[ShaderType::Geometry];
+	Shader* hs = desc.m_byteCodes[ShaderType::Hull];
+	Shader* ds = desc.m_byteCodes[ShaderType::Domain];
 
 	psoDesc.InputLayout.NumElements = (UINT)reflectInputDesc.size();
 	psoDesc.InputLayout.pInputElementDescs = inputLayoutDesc.data();
 
 	ID3D12RootSignature* pRootSignature = nullptr;
-	m_device->CreateRootSignature(0, vs->m_rootSignature.data(),vs->m_rootSignature.size(), IID_PPV_ARGS(&pRootSignature));
+	m_device->CreateRootSignature(0, vs->m_rootSignature.data(), vs->m_rootSignature.size(), IID_PPV_ARGS(&pRootSignature));
 
 	psoDesc.pRootSignature = pRootSignature;
 	psoDesc.PS = CD3DX12_SHADER_BYTECODE(ps->m_byteCode.data(), ps->m_byteCode.size());
@@ -709,7 +717,7 @@ void Renderer::CompileShader(Shader* shader)
 	pResults->GetStatus(&hrStatus);
 	ThrowIfFailed(hrStatus, "COMPILATION FAILED");
 
-	
+
 	IDxcBlob* pShader = nullptr;
 	pResults->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&pShader), nullptr);
 
@@ -1062,6 +1070,34 @@ Texture* Renderer::GetDefaultTexture()
 	return m_defaultTexture;
 }
 
+Buffer* Renderer::CreateBuffer(BufferDesc const& desc)
+{
+	Resource* bufferRsc = new Resource(desc.m_debugName);
+
+	D3D12_HEAP_PROPERTIES heapType = CD3DX12_HEAP_PROPERTIES(LocalToD3D12(desc.m_memoryUsage));
+	D3D12_RESOURCE_DESC1 rscDesc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, desc.m_size, 1, 1, 1,
+		DXGI_FORMAT_UNKNOWN, 1, 0, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
+
+	D3D12_RESOURCE_STATES initialState = (desc.m_memoryUsage == MemoryUsage::Dynamic) ? D3D12_RESOURCE_STATE_COPY_SOURCE : D3D12_RESOURCE_STATE_COMMON;
+	m_device->CreateCommittedResource2(&heapType,
+		D3D12_HEAP_FLAG_NONE,
+		&rscDesc,
+		initialState,
+		NULL,
+		NULL,
+		IID_PPV_ARGS(&bufferRsc->m_rawRsc));
+
+
+	Buffer* newBuffer = new Buffer(desc, bufferRsc);
+
+	// If there is initial data and is upload buffer, then copy to it
+	if (desc.m_data && desc.m_memoryUsage == MemoryUsage::Dynamic) {
+		newBuffer->CopyToBuffer(desc.m_data, desc.m_size);
+	}
+
+	return newBuffer;
+}
+
 Shader* Renderer::CreateOrGetShader(ShaderDesc const& desc)
 {
 	for (int shaderInd = 0; shaderInd < m_loadedShaders.size(); shaderInd++) {
@@ -1112,6 +1148,11 @@ PipelineState* Renderer::CreatePipelineState(PipelineStateDesc const& desc)
 	case PipelineType::Compute:		return CreateComputePSO(desc);
 	default:						return nullptr;
 	}
+}
+
+ShaderPipeline Renderer::GetEngineShader(EngineShaderPipelines shader)
+{
+	return m_engineShaders[(int)shader];
 }
 
 BitmapFont* Renderer::CreateOrGetBitmapFont(char const* sourcePath)
