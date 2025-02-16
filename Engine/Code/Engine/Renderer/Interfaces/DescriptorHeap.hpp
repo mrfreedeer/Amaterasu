@@ -7,25 +7,12 @@ struct D3D12_GPU_DESCRIPTOR_HANDLE;
 
 class Renderer;
 
-enum class DescriptorHeapFlags : uint8_t {
-	None = 0,
-	ShaderVisible
-};
-
-enum class DescriptorHeapType : uint8_t {
-	CBV_SRV_UAV = 0,
-	Sampler,
-	RenderTargetView,
-	DepthStencilView,
-	NUM_TYPES,
-	UNDEFINED = 255,
-};
-
 
 struct DescriptorHeapDesc {
 	unsigned int m_numDescriptors = 0;
 	DescriptorHeapType m_type = DescriptorHeapType::UNDEFINED;
 	DescriptorHeapFlags m_flags = DescriptorHeapFlags::None;
+	ID3D12DescriptorHeap* m_heap = nullptr;
 	char const* m_debugName = nullptr;
 };
 
@@ -40,6 +27,7 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandleAtOffset(size_t offset);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandleHeapStart();
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandleHeapStart();
+	DescriptorHeapType GetType() const { return m_config.m_type; }
 private:
 	DescriptorHeap(DescriptorHeapDesc const& desc);
 
@@ -49,4 +37,11 @@ private:
 	size_t m_remainingDescriptors = 0;
 	size_t m_currentDescriptor = 0;
 	size_t m_handleSize = 0;
+};
+
+// Container for a set of descriptors
+struct DescriptorSet {
+	~DescriptorSet();
+	DescriptorHeap* m_descriptorHeaps[(int)DescriptorHeapType::NUM_TYPES] = {};
+	DescriptorHeap* GetDescriptorHeap(DescriptorHeapType heapType) { return m_descriptorHeaps[(int)heapType]; }
 };

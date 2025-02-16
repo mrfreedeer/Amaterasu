@@ -15,6 +15,7 @@
 #include "Engine/Core/Image.hpp"
 #include "Engine/Renderer/BitmapFont.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
+#include "Engine/Renderer/ConstantBuffers.hpp"
 #include "Engine/Window/Window.hpp"
 #include <ThirdParty/ImGUI/imgui_impl_win32.h>
 #include <ThirdParty/ImGUI/imgui_impl_dx12.h>
@@ -28,6 +29,8 @@
 #pragma comment (lib, "dxgi.lib")
 #pragma comment (lib, "dxguid.lib")
 #pragma message("ENGINE_DIR == " ENGINE_DIR)
+
+ModelConstants defaultModelConstants = {};
 
 void SetBlendModeSpecs(BlendMode const* blendModes, D3D12_BLEND_DESC& blendDesc) {
 	/*
@@ -248,7 +251,20 @@ Renderer& Renderer::Startup()
 
 	LoadEngineShaders();
 
+	BufferDesc modelBufDesc = {};
+	modelBufDesc.m_debugName = "DefaultModelBufferUpload";
+	modelBufDesc.m_data = &defaultModelConstants;
+	modelBufDesc.m_memoryUsage = MemoryUsage::Dynamic;
+	modelBufDesc.m_size = sizeof(ModelConstants);
+	modelBufDesc.m_stride.m_strideBytes = sizeof(ModelConstants);
 
+	m_defaultModelBufferUpload = CreateBuffer(modelBufDesc);
+	modelBufDesc.m_memoryUsage = MemoryUsage::Default;
+	modelBufDesc.m_data = nullptr;
+
+	m_defaultModelBuffer = CreateBuffer(modelBufDesc);
+
+	m_rscCmdList->CopyBuffer(m_defaultModelBufferUpload, m_defaultModelBuffer);
 
 	return *this;
 }
@@ -297,6 +313,7 @@ Renderer& Renderer::Shutdown()
 
 Renderer& Renderer::BeginFrame()
 {
+	if (m_defaultModelBufferUpload) delete m_defaultModelBufferUpload;
 	BeginFrameImGui();
 	return *this;
 }
@@ -610,29 +627,37 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 	psoDesc.DepthStencilState.StencilEnable = FALSE;
 	psoDesc.DepthStencilState.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
 	psoDesc.DepthStencilState.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
+	psoDesc.DSVFormat = LocalToD3D12(desc.m_depthStencilFormat);
 	const D3D12_DEPTH_STENCILOP_DESC defaultStencilOp = // a stencil operation structure, does not really matter since stencil testing is turned off
 	{ D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_STENCIL_OP_KEEP, D3D12_COMPARISON_FUNC_ALWAYS };
 	psoDesc.DepthStencilState.FrontFace = defaultStencilOp; // both front and back facing polygons get the same treatment
 	psoDesc.DepthStencilState.BackFace = defaultStencilOp;
 	psoDesc.SampleMask = UINT_MAX;
+	psoDesc.SampleDesc.Count = (UINT)desc.m_sampleCount;
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE(desc.m_topology);
 	psoDesc.NumRenderTargets = (UINT)desc.m_renderTargetCount;
+	for (unsigned int rtIndex = 0; rtIndex < desc.m_renderTargetCount; rtIndex++) {
+		psoDesc.RTVFormats[rtIndex] = LocalToColourD3D12(desc.m_renderTargetFormats[rtIndex]);
+	}
 
 	ID3D12PipelineState* pso = nullptr;
 	m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso));
 	PipelineState* newPso = new PipelineState(pso);
 	newPso->m_desc = desc;
+	newPso->m_rootSignature = pRootSignature;
 
 	return newPso;
 }
 
 PipelineState* Renderer::CreateMeshPSO(PipelineStateDesc const& desc)
 {
+	UNUSED(desc);
 	return nullptr;
 }
 
 PipelineState* Renderer::CreateComputePSO(PipelineStateDesc const& desc)
 {
+	UNUSED(desc);
 	return nullptr;
 }
 
@@ -792,17 +817,20 @@ Renderer& Renderer::EndFrame()
 	return *this;
 }
 
-DescriptorHeap* Renderer::CreateDescriptorHeap(DescriptorHeapDesc const& desc, char const* debugName)
+DescriptorHeap* Renderer::CreateDescriptorHeap(DescriptorHeapDesc& desc, char const* debugName)
 {
-	DescriptorHeap* newHeap = new DescriptorHeap(desc);
 
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
 	heapDesc.NumDescriptors = desc.m_numDescriptors;
 	heapDesc.Type = LocalToD3D12(desc.m_type);
 	heapDesc.Flags = (D3D12_DESCRIPTOR_HEAP_FLAGS)static_cast<uint8_t>(desc.m_flags);
 
+	ID3D12DescriptorHeap* descriptorHeap = nullptr;
 	char const* errorString = Stringf("FAILED TO CRATE DESCRIPTOR HEAP %s", debugName).c_str();
-	ThrowIfFailed(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&newHeap->m_descriptorHeap)), errorString);
+	ThrowIfFailed(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&descriptorHeap)), errorString);
+
+	desc.m_heap = descriptorHeap;
+	DescriptorHeap* newHeap = new DescriptorHeap(desc);
 	newHeap->m_handleSize = m_device->GetDescriptorHandleIncrementSize(heapDesc.Type);
 
 	if (debugName) {
@@ -811,6 +839,28 @@ DescriptorHeap* Renderer::CreateDescriptorHeap(DescriptorHeapDesc const& desc, c
 
 	return newHeap;
 
+}
+
+DescriptorSet* Renderer::CreateDescriptorSet(unsigned int* descriptorCounts, bool isShaderVisible, char const* debugName /*= nullptr*/)
+{
+	DescriptorHeapFlags flag = (isShaderVisible) ? DescriptorHeapFlags::ShaderVisible : DescriptorHeapFlags::None;
+	DescriptorSet* newSet = new DescriptorSet();
+	for (unsigned int heapType = 0; heapType < (unsigned int)DescriptorHeapType::NUM_TYPES; heapType++) {
+		DescriptorHeapDesc desc = {};
+		DescriptorHeapType currentType = (DescriptorHeapType)heapType;
+		std::string debugNameStr = debugName;
+		debugNameStr += "| ";
+		debugNameStr += EnumToString(currentType);
+
+		desc.m_debugName = debugNameStr.c_str();
+		desc.m_flags = (heapType < (int)DescriptorHeapType::RenderTargetView) ? flag : DescriptorHeapFlags::None;
+		desc.m_numDescriptors = descriptorCounts[heapType];
+		desc.m_type = currentType;
+
+		newSet->m_descriptorHeaps[heapType] = CreateDescriptorHeap(desc);
+	}
+
+	return newSet;
 }
 
 CommandList* Renderer::CreateCommandList(CommandListDesc const& desc)
@@ -1102,7 +1152,7 @@ Shader* Renderer::CreateOrGetShader(ShaderDesc const& desc)
 {
 	for (int shaderInd = 0; shaderInd < m_loadedShaders.size(); shaderInd++) {
 		Shader* shader = m_loadedShaders[shaderInd];
-		if (strcmp(desc.m_path, shader->m_path) == 0) {
+		if ((strcmp(desc.m_path, shader->m_path) == 0) && (desc.m_type == shader->m_type)) {
 			return shader;
 		}
 	}
@@ -1185,6 +1235,13 @@ Fence* Renderer::CreateFence(CommandQueue* fenceManager, unsigned int initialVal
 	return outFence;
 }
 
+Renderer& Renderer::CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* src, DescriptorHeap* dest, unsigned int offsetStart, unsigned int offsetEnd)
+{
+	D3D12_DESCRIPTOR_HEAP_TYPE heapType = LocalToD3D12(src->GetType());
+	m_device->CopyDescriptorsSimple(numDescriptors, src->GetCPUHandleAtOffset(offsetStart), dest->GetCPUHandleAtOffset(offsetEnd), heapType);
+	return *this;
+}
+
 Renderer& Renderer::AddBackBufferToTextures()
 {
 	m_backBuffers = new Texture * [m_config.m_backBuffersCount];
@@ -1218,7 +1275,7 @@ Renderer& Renderer::AddBackBufferToTextures()
 	return *this;
 }
 
-Renderer& Renderer::UploadTexturesToGPU()
+Renderer& Renderer::UploadResourcesToGPU()
 {
 	m_rscCmdList->Close();
 	m_commandQueue->ExecuteCommandLists(1, m_rscCmdList);
@@ -1246,40 +1303,39 @@ LiveObjectReporter::~LiveObjectReporter()
 #endif
 }
 
-RenderContext::RenderContext(RenderContextConfig const& config) :
+RenderContext::RenderContext(RenderContextDesc const& config) :
 	m_config(config)
 {
 	Renderer* renderer = m_config.m_renderer;
+	unsigned int backBufferCount = renderer->GetBackBufferCount();
+	m_cmdList = new CommandList * [backBufferCount];
 
-	m_cmdList = renderer->CreateCommandList(m_config.m_cmdListDesc);
-	for (int heapIndex = 0; heapIndex < (int)DescriptorHeapType::NUM_TYPES; heapIndex++) {
-		DescriptorHeapDesc const& heapDesc = config.m_descriptorHeapDescs[heapIndex];
-		// Not using this type of heap, so continue
-		if (heapDesc.m_type == DescriptorHeapType::UNDEFINED) continue;
-
-		DescriptorHeap*& heap = m_descriptorHeaps[heapIndex];
-		heap = renderer->CreateDescriptorHeap(heapDesc, heapDesc.m_debugName);
+	for (unsigned int listInd = 0; listInd < backBufferCount; listInd++) {
+		m_cmdList[listInd] = renderer->CreateCommandList(m_config.m_cmdListDesc);
 	}
+
+	m_descriptorSet = renderer->CreateDescriptorSet(config.m_descriptorCounts, true, "CTX");
 }
 
 RenderContext::~RenderContext()
 {
-	delete m_cmdList;
+	Renderer* renderer = m_config.m_renderer;
+	unsigned int backBufferCount = renderer->GetBackBufferCount();
+	for (unsigned int listInd = 0; listInd < backBufferCount; listInd++) {
+		delete m_cmdList[listInd];
+	}
+
+	delete[] m_cmdList;
 	m_cmdList = nullptr;
 
-	for (int heapIndex = 0; heapIndex < (int)DescriptorHeapType::NUM_TYPES; heapIndex++) {
-		DescriptorHeap*& heap = m_descriptorHeaps[heapIndex];
-		if (heap) {
-			delete heap;
-			heap = nullptr;
-		}
-	}
+	delete m_descriptorSet;
+	m_descriptorSet = nullptr;
 }
 
 RenderContext& RenderContext::BeginCamera(Camera const& camera)
 {
-	DescriptorHeap* rtvHeap = m_descriptorHeaps[(int)DescriptorHeapType::RenderTargetView];
-	DescriptorHeap* dsvHeap = m_descriptorHeaps[(int)DescriptorHeapType::DepthStencilView];
+	DescriptorHeap* rtvHeap = m_descriptorSet->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
+	DescriptorHeap* dsvHeap = m_descriptorSet->GetDescriptorHeap(DescriptorHeapType::DepthStencilView);
 	Renderer* renderer = m_config.m_renderer;
 
 	m_currentCamera = &camera;
@@ -1300,7 +1356,8 @@ RenderContext& RenderContext::BeginCamera(Camera const& camera)
 		}
 	}
 
-	m_cmdList->SetRenderTargets(rtCount, camera.m_colorTargets, true, camera.m_depthTarget);
+	CommandList* cmdList = GetCommandList();
+	cmdList->SetRenderTargets(rtCount, camera.m_colorTargets, true, camera.m_depthTarget);
 
 	return *this;
 }
@@ -1310,3 +1367,4 @@ RenderContext& RenderContext::EndCamera(Camera const& camera)
 	GUARANTEE_OR_DIE(m_currentCamera == &camera, "THE CAMERA WAS SWITCHED MID RENDER PASS")
 		return *this;
 }
+

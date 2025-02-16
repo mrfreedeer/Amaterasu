@@ -5,10 +5,11 @@
 
 DescriptorHeap::DescriptorHeap(DescriptorHeapDesc const& desc):
 	m_config(desc),
-	m_remainingDescriptors(desc.m_numDescriptors)
+	m_remainingDescriptors(desc.m_numDescriptors),
+	m_descriptorHeap(desc.m_heap)
 {
 	// The assumption is that Renderer will initialize the descriptor heap properly
-	GUARANTEE_OR_DIE(m_descriptorHeap == nullptr, "Descriptor Heap is unitiliazed");
+	GUARANTEE_OR_DIE(m_descriptorHeap != nullptr, "Descriptor Heap is unitiliazed");
 	m_currentDescriptor = m_descriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr;
 }
 
@@ -52,4 +53,11 @@ D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::GetGPUHandleHeapStart()
 D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::GetCPUHandleHeapStart()
 {
 	return m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+}
+
+DescriptorSet::~DescriptorSet()
+{
+	for (int heapInd = 0; heapInd < (int)DescriptorHeapType::NUM_TYPES; heapInd++) {
+		delete m_descriptorHeaps[heapInd];
+	}
 }

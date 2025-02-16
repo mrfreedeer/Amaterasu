@@ -11,6 +11,7 @@ struct CommandQueueDesc;
 struct ResourceView;
 struct TextureDesc;
 struct ShaderDesc;
+struct BufferDesc;
 struct Shader;
 struct PipelineStateDesc;
 
@@ -47,7 +48,7 @@ public:
 	// All public methods to return instance to Renderer for chaining purposes
 	// Creation methods, which require the device, are all here 
 	Renderer(RendererConfig const& config);
-	~Renderer(){};
+	~Renderer() {};
 	/// <summary>+
 	/// Handles initialization of all the rendering system, including creation and 
 	/// initialization of all API's objects
@@ -69,10 +70,13 @@ public:
 	/// </summary>
 	/// <param name="desc"></param>
 	/// <returns></returns>
-	DescriptorHeap* CreateDescriptorHeap(DescriptorHeapDesc const& desc, char const* debugName = nullptr);
+	DescriptorHeap* CreateDescriptorHeap(DescriptorHeapDesc& desc, char const* debugName = nullptr);
+	DescriptorSet* CreateDescriptorSet(unsigned int* descriptorCounts, bool isShaderVisible, char const* debugName = nullptr);
 	CommandList* CreateCommandList(CommandListDesc const& desc);
 	CommandQueue* CreateCommandQueue(CommandQueueDesc const& desc);
 	Fence* CreateFence(CommandQueue* fenceManager, unsigned int initialValue = 0);
+	Renderer& CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* src, DescriptorHeap* dest, unsigned int offsetStart = 0, unsigned int offsetEnd = 0 );
+
 
 	//-------------------------- Resource views --------------------------
 	ResourceView* CreateRenderTargetView(size_t handle, Texture* renderTarget);
@@ -105,9 +109,12 @@ public:
 	/// The exact moment this happens, is left for the user to decide
 	/// </summary>
 	/// <returns></returns>
-	Renderer& UploadTexturesToGPU();
+	Renderer& UploadResourcesToGPU();
 
 	Renderer& RenderImGui(CommandList& cmdList, Texture* renderTarget);
+	unsigned int GetCurrentBufferIndex() const { return m_currentBackBuffer; }
+	unsigned int GetBackBufferCount() const { return m_config.m_backBuffersCount; }
+
 private:
 
 	void EnableDebugLayer();
@@ -160,25 +167,37 @@ private:
 	// Internal Command Lists (For uploading singleton resources like textures)
 	CommandList* m_rscCmdList = nullptr;
 	ShaderPipeline m_engineShaders[(int)EngineShaderPipelines::NUM_ENGINE_SHADERS] = {};
+
+	// Identity Matrix model buffer
+	Buffer* m_defaultModelBuffer = nullptr;
+	Buffer* m_defaultModelBufferUpload = nullptr;
 };
 
-struct RenderContextConfig {
+struct RenderContextDesc {
 	Renderer* m_renderer = nullptr;
-	DescriptorHeapDesc m_descriptorHeapDescs[(int)DescriptorHeapType::NUM_TYPES] = {};
+	// All descriptor heaps will be considered shader visible
+	unsigned int* m_descriptorCounts = nullptr;
 	CommandListDesc m_cmdListDesc = {};
 };
 class RenderContext {
 public:
-	RenderContext(RenderContextConfig const& config);
+	RenderContext(RenderContextDesc const& config);
 	~RenderContext();
 
+	RenderContext& BeginFrame() { };
 	RenderContext& BeginCamera(Camera const& camera);
 	RenderContext& EndCamera(Camera const& camera);
+	RenderContext& EndFrame() { m_currentIndex = (m_currentIndex + 1) % m_backBufferCount;}
+	CommandList* GetCommandList() { return m_cmdList[m_currentIndex]; }
+	DescriptorHeap* GetDescriptorHeap(DescriptorHeapType heapType) { return m_descriptorSet->GetDescriptorHeap(heapType); }
+	DescriptorSet* GetDescriptorSet() { return m_descriptorSet; }
 private:
-	RenderContextConfig m_config = {};
+	RenderContextDesc m_config = {};
 	D3D12_VIEWPORT m_viewport = {};
 	D3D12_RECT m_scissorRect = {};
-	CommandList* m_cmdList = nullptr;
-	DescriptorHeap* m_descriptorHeaps[(int)DescriptorHeapType::NUM_TYPES] = { nullptr };
+	CommandList** m_cmdList = nullptr;
+	DescriptorSet* m_descriptorSet = nullptr;
 	Camera const* m_currentCamera = nullptr;
+	unsigned int m_currentIndex = 0;
+	unsigned int m_backBufferCount = 0;
 };
