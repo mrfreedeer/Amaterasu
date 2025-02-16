@@ -19,4 +19,5 @@ D3D12_COMPARISON_FUNC LocalToD3D12(DepthFunc depthTest);
 BOOL LocalToD3D12(WindingOrder windingOrder);
 D3D12_VERTEX_BUFFER_VIEW LocalToD3D12(BufferView const& bufferView);
 D3D12_COMMAND_LIST_TYPE LocalToD3D12(CommandListType cmdListType);
+D3D12_COMMAND_QUEUE_FLAGS LocalToD3D12(QueueFlags queueFlags);
 D3D12_HEAP_TYPE LocalToD3D12(MemoryUsage memoryUsage);

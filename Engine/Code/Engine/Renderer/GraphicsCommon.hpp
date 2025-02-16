@@ -14,18 +14,6 @@
 	}										\
 }
 
-struct ModelConstants {
-	Mat44 ModelMatrix = Mat44();
-	float ModelColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	float ModelPadding[4];
-};
-
-struct CameraConstants {
-	Mat44 ProjectionMatrix;
-	Mat44 ViewMatrix;
-	Mat44 InvertedMatrix;
-};
-
 template <typename T>
 using ComPtr = Microsoft::WRL::ComPtr<T>;
 
@@ -153,6 +141,28 @@ enum class CommandListType {
 	NUM_COMMAND_LIST_TYPES
 };
 
+enum class MemoryUsage {
+	Default,		// Buffer made to read from multiple times but CPU cannot write to. 
+	Dynamic,		// Buffer that can be read/write from both GPU and CPU. 
+	Readback		// Buffer that can be read back from GPU
+};
+
+enum class DescriptorHeapFlags : uint8_t {
+	None = 0,
+	ShaderVisible
+};
+
+enum class DescriptorHeapType : uint8_t {
+	CBV_SRV_UAV = 0,
+	Sampler,
+	RenderTargetView,
+	DepthStencilView,
+	NUM_TYPES,
+	UNDEFINED = 255,
+};
+
+static const char* DesciptorHeapStrings[] = { "CBV_SRV_UAV", "Sampler", "RTV", "DSV"};
+
 constexpr char const* EnumToString(BlendMode blendMode) {
 	return BlendModeStrings[(int)blendMode];
 }
@@ -183,4 +193,7 @@ constexpr char const* EnumToString(TopologyType topologyType) {
 
 constexpr char const* EnumToString(ShaderType shaderType) {
 	return ShaderTypeStrings[shaderType];
+}
+constexpr char const* EnumToString(DescriptorHeapType heapType) {
+	return DesciptorHeapStrings[(int)heapType];
 }
