@@ -15,7 +15,6 @@ char const* Shader::GetDefaultEntryPoint(ShaderType shaderType)
 	default:
 	case InvalidShader:
 		ERROR_AND_DIE("NO KNOW ENTRYPOINT");
-		return nullptr;
 	}
 }
 
@@ -34,6 +33,5 @@ wchar_t const* Shader::GetTarget(ShaderType shaderType)
 	default:
 	case InvalidShader:
 		ERROR_AND_DIE("NO KNOW ENTRYPOINT");
-		return nullptr;
 	}
 }
