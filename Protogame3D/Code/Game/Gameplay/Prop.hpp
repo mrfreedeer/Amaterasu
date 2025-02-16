@@ -12,8 +12,9 @@ enum class PropRenderType {
 
 class Prop : public Entity {
 public:
-	Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, PropRenderType renderType = PropRenderType::CUBE, IntVec2 gridSize = IntVec2(100,100));
-	Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, float radius, PropRenderType renderType = PropRenderType::SPHERE);
+	Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, PropRenderType renderType, IntVec2 gridSize);
+	Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, PropRenderType renderType, float radius);
+	Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, PropRenderType renderType);
 	~Prop();
 
 	void Update(float deltaSeconds) override;

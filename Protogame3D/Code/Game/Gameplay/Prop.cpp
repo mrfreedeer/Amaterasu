@@ -13,21 +13,33 @@ Prop::Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, PropRenderTyp
 	InitializeLocalVerts();
 }
 
-Prop::Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, float radius, PropRenderType renderType) :
+Prop::Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, PropRenderType renderType, float radius) :
 	Entity(pointerToGame, startingWorldPosition),
 	m_type(renderType),
 	m_sphereRadius(radius)
+
 {
 	InitializeLocalVerts();
 }
 
+Prop::Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, PropRenderType renderType) :
+	Entity(pointerToGame, startingWorldPosition),
+	m_type(renderType)
+{
+
+}
+
 Prop::~Prop()
 {
+	delete m_modelBuffer;
+	m_modelBuffer = nullptr;
 }
 
 
 void Prop::InitializeLocalVerts()
 {
+	CreateModelBuffer(g_theRenderer);
+
 	switch (m_type)
 	{
 	case PropRenderType::CUBE:

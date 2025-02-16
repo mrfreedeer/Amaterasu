@@ -7,6 +7,7 @@
 #include <vector>
 
 class Game;
+class Buffer;
 
 class Entity {
 public:
@@ -15,7 +16,8 @@ public:
 
 	virtual void Update(float deltaTime);
 	virtual void Render() const = 0;
-	
+	virtual void CreateModelBuffer(Renderer* renderer);
+
 	virtual Mat44 GetModelMatrix() const;
 
 public:
@@ -25,8 +27,10 @@ public:
 	EulerAngles m_angularVelocity = {};
 
 protected:
-	std::vector<Vertex_PCU> m_verts;
 	Game* m_game = nullptr;
+	Buffer* m_modelBuffer = nullptr;
+	std::vector<Vertex_PCU> m_verts;
+
 	Rgba8 m_modelColor = Rgba8::WHITE;
 };
 
