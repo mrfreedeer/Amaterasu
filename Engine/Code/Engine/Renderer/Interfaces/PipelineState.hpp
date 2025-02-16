@@ -2,6 +2,7 @@
 #include "Engine/Renderer/GraphicsCommon.hpp"
 
 struct ID3D12PipelineState;
+struct ID3D12RootSignature;
 struct Shader;
 
 struct PipelineStateDesc {
@@ -28,4 +29,5 @@ struct PipelineState {
 
 	PipelineStateDesc m_desc = {};
 	ID3D12PipelineState* m_pso = nullptr;
+	ID3D12RootSignature* m_rootSignature = nullptr;
 };
