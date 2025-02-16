@@ -4,6 +4,7 @@
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Renderer/DebugRendererSystem.hpp"
 
+
 AttractScreenMode::~AttractScreenMode()
 {
 
@@ -12,6 +13,25 @@ AttractScreenMode::~AttractScreenMode()
 void AttractScreenMode::Startup()
 {
 	GameMode::Startup();
+	RenderContextDesc ctxDesc = {};
+	CommandListDesc cmdListDesc = {};
+	cmdListDesc.m_initialState = nullptr;
+	cmdListDesc.m_type = CommandListType::DIRECT;
+
+	ctxDesc.m_cmdListDesc = cmdListDesc;
+	ctxDesc.m_renderer = g_theRenderer;
+	
+	DescriptorHeapDesc heapDesc = {};
+	heapDesc.m_debugName = "AttractScreen Heap";
+	heapDesc.m_flags = DescriptorHeapFlags::ShaderVisible;
+	heapDesc.m_numDescriptors = 128;
+	heapDesc.m_type = DescriptorHeapType::CBV_SRV_UAV;
+	unsigned int descriptorCounts[(int)DescriptorHeapType::NUM_TYPES] = { 128, 1, 1, 1 };
+
+	ctxDesc.m_descriptorCounts = descriptorCounts;
+
+	m_renderContext = new RenderContext(ctxDesc);
+
 	m_currentText = g_gameConfigBlackboard.GetValue("GAME_TITLE", "Protogame3D");
 	m_startTextColor = GetRandomColor();
 	m_endTextColor = GetRandomColor();
@@ -22,6 +42,31 @@ void AttractScreenMode::Startup()
 	}
 
 	DebugRenderClear();
+
+	ShaderPipeline defaultLegacy = g_theRenderer->GetEngineShader(EngineShaderPipelines::LegacyForward);
+	PipelineStateDesc psoDesc = {};
+	psoDesc.m_blendModes[0] = BlendMode::OPAQUE;
+	psoDesc.m_byteCodes[ShaderType::Vertex] = defaultLegacy.m_firstShader;
+	psoDesc.m_byteCodes[ShaderType::Pixel] = defaultLegacy.m_pixelShader;
+	psoDesc.m_cullMode = CullMode::BACK;
+	psoDesc.m_debugName = "Opaque2D";
+	psoDesc.m_depthEnable = true;
+	psoDesc.m_depthFunc = DepthFunc::LESSEQUAL;
+	psoDesc.m_depthStencilFormat = TextureFormat::D24_UNORM_S8_UINT;
+	psoDesc.m_fillMode = FillMode::SOLID;
+	psoDesc.m_renderTargetCount = 1;
+	psoDesc.m_renderTargetFormats[0] = TextureFormat::R8G8B8A8_UNORM;
+	psoDesc.m_topology = TopologyType::TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.m_type = PipelineType::Graphics;
+	psoDesc.m_windingOrder = WindingOrder::COUNTERCLOCKWISE;
+
+	m_opaqueDefault2D = g_theRenderer->CreatePipelineState(psoDesc);
+
+	m_testTexture = g_theRenderer->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png");
+
+	// Alpha for font rendering
+	psoDesc.m_blendModes[0] = BlendMode::ALPHA;
+	m_alphaDefault2D = g_theRenderer->CreatePipelineState(psoDesc);
 }
 
 void AttractScreenMode::Update(float deltaSeconds)
@@ -55,6 +100,18 @@ void AttractScreenMode::Render() const
 
 	m_renderContext->BeginCamera(m_UICamera);
 	{
+		DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+		DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+		DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
+		CommandList* cmdList = m_renderContext->GetCommandList();
+		cmdList->ClearRenderTarget(m_renderTarget, Rgba8::BLACK);
+		cmdList->BindPipelineState(m_opaqueDefault2D);
+		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
+		cmdList->SetDescriptorTable(0, cbvSRVUAVHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(0, cbvSRVUAVHeap->GetGPUHandleAtOffset(2), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(0, samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+
+
 		//g_theRenderer->ClearScreen(Rgba8::BLACK);
 		//Material* def2DMat = g_theRenderer->GetDefaultMaterial(false);
 		//g_theRenderer->BindMaterial(def2DMat);

@@ -5,15 +5,12 @@
 
 GameMode::~GameMode()
 {
-
+	delete m_renderContext;
+	m_renderContext = nullptr;
 }
 
 void GameMode::Startup()
 {
-	RenderContextConfig renderCtxConfig = {};
-	renderCtxConfig.m_renderer = g_theRenderer;
-	m_renderContext = new RenderContext(renderCtxConfig);
-
 	m_isCursorHidden = false;
 	m_isCursorClipped = false;
 	m_isCursorRelative = false;
@@ -23,6 +20,15 @@ void GameMode::Startup()
 	Vec3 kBasis(1.0f, 0.0f, 0.0f);
 	m_worldCamera.SetViewToRenderTransform(iBasis, jBasis, kBasis); // Sets view to render to match D11 handedness and coordinate system
 
+	TextureDesc defaultRtDesc = {};
+	defaultRtDesc.m_bindFlags = ResourceBindFlagBit::RESOURCE_BIND_SHADER_RESOURCE_BIT | ResourceBindFlagBit::RESOURCE_BIND_RENDER_TARGET_BIT;
+	defaultRtDesc.m_clearFormat = TextureFormat::R8G8B8A8_UNORM;
+	defaultRtDesc.m_format = TextureFormat::R8G8B8A8_UNORM;
+	defaultRtDesc.m_name = "DefaultRT";
+	defaultRtDesc.m_dimensions = Window::GetWindowContext()->GetClientDimensions();
+	defaultRtDesc.m_stride = sizeof(Rgba8);
+
+	m_renderTarget = g_theRenderer->CreateTexture(defaultRtDesc);
 }
 
 void GameMode::Update(float deltaSeconds)

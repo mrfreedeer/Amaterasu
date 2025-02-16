@@ -34,12 +34,12 @@ void Basic3DMode::Startup()
 	m_player = player;
 	m_player->m_orientation = EulerAngles(521.0f, 36.0f, 0.0f);
 
-	Prop* cubeProp = new Prop(m_game, Vec3(-2.0f, 2.0f, 0.0f));
+	Prop* cubeProp = new Prop(m_game, Vec3(-2.0f, 2.0f, 0.0f), PropRenderType::CUBE);
 	cubeProp->m_angularVelocity.m_yawDegrees = 45.0f;
 
-	Prop* gridProp = new Prop(m_game, Vec3::ZERO, PropRenderType::GRID);
+	Prop* gridProp = new Prop(m_game, Vec3::ZERO, PropRenderType::GRID, IntVec2(100,100));
 
-	Prop* sphereProp = new Prop(m_game, Vec3(10.0f, -5.0f, 1.0f), 1.0f, PropRenderType::SPHERE);
+	Prop* sphereProp = new Prop(m_game, Vec3(10.0f, -5.0f, 1.0f), PropRenderType::SPHERE, 1.0f);
 	sphereProp->m_angularVelocity.m_pitchDegrees = 20.0f;
 	sphereProp->m_angularVelocity.m_yawDegrees = 20.0f;
 

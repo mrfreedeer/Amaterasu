@@ -5,6 +5,7 @@
 #include "Engine/Core/EngineCommon.hpp"
 #include "Game/Gameplay/Entity.hpp"
 #include "Game/Gameplay/Player.hpp"
+#include "Engine/Renderer/Interfaces/PipelineState.hpp"
 
 class Game;
 
@@ -30,6 +31,7 @@ protected:
 protected:
 	Game* m_game = nullptr;
 	RenderContext* m_renderContext = nullptr;
+	Texture* m_renderTarget = nullptr;
 	Camera m_worldCamera;
 	Camera m_UICamera;
 	Vec2 m_UISize = {};
