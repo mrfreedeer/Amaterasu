@@ -14,13 +14,14 @@ void Buffer::CopyToBuffer(void* data, size_t size)
 		return;
 	}
 
-	UINT8* pMap;
+	void* pMap = nullptr;
+
 	Map(pMap);
 	memcpy(pMap, data, size);
 	Unmap();
 }
 
-void Buffer::Map(void* mapSource, size_t beginRange = 0, size_t endRange = 0)
+void Buffer::Map(void*& mapSource, size_t beginRange, size_t endRange)
 {
 	m_rsc->Map(mapSource, beginRange, endRange);
 }

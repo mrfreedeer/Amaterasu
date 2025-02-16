@@ -29,10 +29,11 @@ struct BufferView {
 
 class Buffer {
 	friend class Renderer;
+	friend class CommandList;
 public:
 	~Buffer();
 	void CopyToBuffer(void* data, size_t size);
-	void Map(void* mapSource, size_t beginRange = 0, size_t endRange = 0);
+	void Map(void*& mapSource, size_t beginRange = 0, size_t endRange = 0);
 	void Unmap();
 	/// <summary>
 	/// Get size in bytes
