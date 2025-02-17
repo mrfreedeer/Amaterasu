@@ -114,12 +114,15 @@ public:
 	Renderer& RenderImGui(CommandList& cmdList, Texture* renderTarget);
 	unsigned int GetCurrentBufferIndex() const { return m_currentBackBuffer; }
 	unsigned int GetBackBufferCount() const { return m_config.m_backBuffersCount; }
-
+	
 private:
-
 	void EnableDebugLayer();
 	void CreateDevice();
 	void CreateSwapChain();
+	/// <summary>
+	/// Create default root signature, designed for bindless usage by default
+	/// </summary>
+	void CreateDefaultRootSignature();
 	void SetDebugName(ID3D12Object* object, char const* name);
 	void SetDebugName(IDXGIObject* object, char const* name);
 	// ImGui
@@ -151,6 +154,7 @@ private:
 	ID3D12Device8* m_device = nullptr;
 	IDXGIFactory4* m_DXGIFactory = nullptr;
 	IDXGISwapChain4* m_swapChain = nullptr;
+	ID3D12RootSignature* m_defaultRootSig = nullptr;
 	DescriptorHeap* m_ImGuiSrvDescHeap = nullptr;
 	CommandQueue* m_commandQueue = nullptr;
 

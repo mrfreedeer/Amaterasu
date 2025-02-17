@@ -22,6 +22,7 @@
 #include <Engine/Renderer/D3D12/lib/d3dx12_resource_helpers.h>
 #include <Engine/Core/FileUtils.hpp>
 #include <Engine/Renderer/D3D12/lib/dxcapi.h>
+#include <Engine/Renderer/D3D12/lib/d3dx12_root_signature.h>
 
 
 #pragma comment (lib, "Engine/Renderer/D3D12/lib/dxcompiler.lib")
@@ -234,6 +235,7 @@ Renderer& Renderer::Startup()
 	CreateDevice();
 	m_commandQueue = CreateCommandQueue(queueDesc);
 	CreateSwapChain();
+	CreateDefaultRootSignature();
 
 	CommandListDesc rscCmdDesc = {};
 	rscCmdDesc.m_initialState = nullptr;
@@ -278,6 +280,7 @@ Renderer& Renderer::Shutdown()
 
 	DX_SAFE_RELEASE(m_DXGIFactory);
 	DX_SAFE_RELEASE(m_swapChain);
+	DX_SAFE_RELEASE(m_defaultRootSig);
 
 	delete m_ImGuiSrvDescHeap;
 	m_ImGuiSrvDescHeap = nullptr;
@@ -390,6 +393,39 @@ void Renderer::CreateSwapChain()
 
 	ThrowIfFailed(swapChain->QueryInterface(&m_swapChain), "Failed to get Swap Chain");
 	m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
+}
+
+void Renderer::CreateDefaultRootSignature()
+{
+	CD3DX12_DESCRIPTOR_RANGE1 descRange[6];
+	descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, -1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded model buffers
+	descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, -1, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded camera buffers
+	descRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 128, 0, 2);														// Game CBuffers
+	descRange[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, -1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded textures
+	descRange[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 128, 0, 0);														// Game UAVs
+	descRange[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0);													// There might be max a sampler per RT (I've only used 1 ever)
+
+	CD3DX12_ROOT_PARAMETER1 rootParams[6];
+	rootParams[0].InitAsDescriptorTable(1, &descRange[0]);
+	rootParams[1].InitAsDescriptorTable(1, &descRange[1]);
+	rootParams[2].InitAsDescriptorTable(1, &descRange[2]);
+	rootParams[3].InitAsDescriptorTable(1, &descRange[3]);
+	rootParams[4].InitAsDescriptorTable(1, &descRange[4]);
+	rootParams[5].InitAsDescriptorTable(1, &descRange[5]);
+
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignDesc(6, rootParams);
+	ID3DBlob* pSerializedRootSig = nullptr;
+	ID3DBlob* pErrorBlob = nullptr;
+	HRESULT serializeRes = D3D12SerializeVersionedRootSignature(&rootSignDesc, &pSerializedRootSig, &pErrorBlob);
+
+	if (pErrorBlob) {
+		DebuggerPrintf((char const*)pErrorBlob->GetBufferPointer());
+	}
+
+	ThrowIfFailed(serializeRes, "FAILED TO SERIALIZE DEFAULT ROOT SIGNATURE");
+	HRESULT rootSigCreateRes = m_device->CreateRootSignature(0, pSerializedRootSig->GetBufferPointer(), pSerializedRootSig->GetBufferSize(), IID_PPV_ARGS(&m_defaultRootSig));
+
+	ThrowIfFailed(rootSigCreateRes, "FAILED TO CREATE DEFAULT ROOT SIGNATURE");
 }
 
 void Renderer::SetDebugName(IDXGIObject* object, char const* name)
@@ -601,7 +637,12 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 	psoDesc.InputLayout.pInputElementDescs = inputLayoutDesc.data();
 
 	ID3D12RootSignature* pRootSignature = nullptr;
-	m_device->CreateRootSignature(0, vs->m_rootSignature.data(), vs->m_rootSignature.size(), IID_PPV_ARGS(&pRootSignature));
+	if (vs->m_rootSignature.size() > 0) {
+		m_device->CreateRootSignature(0, vs->m_rootSignature.data(), vs->m_rootSignature.size(), IID_PPV_ARGS(&pRootSignature));
+	}
+	else { // Use default if no specific root sig is used in shader
+		pRootSignature = m_defaultRootSig;
+	}
 
 	psoDesc.pRootSignature = pRootSignature;
 	psoDesc.PS = CD3DX12_SHADER_BYTECODE(ps->m_byteCode.data(), ps->m_byteCode.size());
@@ -727,7 +768,7 @@ void Renderer::CompileShader(Shader* shader)
 	// Get errors
 	// If UTF16 is used, pErrors is always null with current settings
 	IDxcBlobUtf8* pErrors = nullptr;
-	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
+	pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), NULL);
 	if (pErrors != nullptr && pErrors->GetStringLength() != 0) {
 
 		DebuggerPrintf("\n-------------- SHADER COMPILATION ERRORS --------------\n");
@@ -757,8 +798,11 @@ void Renderer::CompileShader(Shader* shader)
 
 	IDxcBlob* pRootSignature = nullptr;
 	pResults->GetOutput(DXC_OUT_ROOT_SIGNATURE, IID_PPV_ARGS(&pRootSignature), nullptr);
-	shader->m_rootSignature.resize(pRootSignature->GetBufferSize());
-	memcpy(shader->m_rootSignature.data(), pRootSignature->GetBufferPointer(), pRootSignature->GetBufferSize());
+
+	if (pRootSignature) {
+		shader->m_rootSignature.resize(pRootSignature->GetBufferSize());
+		memcpy(shader->m_rootSignature.data(), pRootSignature->GetBufferPointer(), pRootSignature->GetBufferSize());
+	}
 
 	// Release all temp assets
 	DX_SAFE_RELEASE(pUtils);
@@ -769,13 +813,13 @@ void Renderer::CompileShader(Shader* shader)
 	DX_SAFE_RELEASE(pReflection);
 	DX_SAFE_RELEASE(pRootSignature);
 
-	delete wShaderName;
+	delete[] wShaderName;
 	wShaderName = nullptr;
 
-	delete wEntryPoint;
+	delete[] wEntryPoint;
 	wEntryPoint = nullptr;
 
-	delete wSrc;
+	delete[] wSrc;
 	wSrc = nullptr;
 }
 
