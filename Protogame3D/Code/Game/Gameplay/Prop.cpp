@@ -1,9 +1,10 @@
 #include "Engine/Math/AABB3.hpp"
 #include "Engine/Core/EngineCommon.hpp"
+#include "Engine/Renderer/Interfaces/Buffer.hpp"
+#include "Engine/Renderer/Renderer.hpp"
 #include "Game/Gameplay/Prop.hpp"
 #include "Game/Gameplay/Game.hpp"
 #include "Game/Framework/GameCommon.hpp"
-#include "Engine/Renderer/Renderer.hpp"
 
 Prop::Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, PropRenderType renderType, IntVec2 gridSize) :
 	Entity(pointerToGame, startingWorldPosition),
