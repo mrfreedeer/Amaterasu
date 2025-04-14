@@ -80,6 +80,7 @@ void App::Startup()
 
 	RendererConfig rendererConfig;
 	rendererConfig.m_window = g_theWindow;
+	rendererConfig.m_backBuffersCount = 2;
 
 	g_theRenderer = new Renderer(rendererConfig);
 	g_theConsole->SetRenderer(g_theRenderer);

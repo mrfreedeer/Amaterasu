@@ -2,6 +2,7 @@
 
 #include "Game/Gameplay/GameMode.hpp"
 
+class Buffer;
 
 class AttractScreenMode : public GameMode {
 public:
@@ -10,7 +11,7 @@ public:
 
 	virtual void Startup() override;
 	virtual void Update(float deltaSeconds) override;
-	virtual void Render() const override;
+	virtual void Render() override;
 protected:
 	virtual void UpdateInput(float deltaSeconds);
 	virtual void RenderUI() const override;
@@ -41,4 +42,5 @@ private:
 	PipelineState* m_opaqueDefault2D = nullptr;
 	PipelineState* m_alphaDefault2D = nullptr;
 	Texture* m_testTexture = nullptr;
+	Buffer* m_triangleVertsBuffer = nullptr;
 };
