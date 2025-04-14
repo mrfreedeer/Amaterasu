@@ -221,8 +221,6 @@ void Game::Update()
 		break;
 	}
 
-	// All resources (model buffers and textures) can now be updated/uploaded to GPU
-	g_theRenderer->UploadResourcesToGPU();
 }
 
 void Game::Render()

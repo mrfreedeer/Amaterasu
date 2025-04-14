@@ -20,7 +20,7 @@ public:
 	Basic3DMode(Game* game, Vec2 const& UISize);
 	virtual void Startup() override;
 	virtual void Update(float deltaSeconds);
-	virtual void Render() const override;
+	virtual void Render() override;
 	virtual void Shutdown() override;
 
 	static bool DebugSpawnWorldWireSphere(EventArgs& eventArgs);

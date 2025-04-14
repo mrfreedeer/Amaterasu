@@ -6,9 +6,11 @@
 #include "Game/Gameplay/Entity.hpp"
 #include "Game/Gameplay/Player.hpp"
 #include "Engine/Renderer/Interfaces/PipelineState.hpp"
+#include "Engine/Renderer/Interfaces/Fence.hpp"
 
 class Game;
-
+class Fence;
+class CommandList;
 class GameMode {
 public:
 	GameMode(Game* game, Vec2 const& UISize) : m_game(game), m_UISize(UISize) { m_UICamera.SetOrthoView(Vec2::ZERO, UISize); }
@@ -16,7 +18,7 @@ public:
 
 	virtual void Startup();
 	virtual void Update(float deltaSeconds);
-	virtual void Render() const;
+	virtual void Render();
 	virtual void Shutdown();
 
 protected:
@@ -31,6 +33,8 @@ protected:
 protected:
 	Game* m_game = nullptr;
 	RenderContext* m_renderContext = nullptr;
+	Fence* m_copyFence = nullptr;
+	CommandList** m_copyCmdLists = nullptr;
 	Texture* m_renderTarget = nullptr;
 	Camera m_worldCamera;
 	Camera m_UICamera;

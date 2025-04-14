@@ -5,8 +5,7 @@
 
 GameMode::~GameMode()
 {
-	delete m_renderContext;
-	m_renderContext = nullptr;
+
 }
 
 void GameMode::Startup()
@@ -37,7 +36,7 @@ void GameMode::Update(float deltaSeconds)
 	CheckIfWindowHasFocus();
 }
 
-void GameMode::Render() const
+void GameMode::Render()
 {
 	DebugRenderWorld(m_worldCamera);
 	RenderUI();
@@ -64,6 +63,12 @@ void GameMode::Shutdown()
 
 	delete m_renderContext;
 	m_renderContext = nullptr;
+	
+	delete[] m_copyCmdLists;
+	m_copyCmdLists = nullptr;
+
+	delete m_copyFence;
+	m_copyFence = nullptr;
 }
 
 void GameMode::UpdateDeveloperCheatCodes(float deltaSeconds)

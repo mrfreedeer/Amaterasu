@@ -111,7 +111,7 @@ void Basic3DMode::Update(float deltaSeconds)
 
 }
 
-void Basic3DMode::Render() const
+void Basic3DMode::Render()
 {
 
 	{
