@@ -68,7 +68,7 @@ CommandList& CommandList::Dispatch(IntVec3 threads)
 	return *this;
 }
 
-CommandList& CommandList::SetVertexBuffers(Buffer** buffers, unsigned int bufferCount, unsigned int startSlot /* = 0 */)
+CommandList& CommandList::SetVertexBuffers(Buffer* const* buffers, unsigned int bufferCount, unsigned int startSlot /* = 0 */)
 {
 	D3D12_VERTEX_BUFFER_VIEW* vBuffersDesc = new D3D12_VERTEX_BUFFER_VIEW[bufferCount];
 
@@ -160,7 +160,8 @@ CommandList& CommandList::SetDescriptorHeaps(unsigned int heapCount, DescriptorH
 
 CommandList& CommandList::SetDescriptorSet(DescriptorSet* dSet)
 {
-	SetDescriptorHeaps((int)DescriptorHeapType::NUM_TYPES, dSet->m_descriptorHeaps);
+	// We set the descriptor heaps until RTV. RTV and DSV are CPU only
+	SetDescriptorHeaps((int)DescriptorHeapType::RenderTargetView, dSet->m_descriptorHeaps);
 	return *this;
 }
 

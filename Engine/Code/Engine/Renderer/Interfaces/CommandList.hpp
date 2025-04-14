@@ -22,6 +22,7 @@ struct D3D12_GPU_DESCRIPTOR_HANDLE;
 struct CommandListDesc {
 	CommandListType m_type = CommandListType::DIRECT;
 	PipelineState* m_initialState = nullptr;
+	char const* m_debugName = "Unnamed Cmd List";
 };
 
 
@@ -41,7 +42,7 @@ public:
 	CommandList& Dispatch(IntVec3 threads);
 
 	// Buffers
-	CommandList& SetVertexBuffers(Buffer** buffers, unsigned int bufferCount, unsigned int startSlot = 0);
+	CommandList& SetVertexBuffers(Buffer* const* buffers, unsigned int bufferCount, unsigned int startSlot = 0);
 	CommandList& SetIndexBuffer(Buffer* indexBuffer);
 	CommandList& CopyBuffer(Buffer* src, Buffer* dest);
 

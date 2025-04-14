@@ -12,6 +12,7 @@ enum class QueueFlags: uint8_t {
 struct CommandQueueDesc {
 	QueueFlags m_flags = QueueFlags::None;
 	CommandListType m_listType = CommandListType::DIRECT;
+	char const* m_debugName = "UnnamedQueue";
 };
 
 class CommandQueue {
@@ -20,7 +21,7 @@ public:
 	CommandQueue(CommandQueueDesc const& desc);
 	~CommandQueue();
 
-	CommandQueue& ExecuteCommandLists(unsigned int count, CommandList* cmdLists);
+	CommandQueue& ExecuteCommandLists(unsigned int count, CommandList** cmdLists);
 	CommandQueue& Signal(Fence* fence, unsigned int newFenceValue);
 	CommandQueue& Wait(Fence* fence, unsigned int waitValue);
 

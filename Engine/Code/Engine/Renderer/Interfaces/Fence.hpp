@@ -10,7 +10,7 @@ public:
 	Fence(CommandQueue* fenceManager, unsigned int initialValue = 0);
 	~Fence();
 
-	void Signal();
+	unsigned int Signal();
 	void Wait(unsigned int waitValue);
 	unsigned int GetFenceValue() const { return m_fenceValue; }
 private:

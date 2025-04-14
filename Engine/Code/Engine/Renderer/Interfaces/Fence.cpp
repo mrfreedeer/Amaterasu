@@ -16,10 +16,11 @@ Fence::~Fence()
 	DX_SAFE_RELEASE(m_fence);
 }
 
-void Fence::Signal()
+unsigned int Fence::Signal()
 {
 	m_fenceValue++;
 	m_commandQueue->Signal(this, m_fenceValue);
+	return m_fenceValue;
 }
 
 void Fence::Wait(unsigned int waitValue)

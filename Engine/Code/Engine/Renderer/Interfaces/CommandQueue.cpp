@@ -14,11 +14,11 @@ CommandQueue::~CommandQueue()
 	DX_SAFE_RELEASE(m_queue);
 }
 
-CommandQueue& CommandQueue::ExecuteCommandLists(unsigned int count, CommandList* cmdLists)
+CommandQueue& CommandQueue::ExecuteCommandLists(unsigned int count, CommandList** cmdLists)
 {
 	ID3D12CommandList** rawCmdLists = new ID3D12CommandList*[count];
 	for (unsigned int cmdListIndex = 0; cmdListIndex < count; cmdListIndex++) {
-		rawCmdLists[cmdListIndex] = cmdLists[cmdListIndex].m_cmdList;
+		rawCmdLists[cmdListIndex] = cmdLists[cmdListIndex]->m_cmdList;
 	}
 
 	m_queue->ExecuteCommandLists(count, rawCmdLists);	
