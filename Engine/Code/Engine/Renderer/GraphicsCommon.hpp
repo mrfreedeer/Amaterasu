@@ -161,6 +161,23 @@ enum class DescriptorHeapType : uint8_t {
 	UNDEFINED = 255,
 };
 
+// ENUM for getting descriptor table param index
+// Unbounded model buffers
+// Unbounded camera buffers
+// Game CBuffers
+// Unbounded textures
+// Game UAVs
+// There might be max a sampler per RT (I've only used 1 ever)
+enum RootParameterIndex : unsigned int {
+	PARAM_MODEL_BUFFERS = 0,
+	PARAM_CAMERA_BUFFERS,
+	PARAM_GAME_BUFFERS,
+	PARAM_TEXTURES,
+	PARAM_GAME_UAVS,
+	PARAM_SAMPLERS
+
+};
+
 static const char* DesciptorHeapStrings[] = { "CBV_SRV_UAV", "Sampler", "RTV", "DSV"};
 
 constexpr char const* EnumToString(BlendMode blendMode) {

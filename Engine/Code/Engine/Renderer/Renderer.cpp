@@ -230,16 +230,23 @@ Renderer& Renderer::Startup()
 	CommandQueueDesc queueDesc = {};
 	queueDesc.m_flags = QueueFlags::None;
 	queueDesc.m_listType = CommandListType::DIRECT;
+	queueDesc.m_debugName = "GraphicsQ";
 
 	EnableDebugLayer();
 	CreateDevice();
-	m_commandQueue = CreateCommandQueue(queueDesc);
+	m_graphicsQueue = CreateCommandQueue(queueDesc);
+
+	queueDesc.m_listType = CommandListType::COPY;
+	queueDesc.m_debugName = "CopyQ";
+	m_copyQueue = CreateCommandQueue(queueDesc);
+
 	CreateSwapChain();
 	CreateDefaultRootSignature();
 
 	CommandListDesc rscCmdDesc = {};
 	rscCmdDesc.m_initialState = nullptr;
 	rscCmdDesc.m_type = CommandListType::DIRECT;
+	rscCmdDesc.m_debugName = "RscCmdList";
 
 	m_rscCmdList = CreateCommandList(rscCmdDesc);
 
@@ -267,6 +274,18 @@ Renderer& Renderer::Startup()
 	m_defaultModelBuffer = CreateBuffer(modelBufDesc);
 
 	m_rscCmdList->CopyBuffer(m_defaultModelBufferUpload, m_defaultModelBuffer);
+	InitializeImGui();
+
+	Fence* initializationFence = CreateFence(CommandListType::DIRECT);
+
+	m_rscCmdList->Close();
+	ExecuteCmdLists(CommandListType::DIRECT, 1, &m_rscCmdList);
+	initializationFence->Signal();
+	initializationFence->Wait(initializationFence->GetFenceValue());
+
+	delete initializationFence;
+	m_rscCmdList->Reset();
+
 
 	return *this;
 }
@@ -285,8 +304,8 @@ Renderer& Renderer::Shutdown()
 	delete m_ImGuiSrvDescHeap;
 	m_ImGuiSrvDescHeap = nullptr;
 
-	delete m_commandQueue;
-	m_commandQueue = nullptr;
+	delete m_graphicsQueue;
+	m_graphicsQueue = nullptr;
 
 	DX_SAFE_RELEASE(m_device);
 
@@ -380,7 +399,7 @@ void Renderer::CreateSwapChain()
 
 	ComPtr<IDXGISwapChain1> swapChain;
 	ThrowIfFailed(m_DXGIFactory->CreateSwapChainForHwnd(
-		m_commandQueue->m_queue,        // Swap chain needs the queue so that it can force a flush on it.
+		m_graphicsQueue->m_queue,        // Swap chain needs the queue so that it can force a flush on it.
 		windowHandle,
 		&swapChainDesc,
 		nullptr,
@@ -398,12 +417,12 @@ void Renderer::CreateSwapChain()
 void Renderer::CreateDefaultRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE1 descRange[6];
-	descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, -1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded model buffers
-	descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, -1, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded camera buffers
-	descRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 128, 0, 2);														// Game CBuffers
-	descRange[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, -1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded textures
-	descRange[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 128, 0, 0);														// Game UAVs
-	descRange[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0);													// There might be max a sampler per RT (I've only used 1 ever)
+	descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded model buffers
+	descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (UINT)-1, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded camera buffers
+	descRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 128, 0, 2);																// Game CBuffers
+	descRange[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded textures
+	descRange[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 128, 0, 0);																// Game UAVs
+	descRange[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0);															// There might be max a sampler per RT (I've only used 1 ever)
 
 	CD3DX12_ROOT_PARAMETER1 rootParams[6];
 	rootParams[0].InitAsDescriptorTable(1, &descRange[0]);
@@ -414,6 +433,7 @@ void Renderer::CreateDefaultRootSignature()
 	rootParams[5].InitAsDescriptorTable(1, &descRange[5]);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignDesc(6, rootParams);
+	rootSignDesc.Desc_1_2.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	ID3DBlob* pSerializedRootSig = nullptr;
 	ID3DBlob* pErrorBlob = nullptr;
 	HRESULT serializeRes = D3D12SerializeVersionedRootSignature(&rootSignDesc, &pSerializedRootSig, &pErrorBlob);
@@ -441,6 +461,7 @@ void Renderer::SetDebugName(IDXGIObject* object, char const* name)
 
 void Renderer::SetDebugName(ID3D12Object* object, char const* name)
 {
+	if(!object) return;
 #if defined(ENGINE_DEBUG_RENDER)
 	object->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)strlen(name), name);
 #else
@@ -702,6 +723,34 @@ PipelineState* Renderer::CreateComputePSO(PipelineStateDesc const& desc)
 	return nullptr;
 }
 
+
+
+CommandQueue* Renderer::GetCommandQueue(CommandListType listType)
+{
+	CommandQueue* queueToReturn = nullptr;
+
+	switch (listType)
+	{
+	case CommandListType::DIRECT:
+		queueToReturn = m_graphicsQueue;
+		break;
+	case CommandListType::COPY:
+		queueToReturn = m_copyQueue;
+		break;
+	case CommandListType::BUNDLE:
+	case CommandListType::COMPUTE:
+	case CommandListType::VIDEO_DECODE:
+	case CommandListType::VIDEO_PROCESS:
+	case CommandListType::VIDEO_ENCODE:
+	case CommandListType::NUM_COMMAND_LIST_TYPES:
+	default:
+		"UNKNOWN QUEUE TYPE";
+		break;
+	}
+	
+	return queueToReturn;
+}
+
 BitmapFont* Renderer::CreateBitmapFont(char const* sourcePath)
 {
 	std::string filename = sourcePath;
@@ -917,6 +966,8 @@ CommandList* Renderer::CreateCommandList(CommandListDesc const& desc)
 	m_device->CreateCommandAllocator(cmdListType, IID_PPV_ARGS(&newCmdList->m_cmdAllocator));
 	m_device->CreateCommandList1(0, cmdListType, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&newCmdList->m_cmdList));
 
+	SetDebugName(newCmdList->m_cmdList, desc.m_debugName);
+
 	newCmdList->Reset();
 
 	return newCmdList;
@@ -932,6 +983,7 @@ CommandQueue* Renderer::CreateCommandQueue(CommandQueueDesc const& desc)
 
 	m_device->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(&newCmdQueue->m_queue));
 
+	SetDebugName(newCmdQueue->m_queue, desc.m_debugName);
 	return newCmdQueue;
 }
 
@@ -1261,8 +1313,10 @@ BitmapFont* Renderer::CreateOrGetBitmapFont(char const* sourcePath)
 	return CreateBitmapFont(sourcePath);
 }
 
-Fence* Renderer::CreateFence(CommandQueue* fenceManager, unsigned int initialValue /* = 0*/)
+Fence* Renderer::CreateFence(CommandListType managerType, unsigned int initialValue /* = 0*/)
 {
+	CommandQueue* fenceManager = GetCommandQueue(managerType);
+
 	Fence* outFence = new Fence(fenceManager, initialValue);
 
 	ThrowIfFailed(m_device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&outFence->m_fence)), "FAILED CREATING FENCE");
@@ -1283,6 +1337,15 @@ Renderer& Renderer::CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHe
 {
 	D3D12_DESCRIPTOR_HEAP_TYPE heapType = LocalToD3D12(src->GetType());
 	m_device->CopyDescriptorsSimple(numDescriptors, src->GetCPUHandleAtOffset(offsetStart), dest->GetCPUHandleAtOffset(offsetEnd), heapType);
+	return *this;
+}
+
+Renderer& Renderer::ExecuteCmdLists(CommandListType type, unsigned int count, CommandList** cmdLists)
+{
+	CommandQueue* usedQueue = GetCommandQueue(type);
+
+	usedQueue->ExecuteCommandLists(count, cmdLists);
+
 	return *this;
 }
 
@@ -1319,10 +1382,30 @@ Renderer& Renderer::AddBackBufferToTextures()
 	return *this;
 }
 
-Renderer& Renderer::UploadResourcesToGPU()
+
+Renderer& Renderer::WaitForOtherQueue(CommandListType waitingType, Fence* otherQFence)
 {
-	m_rscCmdList->Close();
-	m_commandQueue->ExecuteCommandLists(1, m_rscCmdList);
+	CommandQueue* waitingQueue = nullptr;
+	switch (waitingType)
+	{
+	case CommandListType::DIRECT:
+		waitingQueue = m_graphicsQueue;
+		break;
+	case CommandListType::COPY:
+		waitingQueue = m_copyQueue;
+		break;
+	case CommandListType::COMPUTE:
+	case CommandListType::VIDEO_DECODE:
+	case CommandListType::VIDEO_PROCESS:
+	case CommandListType::VIDEO_ENCODE:
+	case CommandListType::NUM_COMMAND_LIST_TYPES:
+	case CommandListType::BUNDLE:
+	default:
+		ERROR_AND_DIE("UNRECOGNIZED QUEUE TYPE");
+		break;
+	}
+
+	waitingQueue->Wait(otherQFence, otherQFence->GetFenceValue());
 
 	return *this;
 }
@@ -1410,5 +1493,13 @@ RenderContext& RenderContext::EndCamera(Camera const& camera)
 {
 	GUARANTEE_OR_DIE(m_currentCamera == &camera, "THE CAMERA WAS SWITCHED MID RENDER PASS")
 		return *this;
+}
+
+RenderContext& RenderContext::Execute()
+{
+	CommandList* cmdList = GetCommandList();
+	m_config.m_renderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
+
+	return *this;
 }
 

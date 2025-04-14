@@ -3,6 +3,7 @@
 #include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
 #include "Engine/Renderer/Interfaces/CommandList.hpp"
 #include "Engine/Renderer/Shader.hpp"
+#include "Engine/Renderer/GraphicsCommon.hpp"
 #include <vector>
 
 struct DescriptorHeapDesc;
@@ -74,9 +75,9 @@ public:
 	DescriptorSet* CreateDescriptorSet(unsigned int* descriptorCounts, bool isShaderVisible, char const* debugName = nullptr);
 	CommandList* CreateCommandList(CommandListDesc const& desc);
 	CommandQueue* CreateCommandQueue(CommandQueueDesc const& desc);
-	Fence* CreateFence(CommandQueue* fenceManager, unsigned int initialValue = 0);
-	Renderer& CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* src, DescriptorHeap* dest, unsigned int offsetStart = 0, unsigned int offsetEnd = 0 );
-
+	Fence* CreateFence(CommandListType managerType, unsigned int initialValue = 0);
+	Renderer& CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* src, DescriptorHeap* dest, unsigned int offsetStart = 0, unsigned int offsetEnd = 0);
+	Renderer& ExecuteCmdLists(CommandListType type, unsigned int count, CommandList** cmdLists);
 
 	//-------------------------- Resource views --------------------------
 	ResourceView* CreateRenderTargetView(size_t handle, Texture* renderTarget);
@@ -92,7 +93,13 @@ public:
 	Texture* GetBackUpBackBuffer();
 	Texture* GetDefaultTexture();
 
-	//-----------------------------' Buffers -----------------------------
+	//----------------------------- Sampler -----------------------------
+	// #TODO: ADD LOGIC FOR CREATING SAMPLERS HERE:
+	// 1. CREATE SAMPLER WITH DEVICE
+	// 2. ASSING DESCRIPTOR TO SAMPLER
+	// 3. ADD BIND FUNCTION TO COMMAND LIST FOR BINDING SAMPLER?
+
+	//------------------------------ Buffers -----------------------------
 	Buffer* CreateBuffer(BufferDesc const& desc);
 
 	//--------------------------- Shaders/PSO ----------------------------
@@ -105,16 +112,13 @@ public:
 	Renderer& AddBackBufferToTextures();
 
 	/// <summary>
-	/// When textures are created, they still need to be uploaded to the GPU
-	/// The exact moment this happens, is left for the user to decide
+	/// Use this for waiting on a fence that is executing on another queue
 	/// </summary>
-	/// <returns></returns>
-	Renderer& UploadResourcesToGPU();
-
+	Renderer& WaitForOtherQueue(CommandListType waitingType, Fence* otherQFence);
 	Renderer& RenderImGui(CommandList& cmdList, Texture* renderTarget);
 	unsigned int GetCurrentBufferIndex() const { return m_currentBackBuffer; }
 	unsigned int GetBackBufferCount() const { return m_config.m_backBuffersCount; }
-	
+
 private:
 	void EnableDebugLayer();
 	void CreateDevice();
@@ -143,6 +147,8 @@ private:
 	PipelineState* CreateMeshPSO(PipelineStateDesc const& desc);
 	PipelineState* CreateComputePSO(PipelineStateDesc const& desc);
 
+	// CommandQueue
+	CommandQueue* GetCommandQueue(CommandListType listType);
 
 	BitmapFont* CreateBitmapFont(char const* sourcePath);
 	void CompileShader(Shader* shader);
@@ -156,7 +162,8 @@ private:
 	IDXGISwapChain4* m_swapChain = nullptr;
 	ID3D12RootSignature* m_defaultRootSig = nullptr;
 	DescriptorHeap* m_ImGuiSrvDescHeap = nullptr;
-	CommandQueue* m_commandQueue = nullptr;
+	CommandQueue* m_graphicsQueue = nullptr;
+	CommandQueue* m_copyQueue = nullptr;
 
 	unsigned int m_currentBackBuffer = 0;
 
@@ -191,10 +198,12 @@ public:
 	RenderContext& BeginFrame() { };
 	RenderContext& BeginCamera(Camera const& camera);
 	RenderContext& EndCamera(Camera const& camera);
-	RenderContext& EndFrame() { m_currentIndex = (m_currentIndex + 1) % m_backBufferCount;}
+	RenderContext& EndFrame() { m_currentIndex = (m_currentIndex + 1) % m_backBufferCount; return*this; }
+	RenderContext& Execute();
 	CommandList* GetCommandList() { return m_cmdList[m_currentIndex]; }
 	DescriptorHeap* GetDescriptorHeap(DescriptorHeapType heapType) { return m_descriptorSet->GetDescriptorHeap(heapType); }
 	DescriptorSet* GetDescriptorSet() { return m_descriptorSet; }
+	unsigned int GetBufferIndex() const { return m_currentIndex; }
 private:
 	RenderContextDesc m_config = {};
 	D3D12_VIEWPORT m_viewport = {};
