@@ -15,6 +15,7 @@ struct ShaderDesc;
 struct BufferDesc;
 struct Shader;
 struct PipelineStateDesc;
+struct Sampler;
 
 struct IDXGIFactory4;
 struct IDXGIObject;
@@ -94,10 +95,7 @@ public:
 	Texture* GetDefaultTexture();
 
 	//----------------------------- Sampler -----------------------------
-	// #TODO: ADD LOGIC FOR CREATING SAMPLERS HERE:
-	// 1. CREATE SAMPLER WITH DEVICE
-	// 2. ASSING DESCRIPTOR TO SAMPLER
-	// 3. ADD BIND FUNCTION TO COMMAND LIST FOR BINDING SAMPLER?
+	Sampler* CreateSampler(size_t handle, SamplerMode samplerMode);
 
 	//------------------------------ Buffers -----------------------------
 	Buffer* CreateBuffer(BufferDesc const& desc);

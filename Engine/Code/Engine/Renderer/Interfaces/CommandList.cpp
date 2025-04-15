@@ -97,6 +97,13 @@ CommandList& CommandList::CopyBuffer(Buffer* src, Buffer* dest)
 	return *this;
 }
 
+CommandList& CommandList::SetTopology(TopologyType topology)
+{
+	D3D12_PRIMITIVE_TOPOLOGY topologyType = (D3D12_PRIMITIVE_TOPOLOGY)(topology);
+	m_cmdList->IASetPrimitiveTopology(topologyType);
+	return *this;
+}
+
 CommandList& CommandList::BindPipelineState(PipelineState* pipelineState)
 {
 	m_cmdList->SetPipelineState(pipelineState->m_pso);

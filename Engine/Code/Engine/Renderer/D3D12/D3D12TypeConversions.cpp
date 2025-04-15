@@ -137,6 +137,65 @@ D3D12_HEAP_TYPE LocalToD3D12(MemoryUsage memoryUsage)
 	}
 }
 
+D3D12_PRIMITIVE_TOPOLOGY_TYPE LocalToD3D12(TopologyType topology)
+{
+	switch (topology)
+	{
+	
+	case TopologyType::POINTLIST:
+		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+	case TopologyType::TRIANGLELIST:
+	case TopologyType::TRIANGLESTRIP:
+		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	case TopologyType::LINELIST:
+	case TopologyType::LINESTRIP:
+	case TopologyType::LINELIST_ADJ:
+	case TopologyType::LINESTRIP_ADJ:
+		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+	case TopologyType::TRIANGLELIST_ADJ:
+	case TopologyType::TRIANGLESTRIP_ADJ:
+		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	case TopologyType::CONTROL_POINT_PATCHLIST_1:
+	case TopologyType::CONTROL_POINT_PATCHLIST_2:
+	case TopologyType::CONTROL_POINT_PATCHLIST_3:
+	case TopologyType::CONTROL_POINT_PATCHLIST_4:
+	case TopologyType::CONTROL_POINT_PATCHLIST_5:
+	case TopologyType::CONTROL_POINT_PATCHLIST_6:
+	case TopologyType::CONTROL_POINT_PATCHLIST_7:
+	case TopologyType::CONTROL_POINT_PATCHLIST_8:
+	case TopologyType::CONTROL_POINT_PATCHLIST_9:
+	case TopologyType::CONTROL_POINT_PATCHLIST_10:
+	case TopologyType::CONTROL_POINT_PATCHLIST_11:
+	case TopologyType::CONTROL_POINT_PATCHLIST_12:
+	case TopologyType::CONTROL_POINT_PATCHLIST_13:
+	case TopologyType::CONTROL_POINT_PATCHLIST_14:
+	case TopologyType::CONTROL_POINT_PATCHLIST_15:
+	case TopologyType::CONTROL_POINT_PATCHLIST_16:
+	case TopologyType::CONTROL_POINT_PATCHLIST_17:
+	case TopologyType::CONTROL_POINT_PATCHLIST_18:
+	case TopologyType::CONTROL_POINT_PATCHLIST_19:
+	case TopologyType::CONTROL_POINT_PATCHLIST_20:
+	case TopologyType::CONTROL_POINT_PATCHLIST_21:
+	case TopologyType::CONTROL_POINT_PATCHLIST_22:
+	case TopologyType::CONTROL_POINT_PATCHLIST_23:
+	case TopologyType::CONTROL_POINT_PATCHLIST_24:
+	case TopologyType::CONTROL_POINT_PATCHLIST_25:
+	case TopologyType::CONTROL_POINT_PATCHLIST_26:
+	case TopologyType::CONTROL_POINT_PATCHLIST_27:
+	case TopologyType::CONTROL_POINT_PATCHLIST_28:
+	case TopologyType::CONTROL_POINT_PATCHLIST_29:
+	case TopologyType::CONTROL_POINT_PATCHLIST_30:
+	case TopologyType::CONTROL_POINT_PATCHLIST_31:
+	case TopologyType::CONTROL_POINT_PATCHLIST_32:
+		return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+	case TopologyType::UNDEFINED:
+	default:
+		ERROR_AND_DIE("UNDEFINED TOPOLOGY");
+		break;
+	}
+
+}
+
 DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat)
 {
 	switch (textureFormat) {

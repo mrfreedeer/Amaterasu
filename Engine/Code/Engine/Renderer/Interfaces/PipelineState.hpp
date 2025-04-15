@@ -16,7 +16,7 @@ struct PipelineStateDesc {
 	CullMode m_cullMode = CullMode::NONE;
 	WindingOrder m_windingOrder = WindingOrder::COUNTERCLOCKWISE;
 	DepthFunc m_depthFunc = DepthFunc::ALWAYS;
-	TopologyType m_topology = TopologyType::TOPOLOGY_TYPE_TRIANGLE;
+	TopologyType m_topology = TopologyType::TRIANGLELIST;
 	BlendMode m_blendModes[8] = { BlendMode::OPAQUE };
 	TextureFormat m_renderTargetFormats[8] = { TextureFormat::R8G8B8A8_UNORM };
 	TextureFormat m_depthStencilFormat = TextureFormat::D24_UNORM_S8_UINT;

@@ -422,7 +422,7 @@ void Renderer::CreateDefaultRootSignature()
 	descRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 128, 0, 2);																// Game CBuffers
 	descRange[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded textures
 	descRange[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 128, 0, 0);																// Game UAVs
-	descRange[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0);															// There might be max a sampler per RT (I've only used 1 ever)
+	descRange[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);															// There might be max a sampler per RT (I've only used 1 ever)
 
 	CD3DX12_ROOT_PARAMETER1 rootParams[6];
 	rootParams[0].InitAsDescriptorTable(1, &descRange[0]);
@@ -444,6 +444,7 @@ void Renderer::CreateDefaultRootSignature()
 
 	ThrowIfFailed(serializeRes, "FAILED TO SERIALIZE DEFAULT ROOT SIGNATURE");
 	HRESULT rootSigCreateRes = m_device->CreateRootSignature(0, pSerializedRootSig->GetBufferPointer(), pSerializedRootSig->GetBufferSize(), IID_PPV_ARGS(&m_defaultRootSig));
+	SetDebugName(m_defaultRootSig, "DefaultRootSig");
 
 	ThrowIfFailed(rootSigCreateRes, "FAILED TO CREATE DEFAULT ROOT SIGNATURE");
 }
@@ -461,7 +462,7 @@ void Renderer::SetDebugName(IDXGIObject* object, char const* name)
 
 void Renderer::SetDebugName(ID3D12Object* object, char const* name)
 {
-	if(!object) return;
+	if (!object) return;
 #if defined(ENGINE_DEBUG_RENDER)
 	object->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)strlen(name), name);
 #else
@@ -696,7 +697,7 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 	psoDesc.DepthStencilState.BackFace = defaultStencilOp;
 	psoDesc.SampleMask = UINT_MAX;
 	psoDesc.SampleDesc.Count = (UINT)desc.m_sampleCount;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE(desc.m_topology);
+	psoDesc.PrimitiveTopologyType = LocalToD3D12(desc.m_topology);
 	psoDesc.NumRenderTargets = (UINT)desc.m_renderTargetCount;
 	for (unsigned int rtIndex = 0; rtIndex < desc.m_renderTargetCount; rtIndex++) {
 		psoDesc.RTVFormats[rtIndex] = LocalToColourD3D12(desc.m_renderTargetFormats[rtIndex]);
@@ -747,7 +748,7 @@ CommandQueue* Renderer::GetCommandQueue(CommandListType listType)
 		"UNKNOWN QUEUE TYPE";
 		break;
 	}
-	
+
 	return queueToReturn;
 }
 
@@ -1214,6 +1215,69 @@ Texture* Renderer::GetBackUpBackBuffer()
 Texture* Renderer::GetDefaultTexture()
 {
 	return m_defaultTexture;
+}
+
+Sampler* Renderer::CreateSampler(size_t handle, SamplerMode samplerMode)
+{
+	Sampler* newSampler = new Sampler();
+
+	D3D12_SAMPLER_DESC samplerDesc = {};
+	switch (samplerMode)
+	{
+	case SamplerMode::POINTCLAMP:
+		samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+
+		break;
+	case SamplerMode::POINTWRAP:
+		samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+		samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+
+		break;
+	case SamplerMode::BILINEARCLAMP:
+		samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+
+		break;
+	case SamplerMode::BILINEARWRAP:
+		samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		break;
+
+	case SamplerMode::SHADOWMAPS:
+		samplerDesc.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+		samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+		samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+		samplerDesc.BorderColor[0] = 0.0f;
+		samplerDesc.BorderColor[1] = 0.0f;
+		samplerDesc.BorderColor[2] = 0.0f;
+		samplerDesc.BorderColor[3] = 0.0f;
+
+		break;
+	default:
+		break;
+	}
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE d3d12Handle = { handle };
+
+	m_device->CreateSampler(&samplerDesc, d3d12Handle);
+
+	return newSampler;
 }
 
 Buffer* Renderer::CreateBuffer(BufferDesc const& desc)

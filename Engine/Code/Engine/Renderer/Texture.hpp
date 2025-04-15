@@ -63,3 +63,7 @@ private:
 	TextureDesc m_info = {};
 
 };
+
+struct Sampler {
+	unsigned int m_descriptor = 0;
+};
