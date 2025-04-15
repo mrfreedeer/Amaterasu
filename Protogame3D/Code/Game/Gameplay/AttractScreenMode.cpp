@@ -66,7 +66,7 @@ void AttractScreenMode::Startup()
 	psoDesc.m_fillMode = FillMode::SOLID;
 	psoDesc.m_renderTargetCount = 1;
 	psoDesc.m_renderTargetFormats[0] = TextureFormat::R8G8B8A8_UNORM;
-	psoDesc.m_topology = TopologyType::TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.m_topology = TopologyType::TRIANGLELIST;
 	psoDesc.m_type = PipelineType::Graphics;
 	psoDesc.m_windingOrder = WindingOrder::COUNTERCLOCKWISE;
 
@@ -112,8 +112,9 @@ void AttractScreenMode::Startup()
 
 	delete intermediateBuffer;
 
-
-
+	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+	D3D12_CPU_DESCRIPTOR_HANDLE nextSamplerHandle = samplerHeap->GetNextCPUHandle();
+	m_defaultSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::BILINEARCLAMP);
 
 }
 
@@ -147,6 +148,7 @@ void AttractScreenMode::Render()
 		DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 		DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
 		CommandList* cmdList = m_renderContext->GetCommandList();
+		cmdList->SetTopology(TopologyType::TRIANGLELIST);
 		cmdList->ClearRenderTarget(m_renderTarget, Rgba8::BLACK);
 		cmdList->BindPipelineState(m_opaqueDefault2D);
 		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
@@ -184,6 +186,24 @@ void AttractScreenMode::Render()
 	m_renderContext->EndFrame();
 }
 
+
+void AttractScreenMode::Shutdown()
+{
+	delete m_opaqueDefault2D;
+	m_opaqueDefault2D = nullptr;
+
+	delete m_alphaDefault2D;
+	m_alphaDefault2D = nullptr;
+	
+	// Should destroy textures?? probably not, just null them
+	m_testTexture = nullptr;
+
+	delete m_triangleVertsBuffer;
+	m_triangleVertsBuffer = nullptr;
+
+    delete m_defaultSampler;
+    m_defaultSampler = nullptr;
+}
 
 void AttractScreenMode::UpdateInput(float deltaSeconds)
 {
