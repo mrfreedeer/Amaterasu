@@ -28,6 +28,17 @@ void GameMode::Startup()
 	defaultRtDesc.m_stride = sizeof(Rgba8);
 
 	m_renderTarget = g_theRenderer->CreateTexture(defaultRtDesc);
+
+
+	TextureDesc defaultDrtDesc = {};
+	defaultDrtDesc.m_bindFlags = ResourceBindFlagBit::RESOURCE_BIND_SHADER_RESOURCE_BIT | ResourceBindFlagBit::RESOURCE_BIND_DEPTH_STENCIL_BIT;
+	defaultDrtDesc.m_clearFormat = TextureFormat::D24_UNORM_S8_UINT;
+	defaultDrtDesc.m_format = TextureFormat::R24G8_TYPELESS;
+	defaultDrtDesc.m_name = "DefaultDRT";
+	defaultDrtDesc.m_dimensions = Window::GetWindowContext()->GetClientDimensions();
+	defaultDrtDesc.m_stride = sizeof(float);
+
+	m_depthTarget = g_theRenderer->CreateTexture(defaultDrtDesc);
 }
 
 void GameMode::Update(float deltaSeconds)

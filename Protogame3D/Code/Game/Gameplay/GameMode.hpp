@@ -36,6 +36,7 @@ protected:
 	Fence* m_copyFence = nullptr;
 	CommandList** m_copyCmdLists = nullptr;
 	Texture* m_renderTarget = nullptr;
+	Texture* m_depthTarget = nullptr;
 	Camera m_worldCamera;
 	Camera m_UICamera;
 	Vec2 m_UISize = {};
