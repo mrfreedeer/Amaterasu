@@ -142,6 +142,7 @@ void AttractScreenMode::Update(float deltaSeconds)
 void AttractScreenMode::Render()
 {
 	m_UICamera.SetColorTarget(m_renderTarget);
+	m_UICamera.SetDepthTarget(m_depthTarget);
 	m_renderContext->BeginCamera(m_UICamera);
 	{
 		DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
@@ -156,8 +157,9 @@ void AttractScreenMode::Render()
 		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(2), PipelineType::Graphics);
 		cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
 
+		cmdList->SetRenderTargets(1, &m_renderTarget, false, m_depthTarget);
 		cmdList->SetVertexBuffers(&m_triangleVertsBuffer, 1);
-		cmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+		cmdList->DrawInstance(3, 1, 0, 0);
 
 		//g_theRenderer->ClearScreen(Rgba8::BLACK);
 		//Material* def2DMat = g_theRenderer->GetDefaultMaterial(false);
