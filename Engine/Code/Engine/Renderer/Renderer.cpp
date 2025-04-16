@@ -335,7 +335,7 @@ Renderer& Renderer::Shutdown()
 
 Renderer& Renderer::BeginFrame()
 {
-	if (m_defaultModelBufferUpload) delete m_defaultModelBufferUpload;
+	if (m_defaultModelBufferUpload) {delete m_defaultModelBufferUpload; m_defaultModelBufferUpload = nullptr;};
 	BeginFrameImGui();
 	return *this;
 }
@@ -1062,7 +1062,8 @@ ResourceView* Renderer::CreateDepthStencilView(size_t handle, Texture* depthText
 	if (depthTexture->IsDepthStencilCompatible()) {
 		Resource* texResource = depthTexture->m_rsc;
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-		dsvDesc.Format = LocalToD3D12(depthTexture->GetFormat());
+		// For DRTs, clear format is the true view, and the only allowed one
+		dsvDesc.Format = LocalToD3D12(depthTexture->GetClearFormat());
 		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 
 		ResourceView* newDSV = new ResourceView();
@@ -1498,10 +1499,10 @@ RenderContext::RenderContext(RenderContextDesc const& config) :
 	m_config(config)
 {
 	Renderer* renderer = m_config.m_renderer;
-	unsigned int backBufferCount = renderer->GetBackBufferCount();
-	m_cmdList = new CommandList * [backBufferCount];
+	m_backBufferCount = renderer->GetBackBufferCount();
+	m_cmdList = new CommandList * [m_backBufferCount];
 
-	for (unsigned int listInd = 0; listInd < backBufferCount; listInd++) {
+	for (unsigned int listInd = 0; listInd < m_backBufferCount; listInd++) {
 		m_cmdList[listInd] = renderer->CreateCommandList(m_config.m_cmdListDesc);
 	}
 
@@ -1542,7 +1543,7 @@ RenderContext& RenderContext::BeginCamera(Camera const& camera)
 	}
 
 	if (camera.m_depthTarget) {
-		if (!camera.m_depthTarget->GetDepthStencilView()->m_valid) {
+		if (!camera.m_depthTarget->GetDepthStencilView()) {
 			renderer->CreateDepthStencilView(dsvHeap->GetNextCPUHandle().ptr, camera.m_depthTarget);
 		}
 	}

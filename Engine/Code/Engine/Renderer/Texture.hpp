@@ -46,6 +46,7 @@ public:
 	ResourceView* GetDepthStencilView() const;
 	ResourceView* GetShaderResourceView() const;
 	TextureFormat GetFormat() const { return m_info.m_format; }
+	TextureFormat GetClearFormat() const { return m_info.m_clearFormat; }
 	bool IsRenderTargetCompatible() const { return m_info.m_bindFlags & RESOURCE_BIND_RENDER_TARGET_BIT; }
 	bool IsShaderResourceCompatible() const { return m_info.m_bindFlags & RESOURCE_BIND_SHADER_RESOURCE_BIT; }
 	bool IsDepthStencilCompatible() const { return m_info.m_bindFlags & RESOURCE_BIND_DEPTH_STENCIL_BIT; }
