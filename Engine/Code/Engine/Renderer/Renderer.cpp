@@ -551,7 +551,6 @@ Texture* Renderer::CreateTextureFromImage(Image const& image)
 	ci.m_stride = sizeof(Rgba8);
 
 	Texture* newTexture = CreateTexture(ci);
-	SetDebugName(newTexture->m_rsc->m_rawRsc, ci.m_source);
 
 	return newTexture;
 }
@@ -567,12 +566,8 @@ Texture* Renderer::CreateTextureFromFile(char const* imageFilePath)
 void Renderer::DestroyTexture(Texture* texture)
 {
 	if (texture) {
-		Resource* texResource = texture->m_rsc;
 		Resource* uploadRsc = texture->m_uploadRsc;
 		delete texture;
-		if (texResource) {
-			delete texResource;
-		}
 
 		if (uploadRsc) {
 			delete uploadRsc;
@@ -890,6 +885,13 @@ Renderer& Renderer::RenderImGui(CommandList& cmdList, Texture* renderTarget)
 	return *this;
 }
 
+Renderer& Renderer::Present(unsigned int syncInterval, unsigned int flags)
+{
+	m_swapChain->Present(syncInterval, flags);
+	m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
+	return *this;
+}
+
 void Renderer::EnableDebugLayer()
 {
 #if defined(_DEBUG)
@@ -907,7 +909,7 @@ void Renderer::EnableDebugLayer()
 
 Renderer& Renderer::EndFrame()
 {
-
+	ImGui::EndFrame();
 	return *this;
 }
 
@@ -992,19 +994,18 @@ ResourceView* Renderer::CreateRenderTargetView(size_t handle, Texture* renderTar
 {
 	if (renderTarget->IsRenderTargetCompatible())
 	{
-		Resource* rtResource = renderTarget->m_rsc;
 		D3D12_RENDER_TARGET_VIEW_DESC viewDesc = {};
 		viewDesc.Format = LocalToColourD3D12(renderTarget->GetFormat());
 		viewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 
 		ResourceView* newRTV = new ResourceView();
 		newRTV->m_descriptor = { handle };
-		newRTV->m_owner = rtResource;
+		newRTV->m_owner = renderTarget;
 		newRTV->m_valid = true;
 
-		rtResource->m_rtv = newRTV;
+		renderTarget->m_rtv = newRTV;
 
-		m_device->CreateRenderTargetView(rtResource->m_rawRsc, &viewDesc, newRTV->m_descriptor);
+		m_device->CreateRenderTargetView(renderTarget->m_rawRsc, &viewDesc, newRTV->m_descriptor);
 	}
 	return renderTarget->GetRenderTargetView();
 }
@@ -1013,19 +1014,18 @@ ResourceView* Renderer::CreateShaderResourceView(size_t handle, Texture* texture
 {
 	if (texture->IsShaderResourceCompatible()) {
 
-		Resource* texResource = texture->m_rsc;
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Format = LocalToD3D12(texture->GetFormat());
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 
 		ResourceView* newSRV = new ResourceView();
 		newSRV->m_descriptor = { handle };
-		newSRV->m_owner = texResource;
+		newSRV->m_owner = texture;
 		newSRV->m_valid = true;
 
-		texResource->m_srv = newSRV;
+		texture->m_srv = newSRV;
 
-		m_device->CreateShaderResourceView(texResource->m_rawRsc, &srvDesc, newSRV->m_descriptor);
+		m_device->CreateShaderResourceView(texture->m_rawRsc, &srvDesc, newSRV->m_descriptor);
 	}
 
 	return texture->GetShaderResourceView();
@@ -1044,15 +1044,14 @@ ResourceView* Renderer::CreateShaderResourceView(size_t handle, Buffer* buffer)
 	srvDesc.Shader4ComponentMapping = D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(0, 1, 2, 3);
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 
-	Resource* rsc = buffer->m_rsc;
 	ResourceView* newSRV = new ResourceView();
 	newSRV->m_descriptor = { handle };
-	newSRV->m_owner = rsc;
+	newSRV->m_owner = buffer;
 	newSRV->m_valid = true;
 
-	rsc->m_srv = newSRV;
+	buffer->m_srv = newSRV;
 
-	m_device->CreateShaderResourceView(rsc->m_rawRsc, &srvDesc, newSRV->m_descriptor);
+	m_device->CreateShaderResourceView(buffer->m_rawRsc, &srvDesc, newSRV->m_descriptor);
 
 	return buffer->GetShaderResourceView();
 }
@@ -1060,7 +1059,6 @@ ResourceView* Renderer::CreateShaderResourceView(size_t handle, Buffer* buffer)
 ResourceView* Renderer::CreateDepthStencilView(size_t handle, Texture* depthTexture)
 {
 	if (depthTexture->IsDepthStencilCompatible()) {
-		Resource* texResource = depthTexture->m_rsc;
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 		// For DRTs, clear format is the true view, and the only allowed one
 		dsvDesc.Format = LocalToD3D12(depthTexture->GetClearFormat());
@@ -1068,13 +1066,13 @@ ResourceView* Renderer::CreateDepthStencilView(size_t handle, Texture* depthText
 
 		ResourceView* newDSV = new ResourceView();
 		newDSV->m_descriptor = { handle };
-		newDSV->m_owner = texResource;
+		newDSV->m_owner = depthTexture;
 		newDSV->m_valid = true;
 
 
-		texResource->m_dsv = newDSV;
+		depthTexture->m_dsv = newDSV;
 
-		m_device->CreateDepthStencilView(texResource->m_rawRsc, &dsvDesc, newDSV->m_descriptor);
+		m_device->CreateDepthStencilView(depthTexture->m_rawRsc, &dsvDesc, newDSV->m_descriptor);
 	}
 	return depthTexture->GetDepthStencilView();
 }
@@ -1086,13 +1084,12 @@ ResourceView* Renderer::CreateConstantBufferView(size_t handle, Buffer* cBuffer)
 	cBufferView.BufferLocation = cBuffer->GetGPUAddress();
 	cBufferView.SizeInBytes = (UINT)viewDesc.m_sizeBytes;
 
-	Resource* rsc = cBuffer->m_rsc;
 	ResourceView* newCBV = new ResourceView();
 	newCBV->m_descriptor = { handle };
-	newCBV->m_owner = rsc;
+	newCBV->m_owner = cBuffer;
 	newCBV->m_valid = true;
 
-	rsc->m_cbv = newCBV;
+	cBuffer->m_cbv = newCBV;
 
 	m_device->CreateConstantBufferView(&cBufferView, newCBV->m_descriptor);
 
@@ -1195,8 +1192,8 @@ Texture* Renderer::CreateTexture(TextureDesc& creationInfo)
 		newTexture->m_uploadRsc = new Resource(Stringf("UploadRsc: %s", creationInfo.m_name.c_str()).c_str());
 		newTexture->m_uploadRsc->m_rawRsc = textureUploadHeap;
 	}
-	newTexture->m_rsc = handle;
-	SetDebugName(newTexture->m_rsc->m_rawRsc, creationInfo.m_name.c_str());
+	newTexture->m_rawRsc = handle->m_rawRsc;
+	SetDebugName(newTexture->m_rawRsc, creationInfo.m_name.c_str());
 	m_loadedTextures.push_back(newTexture);
 
 	return newTexture;
@@ -1283,7 +1280,7 @@ Sampler* Renderer::CreateSampler(size_t handle, SamplerMode samplerMode)
 
 Buffer* Renderer::CreateBuffer(BufferDesc const& desc)
 {
-	Resource* bufferRsc = new Resource(desc.m_debugName);
+	Buffer* newBuffer = new Buffer(desc);
 
 	D3D12_HEAP_PROPERTIES heapType = CD3DX12_HEAP_PROPERTIES(LocalToD3D12(desc.m_memoryUsage));
 	D3D12_RESOURCE_DESC1 rscDesc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, desc.m_size, 1, 1, 1,
@@ -1296,10 +1293,9 @@ Buffer* Renderer::CreateBuffer(BufferDesc const& desc)
 		initialState,
 		NULL,
 		NULL,
-		IID_PPV_ARGS(&bufferRsc->m_rawRsc));
+		IID_PPV_ARGS(&newBuffer->m_rawRsc));
 
 
-	Buffer* newBuffer = new Buffer(desc, bufferRsc);
 
 	// If there is initial data and is upload buffer, then copy to it
 	if (desc.m_data && desc.m_memoryUsage == MemoryUsage::Dynamic) {
@@ -1560,11 +1556,48 @@ RenderContext& RenderContext::EndCamera(Camera const& camera)
 		return *this;
 }
 
+RenderContext& RenderContext::EndFrame()
+{
+	m_currentIndex = (m_currentIndex + 1) % m_backBufferCount; 
+	return*this;
+}
+
 RenderContext& RenderContext::Execute()
 {
 	CommandList* cmdList = GetCommandList();
 	m_config.m_renderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
 
 	return *this;
+}
+
+CommandList* RenderContext::GetCommandList()
+{
+	 return m_cmdList[m_currentIndex];
+}
+
+RenderContext& RenderContext::Close()
+{
+	CommandList* cmdList = GetCommandList();
+	cmdList->Close();
+		
+	return *this;
+}
+
+RenderContext& RenderContext::CloseAll()
+{
+	for (unsigned int listInd = 0; listInd < m_backBufferCount; listInd++) {
+		m_cmdList[listInd]->Close();
+	}
+
+	return *this;
+}
+
+RenderContext& RenderContext::Reset()
+{
+	CommandList* cmdList = GetCommandList();
+
+	cmdList->Reset();
+	return *this;
+
 }
 

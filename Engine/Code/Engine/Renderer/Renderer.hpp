@@ -117,6 +117,8 @@ public:
 	unsigned int GetCurrentBufferIndex() const { return m_currentBackBuffer; }
 	unsigned int GetBackBufferCount() const { return m_config.m_backBuffersCount; }
 
+	Renderer& Present(unsigned int syncInterval = 0, unsigned int flags = 0);
+
 private:
 	void EnableDebugLayer();
 	void CreateDevice();
@@ -196,12 +198,16 @@ public:
 	RenderContext& BeginFrame() { };
 	RenderContext& BeginCamera(Camera const& camera);
 	RenderContext& EndCamera(Camera const& camera);
-	RenderContext& EndFrame() { m_currentIndex = (m_currentIndex + 1) % m_backBufferCount; return*this; }
+	RenderContext& EndFrame();
 	RenderContext& Execute();
-	CommandList* GetCommandList() { return m_cmdList[m_currentIndex]; }
+	CommandList* GetCommandList();
 	DescriptorHeap* GetDescriptorHeap(DescriptorHeapType heapType) { return m_descriptorSet->GetDescriptorHeap(heapType); }
 	DescriptorSet* GetDescriptorSet() { return m_descriptorSet; }
 	unsigned int GetBufferIndex() const { return m_currentIndex; }
+
+	RenderContext& Close();
+	RenderContext& CloseAll();
+	RenderContext& Reset();
 private:
 	RenderContextDesc m_config = {};
 	D3D12_VIEWPORT m_viewport = {};
