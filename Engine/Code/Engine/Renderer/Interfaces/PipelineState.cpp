@@ -4,6 +4,5 @@
 PipelineState::~PipelineState()
 {
 	DX_SAFE_RELEASE(m_pso);
-	DX_SAFE_RELEASE(m_rootSignature);
 }
 

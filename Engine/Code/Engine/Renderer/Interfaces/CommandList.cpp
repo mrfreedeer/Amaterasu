@@ -50,9 +50,12 @@ CommandList& CommandList::ResourceBarrier(unsigned int count, TransitionBarrier*
 	D3D12_RESOURCE_BARRIER* rscBarriers = new D3D12_RESOURCE_BARRIER[count];
 	memset(rscBarriers, 0, sizeof(D3D12_RESOURCE_BARRIER) * count);
 
+	unsigned int validBarrierCount = 0;
 	for (unsigned int barrierIndex = 0; barrierIndex < count; barrierIndex++) {
-		D3D12_RESOURCE_BARRIER& APIBarrier = rscBarriers[barrierIndex];
+		D3D12_RESOURCE_BARRIER& APIBarrier = rscBarriers[validBarrierCount];
 		TransitionBarrier const& barrier = barriers[barrierIndex];
+		if(barrier.m_before == barrier.m_after) continue;
+
 		APIBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 		APIBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		APIBarrier.Transition.pResource = barrier.m_rsc->m_rawRsc;
@@ -61,9 +64,11 @@ CommandList& CommandList::ResourceBarrier(unsigned int count, TransitionBarrier*
 		APIBarrier.Transition.Subresource = 0;
 		// Change state now that the state will be committed to the cmd list
 		barrier.m_rsc->m_currentState = (int)barrier.m_after;
+
+		validBarrierCount++;
 	}
 
-	m_cmdList->ResourceBarrier(count, rscBarriers);
+	m_cmdList->ResourceBarrier(validBarrierCount, rscBarriers);
 	delete[] rscBarriers;
 
 	return *this;
@@ -108,7 +113,7 @@ CommandList& CommandList::SetVertexBuffers(Buffer* const* buffers, unsigned int 
 
 	for (unsigned int bufferIndex = 0; bufferIndex < bufferCount; bufferIndex++) {
 		BufferView bufferView = buffers[bufferIndex]->GetBufferView();
-		vBuffersDesc[bufferIndex] = { bufferView.m_bufferAddr, (UINT)bufferView.m_stride.m_strideBytes, (UINT)bufferView.m_sizeBytes };
+		vBuffersDesc[bufferIndex] = { bufferView.m_bufferAddr, (UINT)bufferView.m_sizeBytes, (UINT)bufferView.m_stride.m_strideBytes};
 	}
 
 	m_cmdList->IASetVertexBuffers(startSlot, bufferCount, vBuffersDesc);
