@@ -6,6 +6,7 @@
 struct PipelineState;
 struct IntVec3;
 struct Rgba8;
+struct TransitionBarrier;
 class Camera;
 class Resource;
 class Texture;
@@ -35,6 +36,10 @@ public:
 	CommandList& Reset(PipelineState* initialState = nullptr);
 	CommandList& Close();
 	
+	// All resources	
+	CommandList& CopyResource(Resource* dst, Resource* src);
+	CommandList& ResourceBarrier(unsigned int count, TransitionBarrier* barriers);
+
 	// Textures
 	CommandList& ClearDepthStencilView(Texture* depth, float clearValue, uint8_t stencilClearValue = 0, bool clearStencil = false);
 	CommandList& ClearRenderTarget(Texture* rt, Rgba8 const& clearValue);

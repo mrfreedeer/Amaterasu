@@ -32,9 +32,42 @@ CommandList& CommandList::Reset(PipelineState* initialState /*= nullptr*/)
 
 CommandList& CommandList::Close()
 {
-	m_cmdList->Close();
+	HRESULT closeStatus = m_cmdList->Close();
+	ThrowIfFailed(closeStatus, "FAILED TO CLOSE COMMAND LIST");
 
 	return *this;
+}
+
+CommandList& CommandList::CopyResource(Resource* dst, Resource* src)
+{
+	m_cmdList->CopyResource(dst->m_rawRsc, src->m_rawRsc);
+
+	return *this;
+}
+
+CommandList& CommandList::ResourceBarrier(unsigned int count, TransitionBarrier* barriers)
+{
+	D3D12_RESOURCE_BARRIER* rscBarriers = new D3D12_RESOURCE_BARRIER[count];
+	memset(rscBarriers, 0, sizeof(D3D12_RESOURCE_BARRIER) * count);
+
+	for (unsigned int barrierIndex = 0; barrierIndex < count; barrierIndex++) {
+		D3D12_RESOURCE_BARRIER& APIBarrier = rscBarriers[barrierIndex];
+		TransitionBarrier const& barrier = barriers[barrierIndex];
+		APIBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		APIBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		APIBarrier.Transition.pResource = barrier.m_rsc->m_rawRsc;
+		APIBarrier.Transition.StateBefore = (D3D12_RESOURCE_STATES)barrier.m_before;
+		APIBarrier.Transition.StateAfter = (D3D12_RESOURCE_STATES)barrier.m_after;
+		APIBarrier.Transition.Subresource = 0;
+		// Change state now that the state will be committed to the cmd list
+		barrier.m_rsc->m_currentState = (int)barrier.m_after;
+	}
+
+	m_cmdList->ResourceBarrier(count, rscBarriers);
+	delete[] rscBarriers;
+
+	return *this;
+
 }
 
 CommandList& CommandList::ClearDepthStencilView(Texture* depth, float clearValue, uint8_t stencilClearValue, bool clearStencil)
@@ -68,6 +101,7 @@ CommandList& CommandList::Dispatch(IntVec3 threads)
 	return *this;
 }
 
+
 CommandList& CommandList::SetVertexBuffers(Buffer* const* buffers, unsigned int bufferCount, unsigned int startSlot /* = 0 */)
 {
 	D3D12_VERTEX_BUFFER_VIEW* vBuffersDesc = new D3D12_VERTEX_BUFFER_VIEW[bufferCount];
@@ -93,7 +127,7 @@ CommandList& CommandList::SetIndexBuffer(Buffer* indexBuffer)
 
 CommandList& CommandList::CopyBuffer(Buffer* src, Buffer* dest)
 {
-	m_cmdList->CopyBufferRegion(dest->m_rsc->m_rawRsc, 0, src->m_rsc->m_rawRsc, 0, dest->GetSize());
+	m_cmdList->CopyBufferRegion(dest->m_rawRsc, 0, src->m_rawRsc, 0, dest->GetSize());
 	return *this;
 }
 
