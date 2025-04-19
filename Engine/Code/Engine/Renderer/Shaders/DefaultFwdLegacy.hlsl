@@ -28,11 +28,13 @@ struct ModelConstants
 
 ConstantBuffer<CameraConstants> cameraCBuffers[] : register(b0, space0);
 ConstantBuffer<ModelConstants> modelCBuffers[] : register(b0, space1);
-cbuffer PerDrawConstants : register(b0, space2)
+cbuffer PerDrawConstants : register(b0, space4)
 {
     uint CameraBufferInd;
     uint ModelBufferInd;
     uint TextureStart;
+    uint Padding;
+    uint3x4 ExtraPadding;
 };
 
 Texture2D textures[] : register(t0, space0);

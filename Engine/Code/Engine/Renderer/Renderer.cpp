@@ -421,23 +421,28 @@ void Renderer::CreateSwapChain()
 
 void Renderer::CreateDefaultRootSignature()
 {
-	CD3DX12_DESCRIPTOR_RANGE1 descRange[6];
+	CD3DX12_DESCRIPTOR_RANGE1 descRange[7] = {};
 	descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded model buffers
 	descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (UINT)-1, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded camera buffers
-	descRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 128, 0, 2);																// Game CBuffers
-	descRange[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded textures
-	descRange[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 128, 0, 0);																// Game UAVs
-	descRange[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);															// There might be max a sampler per RT (I've only used 1 ever)
+	descRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 2, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);				// Draw constants
+	descRange[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 128, 0, 3);																// Game CBuffers
+	descRange[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded textures
+	descRange[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 128, 0, 0);																// Game UAVs
+	descRange[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);															// There might be max a sampler per RT (I've only used 1 ever)
 
-	CD3DX12_ROOT_PARAMETER1 rootParams[6];
+	CD3DX12_ROOT_PARAMETER1 rootParams[8] = {};
 	rootParams[0].InitAsDescriptorTable(1, &descRange[0]);
 	rootParams[1].InitAsDescriptorTable(1, &descRange[1]);
 	rootParams[2].InitAsDescriptorTable(1, &descRange[2]);
 	rootParams[3].InitAsDescriptorTable(1, &descRange[3]);
 	rootParams[4].InitAsDescriptorTable(1, &descRange[4]);
 	rootParams[5].InitAsDescriptorTable(1, &descRange[5]);
+	rootParams[6].InitAsDescriptorTable(1, &descRange[6]);
 
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignDesc(6, rootParams);
+	// Legacy will used root parameter constants for draw constants
+	rootParams[7].InitAsConstants(16, 0, 4);
+
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignDesc(8, rootParams);
 	rootSignDesc.Desc_1_2.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	ID3DBlob* pSerializedRootSig = nullptr;
 	ID3DBlob* pErrorBlob = nullptr;
@@ -704,7 +709,8 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 	}
 
 	ID3D12PipelineState* pso = nullptr;
-	m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso));
+	HRESULT creationResult = m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso));
+	ThrowIfFailed(creationResult, "Failed to create Graphics PSO");
 	PipelineState* newPso = new PipelineState(pso);
 	newPso->m_desc = desc;
 	newPso->m_rootSignature = pRootSignature;

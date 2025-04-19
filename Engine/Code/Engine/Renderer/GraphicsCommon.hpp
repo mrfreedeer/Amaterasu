@@ -236,12 +236,14 @@ enum ResourceStates
 // Game UAVs
 // There might be max a sampler per RT (I've only used 1 ever)
 enum RootParameterIndex : unsigned int {
-	PARAM_MODEL_BUFFERS = 0,
-	PARAM_CAMERA_BUFFERS,
+	PARAM_CAMERA_BUFFERS = 0,
+	PARAM_MODEL_BUFFERS,
+	PARAM_DRAW_BUFFERS,
 	PARAM_GAME_BUFFERS,
 	PARAM_TEXTURES,
 	PARAM_GAME_UAVS,
-	PARAM_SAMPLERS
+	PARAM_SAMPLERS,
+	PARAM_ROOT_CONSTANTS
 
 };
 

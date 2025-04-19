@@ -59,6 +59,7 @@ public:
 	CommandList& SetDescriptorHeaps(unsigned int heapCount, DescriptorHeap** descriptorHeaps);
 	CommandList& SetDescriptorSet(DescriptorSet* dSet);
 	CommandList& SetDescriptorTable(unsigned int paramIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseGPUDescriptor, PipelineType pipelineType);
+	CommandList& SetGraphicsRootConstants(unsigned int count, unsigned int* constants);
 	/// <summary>
 	/// Set blend factor
 	/// </summary>

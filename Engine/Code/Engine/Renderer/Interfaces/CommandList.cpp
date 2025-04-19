@@ -223,6 +223,12 @@ CommandList& CommandList::SetDescriptorTable(unsigned int paramIndex, D3D12_GPU_
 	return *this;
 }
 
+CommandList& CommandList::SetGraphicsRootConstants(unsigned int count, unsigned int* constants)
+{
+	m_cmdList->SetGraphicsRoot32BitConstants(PARAM_ROOT_CONSTANTS, count, constants, 0);
+	return *this;
+}
+
 CommandList& CommandList::SetBlendFactor(float* blendFactors)
 {
 	m_cmdList->OMSetBlendFactor(blendFactors);
