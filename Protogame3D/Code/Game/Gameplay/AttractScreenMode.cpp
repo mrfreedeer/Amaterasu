@@ -116,6 +116,8 @@ void AttractScreenMode::Startup()
 	D3D12_CPU_DESCRIPTOR_HANDLE nextSamplerHandle = samplerHeap->GetNextCPUHandle();
 	m_defaultSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::BILINEARCLAMP);
 
+	// It's expected that the cmd list will be closed
+	m_renderContext->CloseAll();
 }
 
 void AttractScreenMode::Update(float deltaSeconds)
@@ -141,14 +143,27 @@ void AttractScreenMode::Update(float deltaSeconds)
 
 void AttractScreenMode::Render()
 {
+	/// <summary>
+	/// ADDD RESOURCE BARRIERS!!!!! AND COPY RT TO BACKBUFFER
+	/// </summary>
 	m_UICamera.SetColorTarget(m_renderTarget);
 	m_UICamera.SetDepthTarget(m_depthTarget);
+
+	m_renderContext->Reset();
+
+	TransitionBarrier resourceBarriers[2] = {};
+	resourceBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::RenderTarget);
+	resourceBarriers[1] = m_depthTarget->GetTransitionBarrier(ResourceStates::DepthWrite);
+	CommandList* cmdList = m_renderContext->GetCommandList();
+
+
 	m_renderContext->BeginCamera(m_UICamera);
 	{
 		DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 		DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 		DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
-		CommandList* cmdList = m_renderContext->GetCommandList();
+		cmdList->ResourceBarrier(2, resourceBarriers);
+
 		cmdList->SetTopology(TopologyType::TRIANGLELIST);
 		cmdList->ClearRenderTarget(m_renderTarget, Rgba8::BLACK);
 		cmdList->BindPipelineState(m_opaqueDefault2D);
@@ -157,10 +172,11 @@ void AttractScreenMode::Render()
 		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(2), PipelineType::Graphics);
 		cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
 
-		cmdList->SetRenderTargets(1, &m_renderTarget, false, m_depthTarget);
 		cmdList->SetVertexBuffers(&m_triangleVertsBuffer, 1);
 		cmdList->DrawInstance(3, 1, 0, 0);
 
+		resourceBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::Common);
+		cmdList->ResourceBarrier(1, resourceBarriers);
 		//g_theRenderer->ClearScreen(Rgba8::BLACK);
 		//Material* def2DMat = g_theRenderer->GetDefaultMaterial(false);
 		//g_theRenderer->BindMaterial(def2DMat);
@@ -186,6 +202,22 @@ void AttractScreenMode::Render()
 	DebugRenderScreen(m_UICamera);
 
 	m_renderContext->EndFrame();
+
+	Texture* backBuffer = g_theRenderer->GetActiveBackBuffer();
+	resourceBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::CopySrc);
+	resourceBarriers[1] = backBuffer->GetTransitionBarrier(ResourceStates::CopyDest);
+	 
+	cmdList->ResourceBarrier(2, resourceBarriers);
+	cmdList->CopyResource(backBuffer, m_renderTarget);
+
+	resourceBarriers[0]  = backBuffer->GetTransitionBarrier(ResourceStates::Present);
+	cmdList->ResourceBarrier(1, resourceBarriers);
+
+	cmdList->Close();
+
+	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
+
+	g_theRenderer->Present();
 }
 
 
