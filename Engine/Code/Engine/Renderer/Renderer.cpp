@@ -297,6 +297,9 @@ Renderer& Renderer::Shutdown()
 	delete m_rscCmdList;
 	m_rscCmdList = nullptr;
 
+	delete m_defaultModelBuffer;
+	m_defaultModelBuffer = nullptr;
+
 	DX_SAFE_RELEASE(m_DXGIFactory);
 	DX_SAFE_RELEASE(m_swapChain);
 	DX_SAFE_RELEASE(m_defaultRootSig);
@@ -307,8 +310,8 @@ Renderer& Renderer::Shutdown()
 	delete m_graphicsQueue;
 	m_graphicsQueue = nullptr;
 
-	DX_SAFE_RELEASE(m_device);
-
+	delete m_copyQueue;
+	m_copyQueue = nullptr;
 	m_currentBackBuffer = 0;
 
 	// Game Resources
@@ -330,6 +333,8 @@ Renderer& Renderer::Shutdown()
 	}
 	m_loadedFonts.clear();
 
+	DX_SAFE_RELEASE(m_defaultRootSig);
+	DX_SAFE_RELEASE(m_device);
 	return *this;
 }
 
@@ -888,7 +893,6 @@ Renderer& Renderer::RenderImGui(CommandList& cmdList, Texture* renderTarget)
 Renderer& Renderer::Present(unsigned int syncInterval, unsigned int flags)
 {
 	m_swapChain->Present(syncInterval, flags);
-	m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 	return *this;
 }
 
@@ -910,6 +914,8 @@ void Renderer::EnableDebugLayer()
 Renderer& Renderer::EndFrame()
 {
 	ImGui::EndFrame();
+	m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
+
 	return *this;
 }
 
@@ -1118,7 +1124,7 @@ Texture* Renderer::CreateTexture(TextureDesc& creationInfo)
 		handle->m_rawRsc->AddRef();
 	}
 	else {
-		D3D12_RESOURCE_DESC textureDesc = {};
+		D3D12_RESOURCE_DESC1 textureDesc = {};
 		textureDesc.Width = (UINT64)creationInfo.m_dimensions.x;
 		textureDesc.Height = (UINT64)creationInfo.m_dimensions.y;
 		textureDesc.MipLevels = 1;
@@ -1150,25 +1156,30 @@ Texture* Renderer::CreateTexture(TextureDesc& creationInfo)
 			clearValue = &clearValueTex;
 		}
 
-		HRESULT textureCreateHR = m_device->CreateCommittedResource(
+		HRESULT textureCreateHR = m_device->CreateCommittedResource2(
 			&heapType,
 			D3D12_HEAP_FLAG_NONE,
 			&textureDesc,
 			initialResourceState,
 			clearValue,
+			nullptr,
 			IID_PPV_ARGS(&handle->m_rawRsc)
 		);
 
 		if (creationInfo.m_initialData) {
 			UINT64  const uploadBufferSize = GetRequiredIntermediateSize(handle->m_rawRsc, 0, 1);
-			CD3DX12_RESOURCE_DESC uploadHeapDesc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+			CD3DX12_RESOURCE_DESC uploadHeapDescLegacy = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
+			// The difference between legacy and desc1 is the mip region, so we can copy most of it to the newer version
+			D3D12_RESOURCE_DESC1 uploadHeapDesc = {};
+			memcpy(&uploadHeapDesc, &uploadHeapDescLegacy, sizeof(D3D12_RESOURCE_DESC));
 			CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_UPLOAD);
 
-			HRESULT createUploadHeap = m_device->CreateCommittedResource(
+			HRESULT createUploadHeap = m_device->CreateCommittedResource2(
 				&heapProperties,
 				D3D12_HEAP_FLAG_NONE,
 				&uploadHeapDesc,
 				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
 				nullptr,
 				IID_PPV_ARGS(&textureUploadHeap));
 
@@ -1294,8 +1305,6 @@ Buffer* Renderer::CreateBuffer(BufferDesc const& desc)
 		NULL,
 		NULL,
 		IID_PPV_ARGS(&newBuffer->m_rawRsc));
-
-
 
 	// If there is initial data and is upload buffer, then copy to it
 	if (desc.m_data && desc.m_memoryUsage == MemoryUsage::Dynamic) {
@@ -1443,6 +1452,14 @@ Renderer& Renderer::AddBackBufferToTextures()
 	return *this;
 }
 
+Renderer& Renderer::HandleStateDecay(std::vector<Resource*> resources)
+{
+	for (Resource* rsc : resources) {
+		rsc->m_currentState = (int)ResourceStates::Common;
+	}
+
+	return *this;
+}
 
 Renderer& Renderer::WaitForOtherQueue(CommandListType waitingType, Fence* otherQFence)
 {

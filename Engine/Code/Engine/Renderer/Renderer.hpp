@@ -108,6 +108,12 @@ public:
 
 	BitmapFont* CreateOrGetBitmapFont(char const* sourcePath);
 	Renderer& AddBackBufferToTextures();
+	/// <summary>
+	/// Set the state of the resources on the vector back to common. This must be hanlde by the game if at all
+	/// </summary>
+	/// <param name="resources"></param>
+	/// <returns></returns>
+	Renderer& HandleStateDecay(std::vector<Resource*> resources);
 
 	/// <summary>
 	/// Use this for waiting on a fence that is executing on another queue
