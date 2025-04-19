@@ -3,8 +3,7 @@
 
 Buffer::~Buffer()
 {
-	delete m_rsc;
-	m_rsc = nullptr;
+
 }
 
 void Buffer::CopyToBuffer(void* data, size_t size)
@@ -16,25 +15,17 @@ void Buffer::CopyToBuffer(void* data, size_t size)
 
 	void* pMap = nullptr;
 
-	Map(pMap);
+	Map(pMap, 0, m_desc.m_size);
 	memcpy(pMap, data, size);
 	Unmap();
 }
 
-void Buffer::Map(void*& mapSource, size_t beginRange, size_t endRange)
-{
-	m_rsc->Map(mapSource, beginRange, endRange);
-}
 
-void Buffer::Unmap()
-{
-	m_rsc->Unmap();
-}
 
 BufferView Buffer::GetBufferView() const
 {
 	BufferView retView = {};
-	retView.m_bufferAddr = m_rsc->GetGPUAddress();
+	retView.m_bufferAddr = GetGPUAddress();
 	retView.m_stride.m_strideBytes = m_desc.m_stride.m_strideBytes;
 	retView.m_sizeBytes = m_desc.m_size;
 	retView.m_elemCount = m_elemCount;
@@ -44,15 +35,15 @@ BufferView Buffer::GetBufferView() const
 BufferView Buffer::GetIndexBufferView() const
 {
 	BufferView retView = {};
-	retView.m_bufferAddr = m_rsc->GetGPUAddress();
+	retView.m_bufferAddr = GetGPUAddress();
 	retView.m_stride.m_format = m_desc.m_stride.m_format;
 	retView.m_sizeBytes = m_desc.m_size;
 	return retView;
 }
 
-Buffer::Buffer(BufferDesc const& bufferDesc, Resource* bufferRsc) :
-	m_desc(bufferDesc),
-	m_rsc(bufferRsc)
+Buffer::Buffer(BufferDesc const& bufferDesc) :
+	Resource(bufferDesc.m_debugName),
+	m_desc(bufferDesc)
 {
 	m_elemCount = m_desc.m_size / m_desc.m_stride.m_strideBytes;
 }

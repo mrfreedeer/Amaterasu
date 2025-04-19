@@ -2,6 +2,7 @@
 #include "Engine/Math/IntVec2.hpp"
 #include "Engine/Core/Rgba8.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
+#include "Engine/Renderer/Interfaces/Resource.hpp"
 #include <vector>
 #include <string>
 
@@ -39,12 +40,9 @@ struct TextureDesc {
 };
 
 
-class Texture {
+class Texture : public Resource {
 	friend class Renderer;
 public:
-	ResourceView* GetRenderTargetView() const;
-	ResourceView* GetDepthStencilView() const;
-	ResourceView* GetShaderResourceView() const;
 	TextureFormat GetFormat() const { return m_info.m_format; }
 	TextureFormat GetClearFormat() const { return m_info.m_clearFormat; }
 	bool IsRenderTargetCompatible() const { return m_info.m_bindFlags & RESOURCE_BIND_RENDER_TARGET_BIT; }
@@ -55,11 +53,10 @@ public:
 	IntVec2 GetDimensions() const { return m_info.m_dimensions; }
 	char const* GetDebugName() const { return m_info.m_name.c_str(); }
 private:
-	Texture(){};
+	Texture(): Resource("Unnamed Texture"){};
 	Texture(TextureDesc const& createInfo);
 	~Texture();
 private:
-	Resource* m_rsc = nullptr;
 	Resource* m_uploadRsc = nullptr;
 	TextureDesc m_info = {};
 

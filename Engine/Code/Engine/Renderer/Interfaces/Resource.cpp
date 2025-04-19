@@ -12,6 +12,17 @@ void Resource::Unmap()
 	m_rawRsc->Unmap(0, nullptr);
 }
 
+TransitionBarrier Resource::GetTransitionBarrier(ResourceStates afterState)
+{
+	TransitionBarrier outBarrier = {};
+
+	outBarrier.m_before = (ResourceStates)m_currentState;
+	outBarrier.m_after = afterState;
+	outBarrier.m_rsc = this;
+
+	return outBarrier;
+}
+
 Resource::~Resource()
 {
 	DX_SAFE_RELEASE(m_rawRsc);

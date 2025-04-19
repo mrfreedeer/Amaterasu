@@ -12,23 +12,31 @@ struct ResourceView {
 	bool m_valid = false;
 };
 
+struct TransitionBarrier {
+	ResourceStates m_before = ResourceStates::Common;
+	ResourceStates m_after = ResourceStates::Common;
+	Resource* m_rsc = nullptr;
+};
+
 class Resource {
 	friend class Renderer;
 	friend class CommandList;
 public:
-	~Resource();
-	ResourceView* GetDepthStencilView() const { return m_dsv; }
-	ResourceView* GetShaderResourceView() const { return m_srv; }
-	ResourceView* GetConstantBufferView() const { return m_cbv; }
-	ResourceView* GetRenderTargetView() const { return m_rtv; }
-	ResourceView* GetUnorderedAccessView() const { return m_uav; }
-	size_t GetGPUAddress() const { return m_rawRsc->GetGPUVirtualAddress();}
-	void Map(void*& mapSource, size_t beginRange, size_t endRange);
-	void Unmap();
+	virtual ~Resource();
+	virtual ResourceView* GetDepthStencilView() const { return m_dsv; }
+	virtual ResourceView* GetShaderResourceView() const { return m_srv; }
+	virtual ResourceView* GetConstantBufferView() const { return m_cbv; }
+	virtual ResourceView* GetRenderTargetView() const { return m_rtv; }
+	virtual ResourceView* GetUnorderedAccessView() const { return m_uav; }
+	virtual size_t GetGPUAddress() const { return m_rawRsc->GetGPUVirtualAddress(); }
+	virtual void Map(void*& mapSource, size_t beginRange, size_t endRange);
+	virtual void Unmap();
 
-private:
-	Resource(char const* debugName): m_debugName(debugName) {}
-private:
+	virtual TransitionBarrier GetTransitionBarrier(ResourceStates afterState);
+
+protected:
+	Resource(char const* debugName) : m_debugName(debugName) {}
+protected:
 	ID3D12Resource2* m_rawRsc = nullptr;
 	ResourceView* m_dsv = nullptr;
 	ResourceView* m_uav = nullptr;

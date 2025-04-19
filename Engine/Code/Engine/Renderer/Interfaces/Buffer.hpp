@@ -27,14 +27,13 @@ struct BufferView {
 	size_t m_elemCount = 0;
 };
 
-class Buffer {
+class Buffer : public Resource {
 	friend class Renderer;
 	friend class CommandList;
 public:
 	~Buffer();
 	void CopyToBuffer(void* data, size_t size);
-	void Map(void*& mapSource, size_t beginRange = 0, size_t endRange = 0);
-	void Unmap();
+
 	/// <summary>
 	/// Get size in bytes
 	/// </summary>
@@ -43,14 +42,11 @@ public:
 	MemoryUsage GetMemoryUsage() const { return m_desc.m_memoryUsage; }
 	BufferView GetBufferView() const;
 	BufferView GetIndexBufferView() const;
-	ResourceView* GetShaderResourceView() const { return m_rsc->GetShaderResourceView(); }
-	ResourceView* GetConstantBufferView() const { return m_rsc->GetConstantBufferView(); }
-	size_t GetGPUAddress() const { return m_rsc->GetGPUAddress(); }
-private:
-	Buffer(BufferDesc const& bufferDesc, Resource* bufferRsc);
 
 private:
-	Resource* m_rsc = nullptr;
+	Buffer(BufferDesc const& bufferDesc);
+
+private:
 	BufferDesc m_desc = {};
 	size_t m_elemCount = 0;
 };

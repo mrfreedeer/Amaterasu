@@ -197,6 +197,37 @@ enum class DescriptorHeapType : uint8_t {
 	UNDEFINED = 255,
 };
 
+// Wrapping for future APIs, and so I can cast directly to an API's enum
+enum ResourceStates
+{
+	Common = 0,
+	VertexAndCBuffer = 0x1,
+	IndexBuffer = 0x2,
+	RenderTarget = 0x4,
+	UnorderedAccess = 0x8,
+	DepthWrite = 0x10,
+	DepthRead = 0x20,
+	NonPixelRsc = 0x40,
+	PixelRsc = 0x80,
+	/*D3D12_RESOURCE_STATE_STREAM_OUT = 0x100,
+	D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT = 0x200,*/
+	CopyDest = 0x400,
+	CopySrc = 0x800,
+	//D3D12_RESOURCE_STATE_RESOLVE_DEST = 0x1000,
+	//D3D12_RESOURCE_STATE_RESOLVE_SOURCE = 0x2000,
+	//D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE = 0x400000,
+	//D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE = 0x1000000,
+	//D3D12_RESOURCE_STATE_GENERIC_READ = (((((0x1 | 0x2) | 0x40) | 0x80) | 0x200) | 0x800),
+	Present = 0,
+	//D3D12_RESOURCE_STATE_PREDICATION = 0x200,
+	//D3D12_RESOURCE_STATE_VIDEO_DECODE_READ = 0x10000,
+	//D3D12_RESOURCE_STATE_VIDEO_DECODE_WRITE = 0x20000,
+	//D3D12_RESOURCE_STATE_VIDEO_PROCESS_READ = 0x40000,
+	//D3D12_RESOURCE_STATE_VIDEO_PROCESS_WRITE = 0x80000,
+	//D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ = 0x200000,
+	//D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE = 0x800000
+};
+
 // ENUM for getting descriptor table param index
 // Unbounded model buffers
 // Unbounded camera buffers
