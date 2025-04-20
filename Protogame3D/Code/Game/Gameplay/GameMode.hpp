@@ -11,6 +11,8 @@
 class Game;
 class Fence;
 class CommandList;
+class Resource;
+
 class GameMode {
 public:
 	GameMode(Game* game, Vec2 const& UISize) : m_game(game), m_UISize(UISize) { m_UICamera.SetOrthoView(Vec2::ZERO, UISize); }
@@ -34,9 +36,13 @@ protected:
 	Game* m_game = nullptr;
 	RenderContext* m_renderContext = nullptr;
 	Fence* m_copyFence = nullptr;
+	Fence* m_frameFence = nullptr;
 	CommandList** m_copyCmdLists = nullptr;
 	Texture* m_renderTarget = nullptr;
 	Texture* m_depthTarget = nullptr;
+	Buffer* m_UICameraBuffer = nullptr;
+	Buffer* m_worldCameraBuffer = nullptr;
+	std::vector<Resource*> m_resources;
 	Camera m_worldCamera;
 	Camera m_UICamera;
 	Vec2 m_UISize = {};

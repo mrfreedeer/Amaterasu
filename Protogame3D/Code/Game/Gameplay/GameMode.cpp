@@ -1,5 +1,6 @@
 #include "Engine/Renderer/Renderer.hpp"
 #include "Engine/Renderer/DebugRendererSystem.hpp"
+#include "Engine/Renderer/Interfaces/Buffer.hpp"
 #include "Game/Gameplay/GameMode.hpp"
 #include "Game/Framework/GameCommon.hpp"
 
@@ -29,7 +30,6 @@ void GameMode::Startup()
 
 	m_renderTarget = g_theRenderer->CreateTexture(defaultRtDesc);
 
-
 	TextureDesc defaultDrtDesc = {};
 	defaultDrtDesc.m_bindFlags = ResourceBindFlagBit::RESOURCE_BIND_SHADER_RESOURCE_BIT | ResourceBindFlagBit::RESOURCE_BIND_DEPTH_STENCIL_BIT;
 	defaultDrtDesc.m_clearFormat = TextureFormat::D24_UNORM_S8_UINT;
@@ -39,6 +39,10 @@ void GameMode::Startup()
 	defaultDrtDesc.m_stride = sizeof(float);
 
 	m_depthTarget = g_theRenderer->CreateTexture(defaultDrtDesc);
+
+	//// Add these to resource vector to better handle state decay
+	//m_resources.push_back(m_renderTarget);
+	//m_resources.push_back(m_depthTarget);
 }
 
 void GameMode::Update(float deltaSeconds)
@@ -75,11 +79,24 @@ void GameMode::Shutdown()
 	delete m_renderContext;
 	m_renderContext = nullptr;
 	
+	for (unsigned int listIndex = 0; listIndex < g_theRenderer->GetBackBufferCount(); listIndex++) {
+		delete m_copyCmdLists[listIndex];
+		m_copyCmdLists[listIndex] = nullptr;
+	}
+
 	delete[] m_copyCmdLists;
-	m_copyCmdLists = nullptr;
 
 	delete m_copyFence;
 	m_copyFence = nullptr;
+
+	delete m_frameFence;
+	m_frameFence = nullptr;
+
+	delete m_worldCameraBuffer;
+	m_worldCameraBuffer = nullptr;
+
+	delete m_UICameraBuffer;
+	m_UICameraBuffer = nullptr;
 }
 
 void GameMode::UpdateDeveloperCheatCodes(float deltaSeconds)

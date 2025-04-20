@@ -76,13 +76,17 @@ void AttractScreenMode::Startup()
 
 	// Alpha for font rendering
 	psoDesc.m_blendModes[0] = BlendMode::ALPHA;
+	psoDesc.m_debugName ="Alpha2D";
 	m_alphaDefault2D = g_theRenderer->CreatePipelineState(psoDesc);
+
+	AABB2 UICamBounds = m_UICamera.GetCameraBounds();
+	Vec2 camSize = UICamBounds.GetDimensions();
 
 	Vertex_PCU triangleVertices[] =
 	{
-		Vertex_PCU(Vec3(-0.25f, -0.25f, 0.0f), Rgba8(255, 255, 255, 255), Vec2(0.0f, 0.0f)),
-		Vertex_PCU(Vec3(0.25f, -0.25f, 0.0f), Rgba8(255, 255, 255, 255), Vec2(1.0f, 0.0f)),
-		Vertex_PCU(Vec3(0.0f, 0.25f, 0.0f), Rgba8(255, 255, 255, 255), Vec2(0.5f, 1.0f))
+		Vertex_PCU(Vec3(camSize.x * 0.25f, camSize.y * 0.25f, 0.5f), Rgba8(255, 0, 0, 255), Vec2(0.0f, 0.0f)),
+		Vertex_PCU(Vec3(camSize.x * 0.75f, camSize.y * 0.25f, 0.5f), Rgba8(0, 255, 0, 255), Vec2(1.0f, 0.0f)),
+		Vertex_PCU(Vec3(camSize.x * 0.5f, camSize.y * 0.75f, 0.5f), Rgba8(0, 0, 255, 255), Vec2(0.5f, 1.0f))
 	};
 	BufferDesc bufferDesc = {};
 	bufferDesc.m_data = triangleVertices;
@@ -92,6 +96,7 @@ void AttractScreenMode::Startup()
 	bufferDesc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
 
 	m_triangleVertsBuffer = g_theRenderer->CreateBuffer(bufferDesc);
+	m_resources.push_back(m_triangleVertsBuffer);
 
 	bufferDesc.m_memoryUsage = MemoryUsage::Dynamic;
 	Buffer* intermediateBuffer = g_theRenderer->CreateBuffer(bufferDesc);
@@ -100,6 +105,7 @@ void AttractScreenMode::Startup()
 	copyCmdList->CopyBuffer(intermediateBuffer, m_triangleVertsBuffer);
 
 	m_copyFence = g_theRenderer->CreateFence(CommandListType::COPY);
+	m_frameFence = g_theRenderer->CreateFence(CommandListType::DIRECT);
 
 	copyCmdList->Close();
 	g_theRenderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
@@ -112,9 +118,25 @@ void AttractScreenMode::Startup()
 
 	delete intermediateBuffer;
 
+	// Create descriptors for resources
 	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+	DescriptorHeap* resourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	D3D12_CPU_DESCRIPTOR_HANDLE nextSamplerHandle = samplerHeap->GetNextCPUHandle();
 	m_defaultSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::BILINEARCLAMP);
+
+	BufferDesc cameraBuffDesc = {};
+	CameraConstants cameraConstants = m_UICamera.GetCameraConstants();
+	cameraBuffDesc.m_data = &cameraConstants;
+	cameraBuffDesc.m_debugName = "UICamConst";
+	cameraBuffDesc.m_memoryUsage = MemoryUsage::Dynamic;
+	cameraBuffDesc.m_size = sizeof(cameraConstants);
+	cameraBuffDesc.m_stride.m_strideBytes = sizeof(CameraConstants);
+	cameraBuffDesc.m_type = BufferType::Constant;
+
+	m_UICameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
+	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, m_UICameraBuffer);
+	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultModelBuffer());
+	g_theRenderer->CreateShaderResourceView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultTexture());
 
 	// It's expected that the cmd list will be closed
 	m_renderContext->CloseAll();
@@ -165,12 +187,17 @@ void AttractScreenMode::Render()
 		cmdList->ResourceBarrier(2, resourceBarriers);
 
 		cmdList->SetTopology(TopologyType::TRIANGLELIST);
-		cmdList->ClearRenderTarget(m_renderTarget, Rgba8::BLACK);
+		cmdList->ClearRenderTarget(m_renderTarget, Rgba8::BLUE);
+		cmdList->ClearDepthStencilView(m_depthTarget, 1.0f);
 		cmdList->BindPipelineState(m_opaqueDefault2D);
 		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
-		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, cbvSRVUAVHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
-		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(2), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, cbvSRVUAVHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(1), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_TEXTURES, cbvSRVUAVHeap->GetGPUHandleAtOffset(2), PipelineType::Graphics);
 		cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+
+		unsigned int drawConstants[16] = {0};
+		cmdList->SetGraphicsRootConstants(16, drawConstants);
 
 		cmdList->SetVertexBuffers(&m_triangleVertsBuffer, 1);
 		cmdList->DrawInstance(3, 1, 0, 0);
@@ -218,6 +245,11 @@ void AttractScreenMode::Render()
 	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
 
 	g_theRenderer->Present();
+
+	unsigned int waitVal = m_frameFence->Signal();
+	m_frameFence->Wait(waitVal);
+
+	g_theRenderer->HandleStateDecay(m_resources);
 }
 
 
@@ -237,6 +269,9 @@ void AttractScreenMode::Shutdown()
 
     delete m_defaultSampler;
     m_defaultSampler = nullptr;
+
+	
+	GameMode::Shutdown();
 }
 
 void AttractScreenMode::UpdateInput(float deltaSeconds)
