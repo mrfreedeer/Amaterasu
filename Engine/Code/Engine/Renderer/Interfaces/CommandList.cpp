@@ -7,6 +7,7 @@
 #include "Engine/Renderer/Camera.hpp"
 #include "Engine/Core/Rgba8.hpp"
 #include "Engine/Math/IntVec3.hpp"
+#include "Engine/Math/AABB2.hpp"
 #include "Engine/Renderer/D3D12/D3D12TypeConversions.hpp"
 
 CommandList::CommandList(CommandListDesc const& desc) :
@@ -24,8 +25,10 @@ CommandList::~CommandList()
 CommandList& CommandList::Reset(PipelineState* initialState /*= nullptr*/)
 {
 	ID3D12PipelineState* pso = (initialState) ? initialState->m_pso : nullptr;
-	m_cmdAllocator->Reset();
-	m_cmdList->Reset(m_cmdAllocator, pso);
+	HRESULT resetStatus = m_cmdAllocator->Reset();
+	ThrowIfFailed(resetStatus, "FAILED TO RESET COMMAND ALLOC");
+	resetStatus = m_cmdList->Reset(m_cmdAllocator, pso);
+	ThrowIfFailed(resetStatus, "FAILED TO RESET COMMAND LIST");
 
 	return *this;
 }
@@ -226,6 +229,34 @@ CommandList& CommandList::SetDescriptorTable(unsigned int paramIndex, D3D12_GPU_
 CommandList& CommandList::SetGraphicsRootConstants(unsigned int count, unsigned int* constants)
 {
 	m_cmdList->SetGraphicsRoot32BitConstants(PARAM_ROOT_CONSTANTS, count, constants, 0);
+	return *this;
+}
+
+CommandList& CommandList::SetViewport(AABB2 const& viewport)
+{
+	D3D12_VIEWPORT apiViewport = {viewport.m_mins.x, viewport.m_mins.y, viewport.m_maxs.x, viewport.m_maxs.y};
+	m_cmdList->RSSetViewports(1, &apiViewport);
+	return *this;
+}
+
+CommandList& CommandList::SetViewport(Vec2 const& viewportMin, Vec2 const& viewportMax)
+{
+	D3D12_VIEWPORT apiViewport = { viewportMin.x, viewportMin.y, viewportMax.x, viewportMax.y };
+	m_cmdList->RSSetViewports(1, &apiViewport);
+	return *this;
+}
+
+CommandList& CommandList::SetScissorRect(AABB2 const& rect)
+{
+	D3D12_RECT apiRect = { (LONG)rect.m_mins.x, (LONG)rect.m_mins.y, (LONG)rect.m_maxs.x, (LONG)rect.m_maxs.y };
+	m_cmdList->RSSetScissorRects(1, &apiRect);
+	return *this;
+}
+
+CommandList& CommandList::SetScissorRect(Vec2 const& rectMin, Vec2 const& rectMax)
+{
+	D3D12_RECT apiRect = { (LONG)rectMin.x, (LONG)rectMin.y, (LONG)rectMax.x, (LONG)rectMax.y };
+	m_cmdList->RSSetScissorRects(1, &apiRect);
 	return *this;
 }
 
