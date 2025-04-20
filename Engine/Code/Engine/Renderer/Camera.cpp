@@ -121,6 +121,15 @@ Mat44 Camera::GetRenderMatrix() const
 	return Mat44(m_iBasis, m_jBasis, m_kBasis, Vec3::ZERO);
 }
 
+CameraConstants Camera::GetCameraConstants() const
+{
+	CameraConstants constants = {};
+	constants.ProjectionMatrix = GetProjectionMatrix();
+	constants.ViewMatrix = GetViewMatrix();
+
+	return constants;
+}
+
 Mat44 Camera::GetOrthoMatrix() const
 {
 	return Mat44::CreateOrthoProjection(bottomLeft.x, topRight.x, bottomLeft.y, topRight.y, 0.0f, 1.0f);

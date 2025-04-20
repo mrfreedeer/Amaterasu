@@ -13,7 +13,7 @@ struct CameraConstants
 
 struct ModelConstants
 {
-	Mat44 ModelMatrix;
-	Rgba8 ModelColor;
+	Mat44 ModelMatrix = Mat44();
+	float ModelColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 	float ModelPadding[4];
 };

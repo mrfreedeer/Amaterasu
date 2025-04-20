@@ -5,7 +5,9 @@
 #include "Engine/Math/AABB2.hpp"
 #include "Engine/Math/EulerAngles.hpp"
 #include "Engine/Math/AABB2.hpp"
+#include "Engine/Renderer/ConstantBuffers.hpp"
 
+struct CameraConstants;
 
 class Texture;
 enum class CameraMode {
@@ -46,6 +48,7 @@ public:
 	Mat44 GetRenderMatrix() const;
 	Vec3 const GetViewPosition() const { return m_viewPosition; }
 	EulerAngles const GetViewOrientation() const { return m_viewOrientation; }
+	CameraConstants GetCameraConstants() const;
 
 	AABB2 GetViewport() const { return m_viewPort; }
 	AABB2 const GetCameraBounds() const { return AABB2(bottomLeft, topRight); }
