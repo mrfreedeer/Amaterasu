@@ -266,6 +266,7 @@ Renderer& Renderer::Startup()
 	modelBufDesc.m_memoryUsage = MemoryUsage::Dynamic;
 	modelBufDesc.m_size = sizeof(ModelConstants);
 	modelBufDesc.m_stride.m_strideBytes = sizeof(ModelConstants);
+	modelBufDesc.m_type = BufferType::Constant;
 
 	m_defaultModelBufferUpload = CreateBuffer(modelBufDesc);
 	modelBufDesc.m_memoryUsage = MemoryUsage::Default;
@@ -340,7 +341,7 @@ Renderer& Renderer::Shutdown()
 
 Renderer& Renderer::BeginFrame()
 {
-	if (m_defaultModelBufferUpload) {delete m_defaultModelBufferUpload; m_defaultModelBufferUpload = nullptr;};
+	if (m_defaultModelBufferUpload) { delete m_defaultModelBufferUpload; m_defaultModelBufferUpload = nullptr; };
 	BeginFrameImGui();
 	return *this;
 }
@@ -442,7 +443,7 @@ void Renderer::CreateDefaultRootSignature()
 	// Legacy will used root parameter constants for draw constants
 	rootParams[7].InitAsConstants(16, 0, 4);
 
-	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignDesc(8, rootParams);
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignDesc(_countof(rootParams), rootParams);
 	rootSignDesc.Desc_1_2.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	ID3DBlob* pSerializedRootSig = nullptr;
 	ID3DBlob* pErrorBlob = nullptr;
@@ -559,6 +560,7 @@ Texture* Renderer::CreateTextureFromImage(Image const& image)
 	ci.m_dimensions = image.GetDimensions();
 	ci.m_initialData = image.GetRawData();
 	ci.m_stride = sizeof(Rgba8);
+	ci.m_bindFlags = ResourceBindFlagBit::RESOURCE_BIND_SHADER_RESOURCE_BIT;
 
 	Texture* newTexture = CreateTexture(ci);
 
@@ -879,6 +881,12 @@ void Renderer::CompileShader(Shader* shader)
 	wSrc = nullptr;
 }
 
+size_t Renderer::AlignToCBufferStride(size_t size) const
+{
+	size_t newSize = (size & ~0xFF) + 0x100;
+	return newSize;
+}
+
 Renderer& Renderer::RenderImGui(CommandList& cmdList, Texture* renderTarget)
 {
 #if defined(ENGINE_USE_IMGUI)
@@ -1027,8 +1035,10 @@ ResourceView* Renderer::CreateShaderResourceView(size_t handle, Texture* texture
 	if (texture->IsShaderResourceCompatible()) {
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-		srvDesc.Format = LocalToD3D12(texture->GetFormat());
+		srvDesc.Format = LocalToColourD3D12(texture->GetFormat());
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = 1;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
 		ResourceView* newSRV = new ResourceView();
 		newSRV->m_descriptor = { handle };
@@ -1298,9 +1308,15 @@ Sampler* Renderer::CreateSampler(size_t handle, SamplerMode samplerMode)
 Buffer* Renderer::CreateBuffer(BufferDesc const& desc)
 {
 	Buffer* newBuffer = new Buffer(desc);
+	size_t alignedSize = desc.m_size;
+
+	if (desc.m_type == BufferType::Constant) {
+		alignedSize = AlignToCBufferStride(desc.m_size);
+		newBuffer->m_desc.m_size = alignedSize;
+	}
 
 	D3D12_HEAP_PROPERTIES heapType = CD3DX12_HEAP_PROPERTIES(LocalToD3D12(desc.m_memoryUsage));
-	D3D12_RESOURCE_DESC1 rscDesc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, desc.m_size, 1, 1, 1,
+	D3D12_RESOURCE_DESC1 rscDesc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, alignedSize, 1, 1, 1,
 		DXGI_FORMAT_UNKNOWN, 1, 0, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
 
 	D3D12_RESOURCE_STATES initialState = (desc.m_memoryUsage == MemoryUsage::Dynamic) ? D3D12_RESOURCE_STATE_COPY_SOURCE : D3D12_RESOURCE_STATE_COMMON;
@@ -1545,6 +1561,9 @@ RenderContext::~RenderContext()
 
 RenderContext& RenderContext::BeginCamera(Camera const& camera)
 {
+	Window* window = Window::GetWindowContext();
+	IntVec2 windowDims = window->GetClientDimensions();
+
 	DescriptorHeap* rtvHeap = m_descriptorSet->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
 	DescriptorHeap* dsvHeap = m_descriptorSet->GetDescriptorHeap(DescriptorHeapType::DepthStencilView);
 	Renderer* renderer = m_config.m_renderer;
@@ -1570,6 +1589,13 @@ RenderContext& RenderContext::BeginCamera(Camera const& camera)
 	CommandList* cmdList = GetCommandList();
 	cmdList->SetRenderTargets(rtCount, camera.m_colorTargets, true, camera.m_depthTarget);
 
+	Vec2 floatWindowDims = Vec2(windowDims);
+	AABB2 cameraViewport = camera.GetViewport();
+	Vec2 viewportMins = cameraViewport.m_mins * floatWindowDims;
+	Vec2 viewportMaxs = cameraViewport.m_maxs * floatWindowDims;
+
+	cmdList->SetViewport(viewportMins, viewportMaxs)
+		.SetScissorRect(viewportMins, viewportMaxs);
 	return *this;
 }
 
@@ -1581,7 +1607,7 @@ RenderContext& RenderContext::EndCamera(Camera const& camera)
 
 RenderContext& RenderContext::EndFrame()
 {
-	m_currentIndex = (m_currentIndex + 1) % m_backBufferCount; 
+	m_currentIndex = (m_currentIndex + 1) % m_backBufferCount;
 	return*this;
 }
 
@@ -1595,14 +1621,14 @@ RenderContext& RenderContext::Execute()
 
 CommandList* RenderContext::GetCommandList()
 {
-	 return m_cmdList[m_currentIndex];
+	return m_cmdList[m_currentIndex];
 }
 
 RenderContext& RenderContext::Close()
 {
 	CommandList* cmdList = GetCommandList();
 	cmdList->Close();
-		
+
 	return *this;
 }
 

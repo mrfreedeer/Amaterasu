@@ -99,6 +99,7 @@ public:
 
 	//------------------------------ Buffers -----------------------------
 	Buffer* CreateBuffer(BufferDesc const& desc);
+	Buffer* GetDefaultModelBuffer() const { return m_defaultModelBuffer; }
 
 	//--------------------------- Shaders/PSO ----------------------------
 	Shader* CreateOrGetShader(ShaderDesc const& desc);
@@ -158,6 +159,8 @@ private:
 
 	BitmapFont* CreateBitmapFont(char const* sourcePath);
 	void CompileShader(Shader* shader);
+
+	size_t AlignToCBufferStride(size_t size) const;
 
 private:
 	// LiveObjectReporter must be first ALWAYS!!!!!

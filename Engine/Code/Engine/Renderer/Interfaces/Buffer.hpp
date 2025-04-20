@@ -14,6 +14,7 @@ struct BufferDesc {
 		size_t m_strideBytes;
 	} m_stride;
 	MemoryUsage m_memoryUsage = MemoryUsage::Default;
+	BufferType m_type = BufferType::Vertex;
 };
 
 struct BufferView {

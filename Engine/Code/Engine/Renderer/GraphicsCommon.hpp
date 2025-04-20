@@ -43,7 +43,11 @@ enum ShaderType : unsigned int {
 };
 static const char* ShaderTypeStrings[] = { "VS", "PS", "GS", "MS", "HS", "DS", "CS"};
 
-
+enum class BufferType {
+	Vertex,
+	Constant,
+	Unordered
+};
 
 enum class PipelineType {
 	Graphics,
