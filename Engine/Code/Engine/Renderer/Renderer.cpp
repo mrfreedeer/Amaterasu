@@ -268,59 +268,52 @@ Renderer& Renderer::Startup()
 	modelBufDesc.m_stride.m_strideBytes = sizeof(ModelConstants);
 	modelBufDesc.m_type = BufferType::Constant;
 
-	m_defaultModelBufferUpload = CreateBuffer(modelBufDesc);
+	Buffer* modelBufferUpload = CreateBuffer(modelBufDesc);
 	modelBufDesc.m_memoryUsage = MemoryUsage::Default;
 	modelBufDesc.m_data = nullptr;
 
 	m_defaultModelBuffer = CreateBuffer(modelBufDesc);
 
-	m_rscCmdList->CopyBuffer(m_defaultModelBufferUpload, m_defaultModelBuffer);
+	m_rscCmdList->CopyBuffer(modelBufferUpload, m_defaultModelBuffer);
 	InitializeImGui();
 
-	Fence* initializationFence = CreateFence(CommandListType::DIRECT);
+	m_internalFence = CreateFence(CommandListType::DIRECT);
 
 	m_rscCmdList->Close();
 	ExecuteCmdLists(CommandListType::DIRECT, 1, &m_rscCmdList);
-	initializationFence->Signal();
-	initializationFence->Wait(initializationFence->GetFenceValue());
+	m_internalFence->Signal();
+	m_internalFence->Wait();
 
-	delete initializationFence;
 	m_rscCmdList->Reset();
 
-
+	delete modelBufferUpload;
 	return *this;
 }
 
 Renderer& Renderer::Shutdown()
 {
+	m_internalFence->Signal();
+	m_internalFence->Wait();
+
 	ShutdownImGui();
 
-	delete m_rscCmdList;
-	m_rscCmdList = nullptr;
+	delete m_ImGuiSrvDescHeap;
+	m_ImGuiSrvDescHeap = nullptr;
+	
+	m_currentBackBuffer = 0;
+
+	delete m_internalFence;
+	m_internalFence = nullptr;
 
 	delete m_defaultModelBuffer;
 	m_defaultModelBuffer = nullptr;
 
-	DX_SAFE_RELEASE(m_DXGIFactory);
-	DX_SAFE_RELEASE(m_swapChain);
-	DX_SAFE_RELEASE(m_defaultRootSig);
-
-	delete m_ImGuiSrvDescHeap;
-	m_ImGuiSrvDescHeap = nullptr;
-
-	delete m_graphicsQueue;
-	m_graphicsQueue = nullptr;
-
-	delete m_copyQueue;
-	m_copyQueue = nullptr;
-	m_currentBackBuffer = 0;
-
 	// Game Resources
-	for (int textureInd = 0; textureInd < m_loadedTextures.size(); textureInd++) {
-		Texture* tex = m_loadedTextures[textureInd];
-		DestroyTexture(tex);
+	for (int fontInd = 0; fontInd < m_loadedFonts.size(); fontInd++) {
+		BitmapFont* font = m_loadedFonts[fontInd];
+		delete font;
 	}
-	m_loadedTextures.clear();
+	m_loadedFonts.clear();
 
 	for (int shaderInd = 0; shaderInd < m_loadedShaders.size(); shaderInd++) {
 		Shader* shader = m_loadedShaders[shaderInd];
@@ -328,20 +321,31 @@ Renderer& Renderer::Shutdown()
 	}
 	m_loadedShaders.clear();
 
-	for (int fontInd = 0; fontInd < m_loadedFonts.size(); fontInd++) {
-		BitmapFont* font = m_loadedFonts[fontInd];
-		delete font;
+	for (int textureInd = 0; textureInd < m_loadedTextures.size(); textureInd++) {
+		Texture* tex = m_loadedTextures[textureInd];
+		DestroyTexture(tex);
 	}
-	m_loadedFonts.clear();
+	m_loadedTextures.clear();
+
+	delete m_rscCmdList;
+	m_rscCmdList = nullptr;
 
 	DX_SAFE_RELEASE(m_defaultRootSig);
+	DX_SAFE_RELEASE(m_swapChain);
+
+	delete m_copyQueue;
+	m_copyQueue = nullptr;
+
+	delete m_graphicsQueue;
+	m_graphicsQueue = nullptr;
+
+	DX_SAFE_RELEASE(m_DXGIFactory);
 	DX_SAFE_RELEASE(m_device);
 	return *this;
 }
 
 Renderer& Renderer::BeginFrame()
 {
-	if (m_defaultModelBufferUpload) { delete m_defaultModelBufferUpload; m_defaultModelBufferUpload = nullptr; };
 	BeginFrameImGui();
 	return *this;
 }
@@ -384,6 +388,7 @@ void Renderer::CreateDevice()
 		filter.DenyList.pIDList = hide;
 		d3dInfoQueue->AddStorageFilterEntries(&filter);
 	}
+	DX_SAFE_RELEASE(d3dInfoQueue);
 #endif
 }
 
@@ -916,10 +921,11 @@ void Renderer::EnableDebugLayer()
 	// Enable the debug layer (requires the Graphics Tools "optional feature").
 	// NOTE: Enabling the debug layer after device creation will invalidate the active device.
 	{
-		ComPtr<ID3D12Debug> debugController;
+		ID3D12Debug* debugController;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{
 			debugController->EnableDebugLayer();
+			debugController->Release();
 		}
 	}
 #endif
@@ -1405,11 +1411,11 @@ BitmapFont* Renderer::CreateOrGetBitmapFont(char const* sourcePath)
 	return CreateBitmapFont(sourcePath);
 }
 
-Fence* Renderer::CreateFence(CommandListType managerType, unsigned int initialValue /* = 0*/)
+Fence* Renderer::CreateFence(CommandListType managerType, unsigned int initialValue /* = 1*/)
 {
 	CommandQueue* fenceManager = GetCommandQueue(managerType);
 
-	Fence* outFence = new Fence(fenceManager, initialValue);
+	Fence* outFence = new Fence(fenceManager, initialValue, 2);
 
 	ThrowIfFailed(m_device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&outFence->m_fence)), "FAILED CREATING FENCE");
 
@@ -1505,7 +1511,7 @@ Renderer& Renderer::WaitForOtherQueue(CommandListType waitingType, Fence* otherQ
 		break;
 	}
 
-	waitingQueue->Wait(otherQFence, otherQFence->GetFenceValue());
+	waitingQueue->Wait(otherQFence, otherQFence->GetFenceValue() - 1);
 
 	return *this;
 }

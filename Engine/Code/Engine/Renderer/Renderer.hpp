@@ -76,7 +76,7 @@ public:
 	DescriptorSet* CreateDescriptorSet(unsigned int* descriptorCounts, bool isShaderVisible, char const* debugName = nullptr);
 	CommandList* CreateCommandList(CommandListDesc const& desc);
 	CommandQueue* CreateCommandQueue(CommandQueueDesc const& desc);
-	Fence* CreateFence(CommandListType managerType, unsigned int initialValue = 0);
+	Fence* CreateFence(CommandListType managerType, unsigned int initialValue = 1);
 	Renderer& CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* src, DescriptorHeap* dest, unsigned int offsetStart = 0, unsigned int offsetEnd = 0);
 	Renderer& ExecuteCmdLists(CommandListType type, unsigned int count, CommandList** cmdLists);
 
@@ -173,6 +173,7 @@ private:
 	DescriptorHeap* m_ImGuiSrvDescHeap = nullptr;
 	CommandQueue* m_graphicsQueue = nullptr;
 	CommandQueue* m_copyQueue = nullptr;
+	Fence* m_internalFence = nullptr;
 
 	unsigned int m_currentBackBuffer = 0;
 
@@ -190,7 +191,6 @@ private:
 
 	// Identity Matrix model buffer
 	Buffer* m_defaultModelBuffer = nullptr;
-	Buffer* m_defaultModelBufferUpload = nullptr;
 };
 
 struct RenderContextDesc {
