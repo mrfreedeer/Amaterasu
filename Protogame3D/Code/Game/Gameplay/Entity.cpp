@@ -13,6 +13,7 @@ Entity::Entity(Game* pointerToGame, Vec3 const& startingWorldPosition):
 Entity::~Entity()
 {
 	m_game = nullptr;
+	delete m_modelBuffer;
 }
 
 void Entity::Update(float deltaTime)

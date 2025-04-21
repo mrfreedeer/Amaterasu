@@ -109,9 +109,8 @@ void AttractScreenMode::Startup()
 
 	copyCmdList->Close();
 	g_theRenderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
-	unsigned int fenceVal = m_copyFence->Signal();
-
-	m_copyFence->Wait(fenceVal);
+	m_copyFence->Signal();
+	m_copyFence->Wait();
 
 	// Waiting for the copying to be done
 	g_theRenderer->WaitForOtherQueue(CommandListType::DIRECT, m_copyFence);
@@ -187,7 +186,7 @@ void AttractScreenMode::Render()
 		cmdList->ResourceBarrier(2, resourceBarriers);
 
 		cmdList->SetTopology(TopologyType::TRIANGLELIST);
-		cmdList->ClearRenderTarget(m_renderTarget, Rgba8::BLUE);
+		cmdList->ClearRenderTarget(m_renderTarget, Rgba8::BLACK);
 		cmdList->ClearDepthStencilView(m_depthTarget, 1.0f);
 		cmdList->BindPipelineState(m_opaqueDefault2D);
 		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
@@ -244,10 +243,10 @@ void AttractScreenMode::Render()
 
 	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
 
-	g_theRenderer->Present();
+	g_theRenderer->Present(1);
 
-	unsigned int waitVal = m_frameFence->Signal();
-	m_frameFence->Wait(waitVal);
+	m_frameFence->Signal();
+	m_frameFence->Wait();
 
 	g_theRenderer->HandleStateDecay(m_resources);
 }
@@ -255,6 +254,10 @@ void AttractScreenMode::Render()
 
 void AttractScreenMode::Shutdown()
 {
+	// Wait for things to finish rendering to destroy resources
+	m_frameFence->Signal();
+	m_frameFence->Wait();
+
 	delete m_opaqueDefault2D;
 	m_opaqueDefault2D = nullptr;
 
