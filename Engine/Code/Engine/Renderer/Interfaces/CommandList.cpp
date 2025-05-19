@@ -71,7 +71,9 @@ CommandList& CommandList::ResourceBarrier(unsigned int count, TransitionBarrier*
 		validBarrierCount++;
 	}
 
-	m_cmdList->ResourceBarrier(validBarrierCount, rscBarriers);
+	if (validBarrierCount) {
+		m_cmdList->ResourceBarrier(validBarrierCount, rscBarriers);
+	}
 	delete[] rscBarriers;
 
 	return *this;
