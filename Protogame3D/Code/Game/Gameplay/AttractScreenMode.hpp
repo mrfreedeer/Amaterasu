@@ -26,6 +26,8 @@ private:
 	Vec2 const GetIBasisForTextAnim();
 	Vec2 const GetJBasisForTextAnim();
 	void TransformText(Vec2 iBasis, Vec2 jBasis, Vec2 translation);
+	void CreateRendererObjects();
+	void CreateResources();
 
 private:
 	std::string m_currentText = "";
@@ -45,5 +47,6 @@ private:
 	PipelineState* m_alphaDefault2D = nullptr;
 	Texture* m_testTexture = nullptr;
 	Buffer* m_triangleVertsBuffer = nullptr;
+	Buffer* m_testTexBuffer = nullptr;
 	Sampler* m_defaultSampler = nullptr;
 };

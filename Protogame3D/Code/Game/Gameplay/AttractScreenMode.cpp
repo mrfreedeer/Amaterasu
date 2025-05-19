@@ -11,9 +11,8 @@ AttractScreenMode::~AttractScreenMode()
 
 }
 
-void AttractScreenMode::Startup()
+void AttractScreenMode::CreateRendererObjects()
 {
-	GameMode::Startup();
 	RenderContextDesc ctxDesc = {};
 	CommandListDesc cmdListDesc = {};
 	cmdListDesc.m_initialState = nullptr;
@@ -22,7 +21,7 @@ void AttractScreenMode::Startup()
 
 	ctxDesc.m_cmdListDesc = cmdListDesc;
 	ctxDesc.m_renderer = g_theRenderer;
-	
+
 	DescriptorHeapDesc heapDesc = {};
 	heapDesc.m_debugName = "AttractScreen Heap";
 	heapDesc.m_flags = DescriptorHeapFlags::ShaderVisible;
@@ -37,21 +36,10 @@ void AttractScreenMode::Startup()
 	cmdListDesc.m_type = CommandListType::COPY;
 	cmdListDesc.m_debugName = "AttractCopy";
 
-	m_copyCmdLists = new CommandList*[2];
+	m_copyCmdLists = new CommandList * [2];
 	// For double buffering
 	m_copyCmdLists[0] = g_theRenderer->CreateCommandList(cmdListDesc);
 	m_copyCmdLists[1] = g_theRenderer->CreateCommandList(cmdListDesc);
-
-	m_currentText = g_gameConfigBlackboard.GetValue("GAME_TITLE", "Protogame3D");
-	m_startTextColor = GetRandomColor();
-	m_endTextColor = GetRandomColor();
-	m_transitionTextColor = true;
-
-	if (g_sounds[GAME_SOUND::CLAIRE_DE_LUNE] != -1) {
-		g_soundPlaybackIDs[GAME_SOUND::CLAIRE_DE_LUNE] = g_theAudio->StartSound(g_sounds[GAME_SOUND::CLAIRE_DE_LUNE]);
-	}
-
-	DebugRenderClear();
 
 	ShaderPipeline defaultLegacy = g_theRenderer->GetEngineShader(EngineShaderPipelines::LegacyForward);
 	PipelineStateDesc psoDesc = {};
@@ -72,13 +60,17 @@ void AttractScreenMode::Startup()
 
 	m_opaqueDefault2D = g_theRenderer->CreatePipelineState(psoDesc);
 
-	m_testTexture = g_theRenderer->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png");
-
 	// Alpha for font rendering
 	psoDesc.m_blendModes[0] = BlendMode::ALPHA;
-	psoDesc.m_debugName ="Alpha2D";
+	psoDesc.m_debugName = "Alpha2D";
 	m_alphaDefault2D = g_theRenderer->CreatePipelineState(psoDesc);
+}
 
+
+
+void AttractScreenMode::CreateResources()
+{
+	// Test triangle
 	AABB2 UICamBounds = m_UICamera.GetCameraBounds();
 	Vec2 camSize = UICamBounds.GetDimensions();
 
@@ -95,17 +87,34 @@ void AttractScreenMode::Startup()
 	bufferDesc.m_size = sizeof(Vertex_PCU) * 3;
 	bufferDesc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
 
-	m_triangleVertsBuffer = g_theRenderer->CreateBuffer(bufferDesc);
-	m_resources.push_back(m_triangleVertsBuffer);
+	Buffer* intermTestTri = nullptr, *intermTestTex = nullptr;
+	m_triangleVertsBuffer = g_theRenderer->CreateDefaultBuffer(bufferDesc, &intermTestTri);
 
-	bufferDesc.m_memoryUsage = MemoryUsage::Dynamic;
-	Buffer* intermediateBuffer = g_theRenderer->CreateBuffer(bufferDesc);
+	
+	std::vector<Vertex_PCU> testTextVerts;
+	AABB2 testTextureAABB2(740.0f, 150.0f, 1040.0f, 450.f);
+	AddVertsForAABB2D(testTextVerts, testTextureAABB2, Rgba8());
+
+	BufferDesc testTexBufferDesc = {};
+	testTexBufferDesc.m_data = testTextVerts.data();
+	testTexBufferDesc.m_debugName = "TestAABBBuffer";
+	testTexBufferDesc.m_memoryUsage = MemoryUsage::Default;
+	testTexBufferDesc.m_size = sizeof(Vertex_PCU) * testTextVerts.size();
+	testTexBufferDesc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
+
+	m_testTexBuffer = g_theRenderer->CreateDefaultBuffer(testTexBufferDesc, &intermTestTex);
 
 	CommandList* copyCmdList = m_copyCmdLists[m_renderContext->GetBufferIndex()];
-	copyCmdList->CopyBuffer(intermediateBuffer, m_triangleVertsBuffer);
+	copyCmdList->CopyBuffer(intermTestTri, m_triangleVertsBuffer);
+	copyCmdList->CopyBuffer(intermTestTex, m_testTexBuffer);
+
+
+	m_testTexture = g_theRenderer->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png");
+
 
 	m_copyFence = g_theRenderer->CreateFence(CommandListType::COPY);
 	m_frameFence = g_theRenderer->CreateFence(CommandListType::DIRECT);
+	g_theRenderer->UploadPendingResources();
 
 	copyCmdList->Close();
 	g_theRenderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
@@ -115,7 +124,32 @@ void AttractScreenMode::Startup()
 	// Waiting for the copying to be done
 	g_theRenderer->WaitForOtherQueue(CommandListType::DIRECT, m_copyFence);
 
-	delete intermediateBuffer;
+	delete intermTestTri;
+	delete intermTestTex;
+
+	// Push into resource management vector
+	m_resources.push_back(m_triangleVertsBuffer);
+	m_resources.push_back(m_testTexBuffer);
+
+}
+
+void AttractScreenMode::Startup()
+{
+	GameMode::Startup();
+	
+	CreateRendererObjects();
+	CreateResources();
+	m_currentText = g_gameConfigBlackboard.GetValue("GAME_TITLE", "Protogame3D");
+	m_startTextColor = GetRandomColor();
+	m_endTextColor = GetRandomColor();
+	m_transitionTextColor = true;
+
+	if (g_sounds[GAME_SOUND::CLAIRE_DE_LUNE] != -1) {
+		g_soundPlaybackIDs[GAME_SOUND::CLAIRE_DE_LUNE] = g_theAudio->StartSound(g_sounds[GAME_SOUND::CLAIRE_DE_LUNE]);
+	}
+
+	DebugRenderClear();
+
 
 	// Create descriptors for resources
 	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
@@ -136,6 +170,7 @@ void AttractScreenMode::Startup()
 	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, m_UICameraBuffer);
 	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultModelBuffer());
 	g_theRenderer->CreateShaderResourceView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultTexture());
+	g_theRenderer->CreateShaderResourceView(resourcesHeap->GetNextCPUHandle().ptr, m_testTexture);
 
 	// It's expected that the cmd list will be closed
 	m_renderContext->CloseAll();
@@ -172,9 +207,10 @@ void AttractScreenMode::Render()
 
 	m_renderContext->Reset();
 
-	TransitionBarrier resourceBarriers[2] = {};
+	TransitionBarrier resourceBarriers[3] = {};
 	resourceBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::RenderTarget);
 	resourceBarriers[1] = m_depthTarget->GetTransitionBarrier(ResourceStates::DepthWrite);
+	resourceBarriers[2] = m_testTexture->GetTransitionBarrier(ResourceStates::PixelRsc);
 	CommandList* cmdList = m_renderContext->GetCommandList();
 
 
@@ -192,14 +228,16 @@ void AttractScreenMode::Render()
 		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
 		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, cbvSRVUAVHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
 		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(1), PipelineType::Graphics);
-		cmdList->SetDescriptorTable(PARAM_TEXTURES, cbvSRVUAVHeap->GetGPUHandleAtOffset(2), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_TEXTURES, cbvSRVUAVHeap->GetGPUHandleAtOffset(3), PipelineType::Graphics);
 		cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
 
 		unsigned int drawConstants[16] = {0};
 		cmdList->SetGraphicsRootConstants(16, drawConstants);
 
-		cmdList->SetVertexBuffers(&m_triangleVertsBuffer, 1);
-		cmdList->DrawInstance(3, 1, 0, 0);
+		/*cmdList->SetVertexBuffers(&m_triangleVertsBuffer, 1);
+		cmdList->DrawInstance(3, 1, 0, 0);*/
+		cmdList->SetVertexBuffers(&m_testTexBuffer, 1);
+		cmdList->DrawInstance(6, 1, 0, 0);
 
 		resourceBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::Common);
 		cmdList->ResourceBarrier(1, resourceBarriers);
@@ -269,6 +307,9 @@ void AttractScreenMode::Shutdown()
 
 	delete m_triangleVertsBuffer;
 	m_triangleVertsBuffer = nullptr;
+
+	delete m_testTexBuffer;
+	m_testTexBuffer = nullptr;
 
     delete m_defaultSampler;
     m_defaultSampler = nullptr;
