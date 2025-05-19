@@ -20,7 +20,7 @@ private:
 	BitmapFont(char const* fontFilePathNameWithNoExtension, Texture& fontTexture);
 	~BitmapFont(){};
 public:
-	Texture const& GetTexture() const;
+	Texture& GetTexture();
 
 	void AddVertsForText2D(std::vector<Vertex_PCU>& vertexArray, Vec2 const& textMins,
 		float cellHeight, std::string const& text, Rgba8 const& tint = Rgba8::WHITE, float cellAspect = CELL_ASPECT, int maxGlyphsToDraw = ARBITRARILY_LARGE_INT_VALUE);

@@ -10,7 +10,7 @@ BitmapFont::BitmapFont(char const* fontFilePathNameWithNoExtension, Texture& fon
 {
 }
 
-Texture const& BitmapFont::GetTexture() const
+Texture& BitmapFont::GetTexture()
 {
 	return m_fontGlyphsSpriteSheet.GetTexture();
 }
