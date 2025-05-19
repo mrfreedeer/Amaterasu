@@ -99,6 +99,15 @@ public:
 
 	//------------------------------ Buffers -----------------------------
 	Buffer* CreateBuffer(BufferDesc const& desc);
+	/// <summary>
+	/// Utility function to create intermediate and default buffer. 
+	/// There should be data, to copy into intermediate buffer
+	/// </summary>
+	/// <param name="desc"></param>
+	/// <param name="out_intermediate"></param>
+	/// <param name="out_default"></param>
+	/// <returns></returns>
+	Buffer* CreateDefaultBuffer(BufferDesc const& desc, Buffer** out_intermediate);
 	Buffer* GetDefaultModelBuffer() const { return m_defaultModelBuffer; }
 
 	//--------------------------- Shaders/PSO ----------------------------
@@ -110,7 +119,7 @@ public:
 	BitmapFont* CreateOrGetBitmapFont(char const* sourcePath);
 	Renderer& AddBackBufferToTextures();
 	/// <summary>
-	/// Set the state of the resources on the vector back to common. This must be hanlde by the game if at all
+	/// Set the state of the resources on the vector back to common. This must be handle by the game if at all
 	/// </summary>
 	/// <param name="resources"></param>
 	/// <returns></returns>
@@ -123,6 +132,7 @@ public:
 	Renderer& RenderImGui(CommandList& cmdList, Texture* renderTarget);
 	unsigned int GetCurrentBufferIndex() const { return m_currentBackBuffer; }
 	unsigned int GetBackBufferCount() const { return m_config.m_backBuffersCount; }
+	Renderer& UploadPendingResources();
 
 	Renderer& Present(unsigned int syncInterval = 0, unsigned int flags = 0);
 

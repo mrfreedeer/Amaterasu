@@ -390,6 +390,7 @@ void Renderer::CreateDevice()
 	}
 	DX_SAFE_RELEASE(d3dInfoQueue);
 #endif
+
 }
 
 void Renderer::CreateSwapChain()
@@ -909,6 +910,15 @@ Renderer& Renderer::RenderImGui(CommandList& cmdList, Texture* renderTarget)
 	return *this;
 }
 
+Renderer& Renderer::UploadPendingResources()
+{
+	CommandQueue* usedQueue = GetCommandQueue(CommandListType::DIRECT);
+	m_rscCmdList->Close();
+	usedQueue->ExecuteCommandLists(1, &m_rscCmdList);
+
+	return *this;
+}
+
 Renderer& Renderer::Present(unsigned int syncInterval, unsigned int flags)
 {
 	m_swapChain->Present(syncInterval, flags);
@@ -1340,6 +1350,16 @@ Buffer* Renderer::CreateBuffer(BufferDesc const& desc)
 	}
 
 	return newBuffer;
+}
+
+Buffer* Renderer::CreateDefaultBuffer(BufferDesc const& desc, Buffer** out_intermediate)
+{
+	BufferDesc intermediateDesc = desc;
+	intermediateDesc.m_memoryUsage = MemoryUsage::Dynamic;
+	intermediateDesc.m_debugName = "Intermediate Buffer";
+	*out_intermediate = CreateBuffer(intermediateDesc);
+
+	return CreateBuffer(desc);
 }
 
 Shader* Renderer::CreateOrGetShader(ShaderDesc const& desc)
