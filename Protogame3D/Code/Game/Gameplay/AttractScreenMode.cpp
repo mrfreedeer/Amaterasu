@@ -27,7 +27,7 @@ void AttractScreenMode::CreateRendererObjects()
 	heapDesc.m_flags = DescriptorHeapFlags::ShaderVisible;
 	heapDesc.m_numDescriptors = 128;
 	heapDesc.m_type = DescriptorHeapType::CBV_SRV_UAV;
-	unsigned int descriptorCounts[(int)DescriptorHeapType::NUM_TYPES] = { 128, 1, 1, 8 };
+	unsigned int descriptorCounts[(int)DescriptorHeapType::NUM_TYPES] = { 128, 2, 1, 8 };
 
 	ctxDesc.m_descriptorCounts = descriptorCounts;
 
@@ -109,12 +109,11 @@ void AttractScreenMode::CreateResources()
 	copyCmdList->CopyBuffer(intermTestTex, m_testTexBuffer);
 
 
-	m_testTexture = g_theRenderer->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png");
+	m_testTexture = g_theRenderer->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png", copyCmdList);
 
 
 	m_copyFence = g_theRenderer->CreateFence(CommandListType::COPY);
 	m_frameFence = g_theRenderer->CreateFence(CommandListType::DIRECT);
-	g_theRenderer->UploadPendingResources();
 
 	copyCmdList->Close();
 	g_theRenderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
@@ -130,6 +129,7 @@ void AttractScreenMode::CreateResources()
 	// Push into resource management vector
 	m_resources.push_back(m_triangleVertsBuffer);
 	m_resources.push_back(m_testTexBuffer);
+	m_resources.push_back(&g_squirrelFont->GetTexture());
 
 }
 
@@ -156,6 +156,8 @@ void AttractScreenMode::Startup()
 	DescriptorHeap* resourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	D3D12_CPU_DESCRIPTOR_HANDLE nextSamplerHandle = samplerHeap->GetNextCPUHandle();
 	m_defaultSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::BILINEARCLAMP);
+	nextSamplerHandle = samplerHeap->GetNextCPUHandle();
+	m_defaultTextSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::POINTCLAMP);
 
 	BufferDesc cameraBuffDesc = {};
 	CameraConstants cameraConstants = m_UICamera.GetCameraConstants();
@@ -171,6 +173,7 @@ void AttractScreenMode::Startup()
 	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultModelBuffer());
 	g_theRenderer->CreateShaderResourceView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultTexture());
 	g_theRenderer->CreateShaderResourceView(resourcesHeap->GetNextCPUHandle().ptr, m_testTexture);
+	g_theRenderer->CreateShaderResourceView(resourcesHeap->GetNextCPUHandle().ptr, &g_squirrelFont->GetTexture());
 
 	// It's expected that the cmd list will be closed
 	m_renderContext->CloseAll();
@@ -219,7 +222,7 @@ void AttractScreenMode::Render()
 		DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 		DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 		DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
-		cmdList->ResourceBarrier(2, resourceBarriers);
+		cmdList->ResourceBarrier(3, resourceBarriers);
 
 		cmdList->SetTopology(TopologyType::TRIANGLELIST);
 		cmdList->ClearRenderTarget(m_renderTarget, Rgba8::BLACK);
@@ -239,25 +242,7 @@ void AttractScreenMode::Render()
 		cmdList->SetVertexBuffers(&m_testTexBuffer, 1);
 		cmdList->DrawInstance(6, 1, 0, 0);
 
-		resourceBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::Common);
-		cmdList->ResourceBarrier(1, resourceBarriers);
-		//g_theRenderer->ClearScreen(Rgba8::BLACK);
-		//Material* def2DMat = g_theRenderer->GetDefaultMaterial(false);
-		//g_theRenderer->BindMaterial(def2DMat);
-		//g_theRenderer->SetBlendMode(BlendMode::ALPHA);
-		//if (m_useTextAnimation) {
-		//	RenderTextAnimation();
-		//}
-
-		//Texture* testTexture = g_theRenderer->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png");
-		//std::vector<Vertex_PCU> testTextVerts;
-		//AABB2 testTextureAABB2(740.0f, 150.0f, 1040.0f, 450.f);
-		//AddVertsForAABB2D(testTextVerts, testTextureAABB2, Rgba8());
-		//g_theRenderer->BindTexture(testTexture);
-		//g_theRenderer->DrawVertexArray((int)testTextVerts.size(), testTextVerts.data());
-		////g_theRenderer->BindTexture(nullptr);
-
-
+		
 	}
 	m_renderContext->EndCamera(m_UICamera);
 
@@ -311,6 +296,9 @@ void AttractScreenMode::Shutdown()
 	delete m_testTexBuffer;
 	m_testTexBuffer = nullptr;
 
+	delete m_textBuffer;
+	m_textBuffer = nullptr;
+
     delete m_defaultSampler;
     m_defaultSampler = nullptr;
 
@@ -339,13 +327,17 @@ void AttractScreenMode::UpdateInput(float deltaSeconds)
 	}
 }
 
-void AttractScreenMode::RenderUI() const
+void AttractScreenMode::RenderUI()
 {
 	m_renderContext->BeginCamera(m_UICamera);
-	if (m_useTextAnimation) {
+	{
+		if (m_useTextAnimation) {
 
-		RenderTextAnimation();
+			RenderTextAnimation();
+		}
 	}
+	m_renderContext->EndCamera(m_UICamera);
+
 
 	//AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
 	//AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
@@ -377,7 +369,6 @@ void AttractScreenMode::UpdateTextAnimation(float deltaTime, std::string text, V
 		usedTextColor.g = static_cast<unsigned char>(Interpolate(m_startTextColor.g, m_endTextColor.g, timeAsFraction));
 		usedTextColor.b = static_cast<unsigned char>(Interpolate(m_startTextColor.b, m_endTextColor.b, timeAsFraction));
 		usedTextColor.a = static_cast<unsigned char>(Interpolate(m_startTextColor.a, m_endTextColor.a, timeAsFraction));
-
 	}
 
 	g_squirrelFont->AddVertsForText2D(m_textAnimTriangles, Vec2::ZERO, m_textCellHeightAttractScreen, text, usedTextColor, 0.6f);
@@ -395,13 +386,56 @@ void AttractScreenMode::UpdateTextAnimation(float deltaTime, std::string text, V
 		m_timeTextAnimation = 0.0f;
 	}
 
+	// Create buffer if first time using it
+	size_t bufferSize = m_textAnimTriangles.size() * sizeof(Vertex_PCU);
+	if (!m_textBuffer) {
+		BufferDesc textBufDesc = {};
+		textBufDesc.m_data = m_textAnimTriangles.data();
+		textBufDesc.m_debugName = "TextAnim Buffer";
+		textBufDesc.m_memoryUsage = MemoryUsage::Dynamic;
+		textBufDesc.m_size = bufferSize;
+		textBufDesc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
+		textBufDesc.m_type = BufferType::Vertex;
+
+		m_textBuffer = g_theRenderer->CreateBuffer(textBufDesc);
+		m_resources.push_back(m_textBuffer);
+	}
+
+	m_textBuffer->CopyToBuffer(m_textAnimTriangles.data(), bufferSize);
 }
 
-void AttractScreenMode::RenderTextAnimation() const
+void AttractScreenMode::RenderTextAnimation()
 {
 	if (m_textAnimTriangles.size() > 0) {
-		//g_theRenderer->BindTexture(&g_squirrelFont->GetTexture());
-		//g_theRenderer->DrawVertexArray(int(m_textAnimTriangles.size()), m_textAnimTriangles.data());
+
+		m_UICamera.SetColorTarget(m_renderTarget);
+		m_UICamera.SetDepthTarget(m_depthTarget);
+
+		TransitionBarrier resourceBarriers[2] = {};
+		Texture* textTexture = &g_squirrelFont->GetTexture();
+
+		resourceBarriers[0] = m_textBuffer->GetTransitionBarrier(ResourceStates::VertexAndCBuffer);
+		CommandList* cmdList = m_renderContext->GetCommandList();
+
+		DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+		DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+		DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
+		cmdList->ResourceBarrier(1, resourceBarriers);
+
+		cmdList->SetTopology(TopologyType::TRIANGLELIST);
+		cmdList->BindPipelineState(m_alphaDefault2D);
+		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
+		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, cbvSRVUAVHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(1), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_TEXTURES, cbvSRVUAVHeap->GetGPUHandleAtOffset(4), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleAtOffset(1), PipelineType::Graphics);
+
+		unsigned int drawConstants[16] = { 0 };
+		cmdList->SetGraphicsRootConstants(16, drawConstants);
+
+		cmdList->SetVertexBuffers(&m_textBuffer, 1);
+		cmdList->DrawInstance(m_textAnimTriangles.size(), 1, 0, 0);
+
 	}
 }
 

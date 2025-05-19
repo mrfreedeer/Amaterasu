@@ -16,11 +16,11 @@ public:
 	virtual void Shutdown() override;
 protected:
 	virtual void UpdateInput(float deltaSeconds);
-	virtual void RenderUI() const override;
+	virtual void RenderUI() override;
 
 private:
 	void UpdateTextAnimation(float deltaTime, std::string text, Vec2 textLocation);
-	void RenderTextAnimation() const;
+	void RenderTextAnimation();
 	
 	float GetTextWidthForAnim(float fullTextWidth);
 	Vec2 const GetIBasisForTextAnim();
@@ -48,5 +48,7 @@ private:
 	Texture* m_testTexture = nullptr;
 	Buffer* m_triangleVertsBuffer = nullptr;
 	Buffer* m_testTexBuffer = nullptr;
+	Buffer* m_textBuffer = nullptr;
 	Sampler* m_defaultSampler = nullptr;
+	Sampler* m_defaultTextSampler = nullptr;
 };

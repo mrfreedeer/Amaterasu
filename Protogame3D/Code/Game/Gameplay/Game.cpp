@@ -166,6 +166,7 @@ void Game::LoadAssets()
 	LoadSoundFiles();
 
 	m_loadedAssets = true;
+	g_theRenderer->UploadPendingResources();
 }
 
 void Game::LoadTextures()

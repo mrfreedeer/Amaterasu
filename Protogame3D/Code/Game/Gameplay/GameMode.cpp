@@ -191,7 +191,7 @@ void GameMode::RenderEntities() const
 	}
 }
 
-void GameMode::RenderUI() const
+void GameMode::RenderUI() 
 {
 	m_renderContext->BeginCamera(m_UICamera);
 

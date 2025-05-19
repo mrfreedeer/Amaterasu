@@ -31,7 +31,7 @@ protected:
 
 	virtual void UpdateEntities(float deltaSeconds);
 	virtual void RenderEntities() const;
-	virtual void RenderUI() const;
+	virtual void RenderUI();
 protected:
 	Game* m_game = nullptr;
 	RenderContext* m_renderContext = nullptr;
