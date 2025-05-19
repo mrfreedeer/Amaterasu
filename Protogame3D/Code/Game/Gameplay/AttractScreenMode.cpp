@@ -114,10 +114,11 @@ void AttractScreenMode::CreateResources()
 
 	m_copyFence = g_theRenderer->CreateFence(CommandListType::COPY);
 	m_frameFence = g_theRenderer->CreateFence(CommandListType::DIRECT);
+	m_gpuFence = g_theRenderer->CreateFence(CommandListType::DIRECT);
 
 	copyCmdList->Close();
 	g_theRenderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
-	m_copyFence->Signal();
+	m_copyFence->SignalGPU();
 	m_copyFence->Wait();
 
 	// Waiting for the copying to be done
@@ -268,7 +269,8 @@ void AttractScreenMode::Render()
 
 	g_theRenderer->Present(1);
 
-	m_frameFence->Signal();
+	// I want the GPU to be done, before continuing
+	m_frameFence->SignalGPU();
 	m_frameFence->Wait();
 
 	g_theRenderer->HandleStateDecay(m_resources);

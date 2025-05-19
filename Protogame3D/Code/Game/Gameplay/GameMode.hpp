@@ -37,6 +37,7 @@ protected:
 	RenderContext* m_renderContext = nullptr;
 	Fence* m_copyFence = nullptr;
 	Fence* m_frameFence = nullptr;
+	Fence* m_gpuFence = nullptr;
 	CommandList** m_copyCmdLists = nullptr;
 	Texture* m_renderTarget = nullptr;
 	Texture* m_depthTarget = nullptr;

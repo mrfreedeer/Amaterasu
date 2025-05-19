@@ -92,6 +92,9 @@ void GameMode::Shutdown()
 	delete m_frameFence;
 	m_frameFence = nullptr;
 
+	delete m_gpuFence;
+	m_gpuFence = nullptr;
+
 	delete m_worldCameraBuffer;
 	m_worldCameraBuffer = nullptr;
 
