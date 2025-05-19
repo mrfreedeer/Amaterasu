@@ -281,7 +281,7 @@ Renderer& Renderer::Startup()
 
 	m_rscCmdList->Close();
 	ExecuteCmdLists(CommandListType::DIRECT, 1, &m_rscCmdList);
-	m_internalFence->Signal();
+	m_internalFence->SignalGPU();
 	m_internalFence->Wait();
 
 	m_rscCmdList->Reset();

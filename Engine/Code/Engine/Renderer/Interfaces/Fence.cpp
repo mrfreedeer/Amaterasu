@@ -23,6 +23,13 @@ Fence::~Fence()
 unsigned int Fence::Signal()
 {
 	unsigned int currentValue = m_fenceValues[m_currentIndex];
+	m_fence->Signal(currentValue);
+	return currentValue;
+}
+
+unsigned int Fence::SignalGPU()
+{
+	unsigned int currentValue = m_fenceValues[m_currentIndex];
 	m_commandQueue->Signal(this, currentValue);
 	return currentValue;
 }

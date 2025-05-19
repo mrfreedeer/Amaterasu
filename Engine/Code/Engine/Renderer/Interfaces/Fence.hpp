@@ -18,6 +18,7 @@ public:
 	~Fence();
 
 	unsigned int Signal();
+	unsigned int SignalGPU();
 	void Wait();
 	unsigned int GetFenceValue() const { return m_fenceValues[m_currentIndex]; }
 
