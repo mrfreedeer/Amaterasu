@@ -88,7 +88,16 @@ public:
 	ResourceView* CreateConstantBufferView(size_t handle, Buffer* cBuffer);
 
 	//----------------------------- Textures -----------------------------
-	Texture* CreateOrGetTextureFromFile(char const* imageFilePath);
+	//************************************
+	// Method:    CreateOrGetTextureFromFile
+	// FullName:  Renderer::CreateOrGetTextureFromFile
+	// Access:    public 
+	// Returns:   Texture*
+	// Qualifier:
+	// Parameter: char const * imageFilePath
+	// Parameter: CommandList * cmdList Optional parameter, cmd list used for copying texture to defaul memory
+	//************************************
+	Texture* CreateOrGetTextureFromFile(char const* imageFilePath, CommandList* cmdList = nullptr);
 	Texture* CreateTexture(TextureDesc& creationInfo);
 	Texture* GetActiveBackBuffer();
 	Texture* GetBackUpBackBuffer();
@@ -153,8 +162,8 @@ private:
 
 	// Textures
 	Texture* GetTextureForFileName(char const* imageFilePath);
-	Texture* CreateTextureFromImage(Image const& image);
-	Texture* CreateTextureFromFile(char const* imageFilePath);
+	Texture* CreateTextureFromImage(Image const& image, CommandList* cmdList = nullptr);
+	Texture* CreateTextureFromFile(char const* imageFilePath, CommandList* cmdList = nullptr);
 	void DestroyTexture(Texture* texture);
 
 	// Shaders & PSO

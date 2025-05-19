@@ -557,7 +557,7 @@ Texture* Renderer::GetTextureForFileName(char const* imageFilePath)
 	return textureToGet;
 }
 
-Texture* Renderer::CreateTextureFromImage(Image const& image)
+Texture* Renderer::CreateTextureFromImage(Image const& image, CommandList* cmdList/* = nullptr */ )
 {
 	TextureDesc ci{};
 	ci.m_owner = this;
@@ -567,16 +567,17 @@ Texture* Renderer::CreateTextureFromImage(Image const& image)
 	ci.m_initialData = image.GetRawData();
 	ci.m_stride = sizeof(Rgba8);
 	ci.m_bindFlags = ResourceBindFlagBit::RESOURCE_BIND_SHADER_RESOURCE_BIT;
+	ci.m_cmdList = cmdList;
 
 	Texture* newTexture = CreateTexture(ci);
 
 	return newTexture;
 }
 
-Texture* Renderer::CreateTextureFromFile(char const* imageFilePath)
+Texture* Renderer::CreateTextureFromFile(char const* imageFilePath , CommandList* cmdList /* = nullptr */)
 {
 	Image loadedImage(imageFilePath);
-	Texture* newTexture = CreateTextureFromImage(loadedImage);
+	Texture* newTexture = CreateTextureFromImage(loadedImage, cmdList);
 
 	return newTexture;
 }
@@ -1134,7 +1135,7 @@ ResourceView* Renderer::CreateConstantBufferView(size_t handle, Buffer* cBuffer)
 	return cBuffer->GetConstantBufferView();
 }
 
-Texture* Renderer::CreateOrGetTextureFromFile(char const* imageFilePath)
+Texture* Renderer::CreateOrGetTextureFromFile(char const* imageFilePath, CommandList* cmdList /* = nullptr */ )
 {
 	Texture* existingTexture = GetTextureForFileName(imageFilePath);
 	if (existingTexture)
@@ -1143,7 +1144,7 @@ Texture* Renderer::CreateOrGetTextureFromFile(char const* imageFilePath)
 	}
 
 	// Never seen this texture before!  Let's load it.
-	Texture* newTexture = CreateTextureFromFile(imageFilePath);
+	Texture* newTexture = CreateTextureFromFile(imageFilePath, cmdList);
 	return newTexture;
 }
 
@@ -1223,7 +1224,9 @@ Texture* Renderer::CreateTexture(TextureDesc& creationInfo)
 			imageData.RowPitch = creationInfo.m_stride * creationInfo.m_dimensions.x;
 			imageData.SlicePitch = creationInfo.m_stride * creationInfo.m_dimensions.y * creationInfo.m_dimensions.x;
 
-			UpdateSubresources(m_rscCmdList->m_cmdList, handle->m_rawRsc, textureUploadHeap, 0, 0, 1, &imageData);
+			CommandList* cmdList = (creationInfo.m_cmdList)? creationInfo.m_cmdList : m_rscCmdList;
+
+			UpdateSubresources(cmdList->m_cmdList, handle->m_rawRsc, textureUploadHeap, 0, 0, 1, &imageData);
 		}
 
 		std::string const errorMsg = Stringf("COULD NOT CREATE TEXTURE WITH NAME %s", creationInfo.m_name.c_str());

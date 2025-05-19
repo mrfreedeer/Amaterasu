@@ -9,6 +9,7 @@
 class Resource;
 struct ResourceView;
 class Renderer;
+class CommandList;
 
 enum ResourceBindFlagBit : unsigned int {
 	RESOURCE_BIND_NONE = 0,
@@ -24,18 +25,19 @@ enum ResourceBindFlagBit : unsigned int {
 typedef unsigned int ResourceBindFlag;
 
 struct TextureDesc {
-	std::string m_name = "Unnamed Texture";
 	char const* m_source = "";
 	Renderer* m_owner = nullptr;
 	Resource* m_handle = nullptr;
+	CommandList* m_cmdList = nullptr;
 	void* m_initialData = nullptr;
 	ResourceBindFlag m_bindFlags = RESOURCE_BIND_NONE;
-	bool m_isMultiSample = false;
 	size_t m_stride = 0;
 	IntVec2 m_dimensions = IntVec2::ZERO;
 	TextureFormat m_format = TextureFormat::R8G8B8A8_UNORM;
 	TextureFormat m_clearFormat = TextureFormat::R8G8B8A8_UNORM;
+	std::string m_name = "Unnamed Texture";
 	Rgba8 m_clearColour = Rgba8();
+	bool m_isMultiSample = false;
 
 };
 
