@@ -119,7 +119,7 @@ void SpriteAnimGroupDefinition::LoadAnimationsFromXML(XMLElement const& element)
 	m_secondsPerFrame = ParseXmlAttribute(element, "secondsPerFrame", 1.0f);
 	m_scaleBySpeed = ParseXmlAttribute(element, "scaleBySpeed", false);
 
-	m_spriteSheet = new SpriteSheet(*m_texture, spriteSheetDims);
+	m_spriteSheet = new SpriteSheet(*const_cast<Texture*>(m_texture), spriteSheetDims);
 
 
 	XMLElement const* currentSpriteAnim = element.FirstChildElement("Direction");

@@ -23,9 +23,10 @@ AABB2 SpriteDefinition::GetUVs() const
 	return AABB2(m_uvAtMins, m_uvAtMaxs);
 }
 
-Texture const& SpriteDefinition::GetTexture() const
+Texture& SpriteDefinition::GetTexture() 
 {
-	return m_spriteSheet.GetTexture();
+	Texture* texture = const_cast<Texture*>(&m_spriteSheet.GetTexture());
+	return *texture;
 }
 
 float SpriteDefinition::GetAspect()
@@ -50,7 +51,7 @@ SpriteSheet const& SpriteDefinition::GetSpriteSheet() const
 }
 
 
-SpriteSheet::SpriteSheet(Texture const& texture, IntVec2 const& simpleGridLayout) :
+SpriteSheet::SpriteSheet(Texture& texture, IntVec2 const& simpleGridLayout) :
 	m_texture(texture)
 {
 	float deltaX = 1.0f / simpleGridLayout.x;
@@ -68,6 +69,11 @@ SpriteSheet::SpriteSheet(Texture const& texture, IntVec2 const& simpleGridLayout
 			m_spriteDefs.emplace_back(*this, spriteIndex, minUvs, maxUvs);
 		}
 	}
+}
+
+Texture& SpriteSheet::GetTexture() 
+{
+	return m_texture;
 }
 
 Texture const& SpriteSheet::GetTexture() const

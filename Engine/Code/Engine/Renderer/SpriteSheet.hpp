@@ -14,7 +14,7 @@ public:
 	void GetUVs(Vec2& out_uvAtMins, Vec2& out_uvAtMaxs) const;
 	AABB2 GetUVs() const;
 	SpriteSheet const& GetSpriteSheet() const;
-	Texture const& GetTexture() const;
+	Texture& GetTexture();
 	float GetAspect();
 protected:
 	SpriteSheet const& m_spriteSheet;
@@ -27,15 +27,16 @@ protected:
 class SpriteSheet {
 	friend class SpriteAnimGroupDefinition;
 public:
-	explicit SpriteSheet(Texture const& texture, IntVec2 const& simpleGridLayout);
+	explicit SpriteSheet(Texture& texture, IntVec2 const& simpleGridLayout);
 
-	Texture const& GetTexture()const;
+	Texture& GetTexture();
+	Texture const& GetTexture() const;
 	int GetNumSprites() const;
 	SpriteDefinition const& GetSpriteDef(int spriteIndex) const;
 	void GetSpriteUVs(Vec2& out_uvAtMins, Vec2& out_uvAtMaxs, int spriteIndex) const;
 	AABB2 GetSpriteUVs(int spriteIndex) const;
 
 protected:
-	Texture const& m_texture;
+	Texture& m_texture;
 	std::vector<SpriteDefinition> m_spriteDefs;
 };
