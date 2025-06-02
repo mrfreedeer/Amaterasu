@@ -17,3 +17,10 @@ struct ModelConstants
 	float ModelColor[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 	float ModelPadding[4];
 };
+
+struct DrawInfoConstants
+{
+	unsigned int CameraBufferInd;
+	unsigned int ModelBufferInd;
+	unsigned int TextureStart;
+};

@@ -43,7 +43,7 @@ public:
 	MemoryUsage GetMemoryUsage() const { return m_desc.m_memoryUsage; }
 	BufferView GetBufferView() const;
 	BufferView GetIndexBufferView() const;
-
+	BufferType GetType() const { return m_desc.m_type; }
 private:
 	Buffer(BufferDesc const& bufferDesc);
 
