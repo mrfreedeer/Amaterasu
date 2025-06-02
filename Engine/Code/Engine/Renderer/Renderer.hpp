@@ -76,7 +76,7 @@ public:
 	DescriptorSet* CreateDescriptorSet(unsigned int* descriptorCounts, bool isShaderVisible, char const* debugName = nullptr);
 	CommandList* CreateCommandList(CommandListDesc const& desc);
 	CommandQueue* CreateCommandQueue(CommandQueueDesc const& desc);
-	Fence* CreateFence(CommandListType managerType, unsigned int initialValue = 1);
+	Fence* CreateFence(CommandListType managerType, unsigned int initialValue = 0);
 	Renderer& CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* src, DescriptorHeap* dest, unsigned int offsetStart = 0, unsigned int offsetEnd = 0);
 	Renderer& ExecuteCmdLists(CommandListType type, unsigned int count, CommandList** cmdLists);
 
@@ -137,7 +137,7 @@ public:
 	/// <summary>
 	/// Use this for waiting on a fence that is executing on another queue
 	/// </summary>
-	Renderer& WaitForOtherQueue(CommandListType waitingType, Fence* otherQFence);
+	Renderer& InsertWaitInQueue(CommandListType waitingType, Fence* otherQFence);
 	Renderer& RenderImGui(CommandList& cmdList, Texture* renderTarget);
 	unsigned int GetCurrentBufferIndex() const { return m_currentBackBuffer; }
 	unsigned int GetBackBufferCount() const { return m_config.m_backBuffersCount; }

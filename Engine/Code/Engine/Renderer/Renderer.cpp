@@ -274,7 +274,7 @@ Renderer& Renderer::Startup()
 
 	m_defaultModelBuffer = CreateBuffer(modelBufDesc);
 
-	m_rscCmdList->CopyBuffer(modelBufferUpload, m_defaultModelBuffer);
+	m_rscCmdList->CopyBuffer(m_defaultModelBuffer, modelBufferUpload);
 	InitializeImGui();
 
 	m_internalFence = CreateFence(CommandListType::DIRECT);
@@ -773,7 +773,7 @@ BitmapFont* Renderer::CreateBitmapFont(char const* sourcePath)
 	filename += ".png";
 
 	Texture* bitmapTexture = CreateOrGetTextureFromFile(filename.c_str());
-	BitmapFont* newBitmapFont = new BitmapFont(filename.c_str(), *bitmapTexture);
+	BitmapFont* newBitmapFont = new BitmapFont(sourcePath, *bitmapTexture);
 
 	m_loadedFonts.push_back(newBitmapFont);
 	return newBitmapFont;
@@ -1006,7 +1006,7 @@ CommandList* Renderer::CreateCommandList(CommandListDesc const& desc)
 	m_device->CreateCommandAllocator(cmdListType, IID_PPV_ARGS(&newCmdList->m_cmdAllocator));
 	m_device->CreateCommandList1(0, cmdListType, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&newCmdList->m_cmdList));
 
-	SetDebugName(newCmdList->m_cmdList, desc.m_debugName);
+	SetDebugName(newCmdList->m_cmdList, desc.m_debugName.c_str());
 
 	newCmdList->Reset();
 
@@ -1118,6 +1118,7 @@ ResourceView* Renderer::CreateDepthStencilView(size_t handle, Texture* depthText
 
 ResourceView* Renderer::CreateConstantBufferView(size_t handle, Buffer* cBuffer)
 {
+	GUARANTEE_OR_DIE(cBuffer->GetType() == BufferType::Constant, "ERROR: USING NON CBUFFER TO CREATE CBUFFER VIEW");
 	BufferView viewDesc = cBuffer->GetBufferView();
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cBufferView = D3D12_CONSTANT_BUFFER_VIEW_DESC();
 	cBufferView.BufferLocation = cBuffer->GetGPUAddress();
@@ -1362,6 +1363,7 @@ Buffer* Renderer::CreateDefaultBuffer(BufferDesc const& desc, Buffer** out_inter
 	intermediateDesc.m_debugName = "Intermediate Buffer";
 	*out_intermediate = CreateBuffer(intermediateDesc);
 
+	intermediateDesc.m_memoryUsage = MemoryUsage::Default;
 	return CreateBuffer(desc);
 }
 
@@ -1441,6 +1443,8 @@ Fence* Renderer::CreateFence(CommandListType managerType, unsigned int initialVa
 	Fence* outFence = new Fence(fenceManager, initialValue, 2);
 
 	ThrowIfFailed(m_device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&outFence->m_fence)), "FAILED CREATING FENCE");
+	
+	outFence->m_fenceValues[0] = initialValue + 1;
 
 	// Create an event handle to use for frame synchronization.
 	outFence->m_fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -1512,7 +1516,7 @@ Renderer& Renderer::HandleStateDecay(std::vector<Resource*> resources)
 	return *this;
 }
 
-Renderer& Renderer::WaitForOtherQueue(CommandListType waitingType, Fence* otherQFence)
+Renderer& Renderer::InsertWaitInQueue(CommandListType waitingType, Fence* fence)
 {
 	CommandQueue* waitingQueue = nullptr;
 	switch (waitingType)
@@ -1534,7 +1538,7 @@ Renderer& Renderer::WaitForOtherQueue(CommandListType waitingType, Fence* otherQ
 		break;
 	}
 
-	waitingQueue->Wait(otherQFence, otherQFence->GetFenceValue() - 1);
+	waitingQueue->Wait(fence, fence->GetFenceValue() - 1);
 
 	return *this;
 }
