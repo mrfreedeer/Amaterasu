@@ -35,6 +35,8 @@ public:
 protected:
 	virtual void UpdateDeveloperCheatCodes(float deltaSeconds);
 	virtual void UpdateInput(float deltaSeconds) override;
+	virtual void CreateResourceDescriptors();
+	void CreateVertexBuffers();
 
 private:
 	void DisplayClocksInfo() const;
@@ -43,4 +45,5 @@ private:
 	float m_fps = 0.0f;
 	Material* m_effectsMaterials[(int)MaterialEffect::NUM_EFFECTS];
 	bool m_applyEffects[(int)MaterialEffect::NUM_EFFECTS];
+
 };

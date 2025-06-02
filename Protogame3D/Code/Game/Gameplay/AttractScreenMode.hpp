@@ -26,7 +26,6 @@ private:
 	Vec2 const GetIBasisForTextAnim();
 	Vec2 const GetJBasisForTextAnim();
 	void TransformText(Vec2 iBasis, Vec2 jBasis, Vec2 translation);
-	void CreateRendererObjects();
 	void CreateResources();
 
 private:
@@ -43,12 +42,10 @@ private:
 	float m_textAnimationTime = g_gameConfigBlackboard.GetValue("TEXT_ANIMATION_TIME", 4.0f);
 	float m_textMovementPhaseTimePercentage = g_gameConfigBlackboard.GetValue("TEXT_MOVEMENT_PHASE_TIME_PERCENTAGE", 0.25f);
 	float m_timeTextAnimation = 0.0f;
-	PipelineState* m_opaqueDefault2D = nullptr;
-	PipelineState* m_alphaDefault2D = nullptr;
+	
 	Texture* m_testTexture = nullptr;
 	Buffer* m_triangleVertsBuffer = nullptr;
 	Buffer* m_testTexBuffer = nullptr;
 	Buffer* m_textBuffer = nullptr;
-	Sampler* m_defaultSampler = nullptr;
-	Sampler* m_defaultTextSampler = nullptr;
+
 };

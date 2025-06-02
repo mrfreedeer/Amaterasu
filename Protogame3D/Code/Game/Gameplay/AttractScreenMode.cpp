@@ -11,63 +11,6 @@ AttractScreenMode::~AttractScreenMode()
 
 }
 
-void AttractScreenMode::CreateRendererObjects()
-{
-	RenderContextDesc ctxDesc = {};
-	CommandListDesc cmdListDesc = {};
-	cmdListDesc.m_initialState = nullptr;
-	cmdListDesc.m_type = CommandListType::DIRECT;
-	cmdListDesc.m_debugName = "AttractGraphics";
-
-	ctxDesc.m_cmdListDesc = cmdListDesc;
-	ctxDesc.m_renderer = g_theRenderer;
-
-	DescriptorHeapDesc heapDesc = {};
-	heapDesc.m_debugName = "AttractScreen Heap";
-	heapDesc.m_flags = DescriptorHeapFlags::ShaderVisible;
-	heapDesc.m_numDescriptors = 128;
-	heapDesc.m_type = DescriptorHeapType::CBV_SRV_UAV;
-	unsigned int descriptorCounts[(int)DescriptorHeapType::NUM_TYPES] = { 128, 2, 1, 8 };
-
-	ctxDesc.m_descriptorCounts = descriptorCounts;
-
-	m_renderContext = new RenderContext(ctxDesc);
-
-	cmdListDesc.m_type = CommandListType::COPY;
-	cmdListDesc.m_debugName = "AttractCopy";
-
-	m_copyCmdLists = new CommandList * [2];
-	// For double buffering
-	m_copyCmdLists[0] = g_theRenderer->CreateCommandList(cmdListDesc);
-	m_copyCmdLists[1] = g_theRenderer->CreateCommandList(cmdListDesc);
-
-	ShaderPipeline defaultLegacy = g_theRenderer->GetEngineShader(EngineShaderPipelines::LegacyForward);
-	PipelineStateDesc psoDesc = {};
-	psoDesc.m_blendModes[0] = BlendMode::OPAQUE;
-	psoDesc.m_byteCodes[ShaderType::Vertex] = defaultLegacy.m_firstShader;
-	psoDesc.m_byteCodes[ShaderType::Pixel] = defaultLegacy.m_pixelShader;
-	psoDesc.m_cullMode = CullMode::BACK;
-	psoDesc.m_debugName = "Opaque2D";
-	psoDesc.m_depthEnable = true;
-	psoDesc.m_depthFunc = DepthFunc::LESSEQUAL;
-	psoDesc.m_depthStencilFormat = TextureFormat::D24_UNORM_S8_UINT;
-	psoDesc.m_fillMode = FillMode::SOLID;
-	psoDesc.m_renderTargetCount = 1;
-	psoDesc.m_renderTargetFormats[0] = TextureFormat::R8G8B8A8_UNORM;
-	psoDesc.m_topology = TopologyType::TRIANGLELIST;
-	psoDesc.m_type = PipelineType::Graphics;
-	psoDesc.m_windingOrder = WindingOrder::COUNTERCLOCKWISE;
-
-	m_opaqueDefault2D = g_theRenderer->CreatePipelineState(psoDesc);
-
-	// Alpha for font rendering
-	psoDesc.m_blendModes[0] = BlendMode::ALPHA;
-	psoDesc.m_debugName = "Alpha2D";
-	m_alphaDefault2D = g_theRenderer->CreatePipelineState(psoDesc);
-}
-
-
-
 void AttractScreenMode::CreateResources()
 {
 	// Test triangle
@@ -105,25 +48,21 @@ void AttractScreenMode::CreateResources()
 	m_testTexBuffer = g_theRenderer->CreateDefaultBuffer(testTexBufferDesc, &intermTestTex);
 
 	CommandList* copyCmdList = m_copyCmdLists[m_renderContext->GetBufferIndex()];
-	copyCmdList->CopyBuffer(intermTestTri, m_triangleVertsBuffer);
-	copyCmdList->CopyBuffer(intermTestTex, m_testTexBuffer);
+	copyCmdList->CopyResource(m_triangleVertsBuffer, intermTestTri);
+	copyCmdList->CopyResource(m_testTexBuffer, intermTestTex);
 
 
 	m_testTexture = g_theRenderer->CreateOrGetTextureFromFile("Data/Images/Test_StbiFlippedAndOpenGL.png", copyCmdList);
-
-
-	m_copyFence = g_theRenderer->CreateFence(CommandListType::COPY);
-	m_frameFence = g_theRenderer->CreateFence(CommandListType::DIRECT);
-	m_gpuFence = g_theRenderer->CreateFence(CommandListType::DIRECT);
-
 	copyCmdList->Close();
 	g_theRenderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
 	m_copyFence->SignalGPU();
-	m_copyFence->Wait();
 
 	// Waiting for the copying to be done
-	g_theRenderer->WaitForOtherQueue(CommandListType::DIRECT, m_copyFence);
+	g_theRenderer->InsertWaitInQueue(CommandListType::DIRECT, m_copyFence);
+	//g_theRenderer->InsertWaitInQueue(CommandListType::COPY, m_copyFence);
+	DebuggerPrintf("CopyQueueValue: %d", m_copyFence->GetCompletedValue());
 
+	m_copyFence->Wait();
 	delete intermTestTri;
 	delete intermTestTex;
 
@@ -138,7 +77,8 @@ void AttractScreenMode::Startup()
 {
 	GameMode::Startup();
 	
-	CreateRendererObjects();
+	unsigned int descriptorCounts[] = {128, 2, 1, 8};
+	CreateRendererObjects("AttractScreen", descriptorCounts);
 	CreateResources();
 	m_currentText = g_gameConfigBlackboard.GetValue("GAME_TITLE", "Protogame3D");
 	m_startTextColor = GetRandomColor();
@@ -153,23 +93,13 @@ void AttractScreenMode::Startup()
 
 
 	// Create descriptors for resources
-	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 	DescriptorHeap* resourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 	D3D12_CPU_DESCRIPTOR_HANDLE nextSamplerHandle = samplerHeap->GetNextCPUHandle();
 	m_defaultSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::BILINEARCLAMP);
 	nextSamplerHandle = samplerHeap->GetNextCPUHandle();
 	m_defaultTextSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::POINTCLAMP);
 
-	BufferDesc cameraBuffDesc = {};
-	CameraConstants cameraConstants = m_UICamera.GetCameraConstants();
-	cameraBuffDesc.m_data = &cameraConstants;
-	cameraBuffDesc.m_debugName = "UICamConst";
-	cameraBuffDesc.m_memoryUsage = MemoryUsage::Dynamic;
-	cameraBuffDesc.m_size = sizeof(cameraConstants);
-	cameraBuffDesc.m_stride.m_strideBytes = sizeof(CameraConstants);
-	cameraBuffDesc.m_type = BufferType::Constant;
-
-	m_UICameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
 	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, m_UICameraBuffer);
 	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultModelBuffer());
 	g_theRenderer->CreateShaderResourceView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultTexture());
@@ -251,14 +181,9 @@ void AttractScreenMode::Render()
 	RenderUI();
 	DebugRenderScreen(m_UICamera);
 
-	m_renderContext->EndFrame();
 
 	Texture* backBuffer = g_theRenderer->GetActiveBackBuffer();
-	resourceBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::CopySrc);
-	resourceBarriers[1] = backBuffer->GetTransitionBarrier(ResourceStates::CopyDest);
-	 
-	cmdList->ResourceBarrier(2, resourceBarriers);
-	cmdList->CopyResource(backBuffer, m_renderTarget);
+	cmdList->CopyTexture(backBuffer, m_renderTarget);
 
 	resourceBarriers[0]  = backBuffer->GetTransitionBarrier(ResourceStates::Present);
 	cmdList->ResourceBarrier(1, resourceBarriers);
@@ -274,20 +199,15 @@ void AttractScreenMode::Render()
 	m_frameFence->Wait();
 
 	g_theRenderer->HandleStateDecay(m_resources);
+	m_renderContext->EndFrame();
 }
 
 
 void AttractScreenMode::Shutdown()
 {
 	// Wait for things to finish rendering to destroy resources
-	m_frameFence->Signal();
+	m_frameFence->SignalGPU();
 	m_frameFence->Wait();
-
-	delete m_opaqueDefault2D;
-	m_opaqueDefault2D = nullptr;
-
-	delete m_alphaDefault2D;
-	m_alphaDefault2D = nullptr;
 	
 	// Should destroy textures?? probably not, just null them
 	m_testTexture = nullptr;
@@ -436,7 +356,7 @@ void AttractScreenMode::RenderTextAnimation()
 		cmdList->SetGraphicsRootConstants(16, drawConstants);
 
 		cmdList->SetVertexBuffers(&m_textBuffer, 1);
-		cmdList->DrawInstance(m_textAnimTriangles.size(), 1, 0, 0);
+		cmdList->DrawInstance((unsigned int)m_textAnimTriangles.size(), 1, 0, 0);
 
 	}
 }

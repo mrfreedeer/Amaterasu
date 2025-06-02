@@ -1,6 +1,8 @@
+
 #include "Engine/Core/EngineCommon.hpp"
 #include "Engine/Renderer/DebugRendererSystem.hpp"
 #include "Engine/Renderer/Renderer.hpp"
+#include "Engine/Renderer/Interfaces/Buffer.hpp"
 #include "Game/Gameplay/Basic3DMode.hpp"
 #include "Game/Framework/GameCommon.hpp"
 #include "Game/Gameplay/Prop.hpp"
@@ -17,6 +19,9 @@ Basic3DMode::Basic3DMode(Game* game, Vec2 const& UISize) :
 void Basic3DMode::Startup()
 {
 	GameMode::Startup();
+
+	unsigned int descriptorCounts[] = { 128, 2, 1, 8 };
+	CreateRendererObjects("Basic3DMode", descriptorCounts);
 
 	SubscribeEventCallbackFunction("DebugAddWorldWireSphere", DebugSpawnWorldWireSphere);
 	SubscribeEventCallbackFunction("DebugAddWorldLine", DebugSpawnWorldLine3D);
@@ -48,6 +53,9 @@ void Basic3DMode::Startup()
 	m_allEntities.push_back(gridProp);
 	m_allEntities.push_back(sphereProp);
 
+	CreateResourceDescriptors();
+	CreateVertexBuffers();
+
 	m_isCursorHidden = true;
 	m_isCursorClipped = true;
 	m_isCursorRelative = true;
@@ -76,6 +84,8 @@ void Basic3DMode::Startup()
 
 	DebugAddWorldText("Z - Up", zLabelTransformMatrix, axisLabelTextHeight, Vec2(0.5f, 0.5f), -1.0f, Rgba8::BLUE, Rgba8::BLUE, DebugRenderMode::USEDEPTH);
 
+
+	m_renderContext->CloseAll();
 
 	//TextureCreateInfo colorInfo;
 	//colorInfo.m_dimensions = g_theWindow->GetClientDimensions();
@@ -113,13 +123,33 @@ void Basic3DMode::Update(float deltaSeconds)
 
 void Basic3DMode::Render()
 {
+	m_renderContext->Reset();
 
+	CommandList* cmdList = m_renderContext->GetCommandList();
+	TransitionBarrier rscBarriers[2] = {};
+	rscBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::RenderTarget);
+	rscBarriers[1] = m_depthTarget->GetTransitionBarrier(ResourceStates::DepthWrite);
+	m_worldCamera.SetColorTarget(m_renderTarget);
+	m_worldCamera.SetDepthTarget(m_depthTarget);
+	DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+	DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
 	{
 		m_renderContext->BeginCamera(m_worldCamera);
-		/*	g_theRenderer->ClearScreen(Rgba8::BLACK);
-			g_theRenderer->BindMaterial(nullptr);
-			g_theRenderer->SetSamplerMode(SamplerMode::BILINEARWRAP);
-			g_theRenderer->BindTexture(nullptr, 1);*/
+		cmdList->ResourceBarrier(_countof(rscBarriers), rscBarriers);
+		cmdList->BindPipelineState(m_opaqueDefault2D);
+		cmdList->ClearRenderTarget(m_renderTarget, Rgba8::BLACK);
+		cmdList->ClearDepthStencilView(m_depthTarget, 1.0f);
+		cmdList->SetRenderTargets(1, &m_renderTarget, false, m_depthTarget);
+		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
+		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(m_cameraCBVStart), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(m_modelCBVStart), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_TEXTURES, cbvSRVUAVHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+		cmdList->SetTopology(TopologyType::TRIANGLELIST);
+		unsigned int drawConstants[16] = { 0 };
+		cmdList->SetGraphicsRootConstants(16, drawConstants);
+
 		RenderEntities();
 		m_renderContext->EndCamera(m_worldCamera);
 	}
@@ -134,11 +164,34 @@ void Basic3DMode::Render()
 
 	GameMode::Render();
 
+	m_renderContext->EndFrame();
+	Texture* backBuffer = g_theRenderer->GetActiveBackBuffer();
+	cmdList->CopyTexture(backBuffer, m_renderTarget);
+	
+	TransitionBarrier presentBarrier = backBuffer->GetTransitionBarrier(ResourceStates::Present);
+	cmdList->ResourceBarrier(1, &presentBarrier);
+
+	cmdList->Close();
+
+
+
+	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
+	g_theRenderer->Present(1);
+
+	// I want the GPU to be done, before continuing
+	m_frameFence->SignalGPU();
+	m_frameFence->Wait();
+
+
 }
 
 void Basic3DMode::Shutdown()
 {
 	pointerToSelf = nullptr;
+	m_frameFence->SignalGPU();
+	m_frameFence->Wait();
+	m_copyFence->SignalGPU();
+	m_copyFence->Wait();
 
 	GameMode::Shutdown();
 	UnsubscribeEventCallbackFunction("DebugAddWorldWireSphere", DebugSpawnWorldWireSphere);
@@ -231,6 +284,84 @@ void Basic3DMode::UpdateInput(float deltaSeconds)
 	if (g_theInput->WasKeyJustPressed('L')) {
 		m_applyEffects[4] = !m_applyEffects[4];
 	}
+}
+
+void Basic3DMode::CreateResourceDescriptors()
+{
+	DescriptorHeap* resourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+
+	unsigned int texturesPerEntity = 1;
+	m_cbvStart= (texturesPerEntity * (unsigned int)m_allEntities.size()) + 1;
+	m_drawInfoCBVStart = m_cbvStart;
+	m_cameraCBVStart = m_cbvStart + (unsigned int)m_allEntities.size();
+	m_modelCBVStart = m_cameraCBVStart + 2;
+	D3D12_CPU_DESCRIPTOR_HANDLE defaultTexHandle = resourcesHeap->GetCPUHandleAtOffset(0);
+	g_theRenderer->CreateShaderResourceView(defaultTexHandle.ptr, g_theRenderer->GetDefaultTexture());
+
+	for (unsigned int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
+		Entity* entity = m_allEntities[entityIndex];
+		if(entity == m_player) continue;
+		D3D12_CPU_DESCRIPTOR_HANDLE nextSRV = resourcesHeap->GetNextCPUHandle();
+		Texture* tex = entity->GetUsedTexture();
+		unsigned int currentSRV = 0;
+		if (tex) {
+			currentSRV = entityIndex + 1;
+			g_theRenderer->CreateShaderResourceView(nextSRV.ptr, tex);
+		}
+
+		unsigned int currentModelCBV = m_modelCBVStart + entityIndex;
+		unsigned int currentDrawCBV = m_drawInfoCBVStart + entityIndex;
+		D3D12_CPU_DESCRIPTOR_HANDLE nextModelCBV = resourcesHeap->GetCPUHandleAtOffset(currentModelCBV);
+		D3D12_CPU_DESCRIPTOR_HANDLE nextDrawCBV = resourcesHeap->GetCPUHandleAtOffset(currentDrawCBV);
+		Buffer* modelBuffer = entity->GetModelBuffer();
+		Buffer* drawInfoBuffer = entity->GetDrawInfoBuffer();
+		g_theRenderer->CreateConstantBufferView(nextModelCBV.ptr, modelBuffer);
+		g_theRenderer->CreateConstantBufferView(nextDrawCBV.ptr, drawInfoBuffer);
+
+		entity->SetDrawConstants(0, currentModelCBV, currentSRV);
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE nextSamplerHandle = samplerHeap->GetNextCPUHandle();
+	m_defaultSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::BILINEARCLAMP);
+	nextSamplerHandle = samplerHeap->GetNextCPUHandle();
+	m_defaultTextSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::POINTCLAMP);
+
+
+	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetCPUHandleAtOffset(m_cameraCBVStart).ptr, m_worldCameraBuffer);
+	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetCPUHandleAtOffset(m_cameraCBVStart + 1).ptr, m_UICameraBuffer);
+
+}
+
+void Basic3DMode::CreateVertexBuffers()
+{
+	CommandList* copyCmdList = m_copyCmdLists[m_renderContext->GetBufferIndex()];
+	std::vector<Buffer*> intermediateBuffers;
+	intermediateBuffers.reserve(m_allEntities.size());
+	for (int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
+		Entity* entity = m_allEntities[entityIndex];
+		if(entity == m_player) continue;
+
+		Prop* prop = reinterpret_cast<Prop*>(entity);
+		Buffer* intermeadiateBuffer = prop->CreateVertexBuffer();
+
+		copyCmdList->CopyResource(entity->GetVertexBuffer(), intermeadiateBuffer);
+		intermediateBuffers.push_back(intermeadiateBuffer);
+	}
+
+	copyCmdList->Close();
+	g_theRenderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
+
+	m_copyFence->SignalGPU();
+	m_copyFence->Wait();
+
+	// Waiting for the copying to be done
+	g_theRenderer->InsertWaitInQueue(CommandListType::DIRECT, m_copyFence);
+
+	for (int bufIndex = 0; bufIndex < intermediateBuffers.size(); bufIndex++) {
+		delete intermediateBuffers[bufIndex];
+	}
+
 }
 
 bool Basic3DMode::DebugSpawnWorldWireSphere(EventArgs& eventArgs)
