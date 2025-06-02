@@ -24,7 +24,7 @@ struct D3D12_GPU_DESCRIPTOR_HANDLE;
 struct CommandListDesc {
 	CommandListType m_type = CommandListType::DIRECT;
 	PipelineState* m_initialState = nullptr;
-	char const* m_debugName = "Unnamed Cmd List";
+	std::string m_debugName = "Unnamed Cmd List";
 };
 
 
@@ -46,11 +46,12 @@ public:
 	CommandList& ClearRenderTarget(Texture* rt, Rgba8 const& clearValue);
 	CommandList& SetRenderTargets(unsigned int rtCount, Texture* const* renderTargets, bool singleDescriptor, Texture* depthRenderTarget);
 	CommandList& Dispatch(IntVec3 threads);
+	CommandList& CopyTexture(Texture* dst, Texture* src);
 
 	// Buffers
 	CommandList& SetVertexBuffers(Buffer* const* buffers, unsigned int bufferCount, unsigned int startSlot = 0);
 	CommandList& SetIndexBuffer(Buffer* indexBuffer);
-	CommandList& CopyBuffer(Buffer* src, Buffer* dest);
+	CommandList& CopyBuffer(Buffer* dst, Buffer* src);
 
 	// Draws/State
 	CommandList& SetTopology(TopologyType topology);
@@ -60,6 +61,7 @@ public:
 	CommandList& SetDescriptorHeaps(unsigned int heapCount, DescriptorHeap** descriptorHeaps);
 	CommandList& SetDescriptorSet(DescriptorSet* dSet);
 	CommandList& SetDescriptorTable(unsigned int paramIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseGPUDescriptor, PipelineType pipelineType);
+	CommandList& SetDescriptorTable(unsigned int paramIndex, size_t baseGPUDescriptor, PipelineType pipelineType);
 	CommandList& SetGraphicsRootConstants(unsigned int count, unsigned int* constants);
 	CommandList& SetViewport(AABB2 const& viewport);
 	CommandList& SetViewport(Vec2 const& viewportMin, Vec2 const& viewportMax);

@@ -112,6 +112,18 @@ CommandList& CommandList::Dispatch(IntVec3 threads)
 }
 
 
+CommandList& CommandList::CopyTexture(Texture* dst, Texture* src)
+{
+	TransitionBarrier resourceBarriers[2] = {};
+	resourceBarriers[0] = src->GetTransitionBarrier(ResourceStates::CopySrc);
+	resourceBarriers[1] = dst->GetTransitionBarrier(ResourceStates::CopyDest);
+
+	ResourceBarrier(2, resourceBarriers);
+	CopyResource(dst, src);
+
+	return *this;
+}
+
 CommandList& CommandList::SetVertexBuffers(Buffer* const* buffers, unsigned int bufferCount, unsigned int startSlot /* = 0 */)
 {
 	D3D12_VERTEX_BUFFER_VIEW* vBuffersDesc = new D3D12_VERTEX_BUFFER_VIEW[bufferCount];
@@ -135,9 +147,14 @@ CommandList& CommandList::SetIndexBuffer(Buffer* indexBuffer)
 	return *this;
 }
 
-CommandList& CommandList::CopyBuffer(Buffer* src, Buffer* dest)
+CommandList& CommandList::CopyBuffer(Buffer* dst, Buffer* src)
 {
-	m_cmdList->CopyBufferRegion(dest->m_rawRsc, 0, src->m_rawRsc, 0, dest->GetSize());
+	TransitionBarrier resourceBarriers[2] = {};
+	resourceBarriers[0] = src->GetTransitionBarrier(ResourceStates::CopySrc);
+	resourceBarriers[1] = dst->GetTransitionBarrier(ResourceStates::CopyDest);
+	ResourceBarrier(2, resourceBarriers);
+
+	m_cmdList->CopyBufferRegion(dst->m_rawRsc, 0, src->m_rawRsc, 0, dst->GetSize());
 	return *this;
 }
 
@@ -226,6 +243,13 @@ CommandList& CommandList::SetDescriptorTable(unsigned int paramIndex, D3D12_GPU_
 	}
 
 	return *this;
+}
+
+CommandList& CommandList::SetDescriptorTable(unsigned int paramIndex, size_t baseGPUDescriptor, PipelineType pipelineType)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = {};
+	handle.ptr = baseGPUDescriptor;
+	return SetDescriptorTable(paramIndex, handle, pipelineType);
 }
 
 CommandList& CommandList::SetGraphicsRootConstants(unsigned int count, unsigned int* constants)
