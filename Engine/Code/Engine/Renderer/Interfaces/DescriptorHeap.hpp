@@ -13,7 +13,7 @@ struct DescriptorHeapDesc {
 	DescriptorHeapType m_type = DescriptorHeapType::UNDEFINED;
 	DescriptorHeapFlags m_flags = DescriptorHeapFlags::None;
 	ID3D12DescriptorHeap* m_heap = nullptr;
-	char const* m_debugName = nullptr;
+	std::string m_debugName = "Unknown Heap";
 };
 
 class DescriptorHeap {
