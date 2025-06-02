@@ -30,6 +30,7 @@ protected:
 	Rgba8 const GetRandomColor() const;
 	void CheckIfWindowHasFocus();
 
+	virtual void UpdateCamera(Camera const& camera, Buffer* cBuffer);
 	virtual void UpdateEntities(float deltaSeconds);
 	virtual void RenderEntities() const;
 	virtual void RenderUI();

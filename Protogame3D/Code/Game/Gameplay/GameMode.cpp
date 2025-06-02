@@ -189,6 +189,12 @@ void GameMode::CheckIfWindowHasFocus()
 	}
 }
 
+void GameMode::UpdateCamera(Camera const& camera, Buffer* cBuffer)
+{
+	CameraConstants constants = camera.GetCameraConstants();
+	cBuffer->CopyToBuffer(&constants, sizeof(constants));
+}
+
 void GameMode::UpdateEntities(float deltaSeconds)
 {
 	for (int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
