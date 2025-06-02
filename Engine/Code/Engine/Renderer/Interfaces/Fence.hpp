@@ -21,6 +21,7 @@ public:
 	unsigned int SignalGPU();
 	void Wait();
 	unsigned int GetFenceValue() const { return m_fenceValues[m_currentIndex]; }
+	unsigned int GetCompletedValue();
 
 private:
 	ID3D12Fence1* m_fence = nullptr;

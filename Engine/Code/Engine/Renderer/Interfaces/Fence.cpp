@@ -16,6 +16,7 @@ Fence::Fence(CommandQueue* commandQueue, unsigned int initialValue /*= 0*/, unsi
 
 Fence::~Fence()
 {
+	CloseHandle(m_fenceEvent);
 	delete[] m_fenceValues;
 	DX_SAFE_RELEASE(m_fence);
 }
@@ -39,13 +40,19 @@ void Fence::Wait()
 	unsigned int currentValue = m_fenceValues[m_currentIndex];
 	m_currentIndex = (m_currentIndex + 1) % m_bufferCount;
 
-	if (m_fence->GetCompletedValue() < m_fenceValues[m_currentIndex])
+	unsigned int completedValue = m_fence->GetCompletedValue();
+	if (completedValue < currentValue)
 	{
-		ThrowIfFailed(m_fence->SetEventOnCompletion(m_fenceValues[m_currentIndex], m_fenceEvent), "FAILED TO SET EVENT ON COMPLETION");
+		ThrowIfFailed(m_fence->SetEventOnCompletion(currentValue, m_fenceEvent), "FAILED TO SET EVENT ON COMPLETION");
 		WaitForSingleObject(m_fenceEvent, INFINITE);
 	}
 
 	m_fenceValues[m_currentIndex] = currentValue + 1;
+
 }
 
+unsigned int Fence::GetCompletedValue()
+{
+	return m_fence->GetCompletedValue();
+}
 
