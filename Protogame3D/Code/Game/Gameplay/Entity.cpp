@@ -36,6 +36,9 @@ void Entity::Update(float deltaTime)
 	if (m_modelBuffer) {
 		UpdateModelBuffer();
 	}
+	if (m_drawConstants) {
+		UpdateDrawInfoBuffer();
+	}
 }
 
 void Entity::CreateModelBuffer(Renderer* renderer)
