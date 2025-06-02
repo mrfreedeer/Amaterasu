@@ -299,7 +299,7 @@ void Basic3DMode::CreateResourceDescriptors()
 	m_drawInfoCBVStart = m_cbvStart;
 	m_cameraCBVStart = m_cbvStart + (unsigned int)m_allEntities.size();
 	m_modelCBVStart = m_cameraCBVStart + 2;
-	D3D12_CPU_DESCRIPTOR_HANDLE defaultTexHandle = resourcesHeap->GetCPUHandleAtOffset(0);
+	D3D12_CPU_DESCRIPTOR_HANDLE defaultTexHandle = resourcesHeap->GetNextCPUHandle();
 	g_theRenderer->CreateShaderResourceView(defaultTexHandle.ptr, g_theRenderer->GetDefaultTexture());
 
 	for (unsigned int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
@@ -309,7 +309,7 @@ void Basic3DMode::CreateResourceDescriptors()
 		Texture* tex = entity->GetUsedTexture();
 		unsigned int currentSRV = 0;
 		if (tex) {
-			currentSRV = entityIndex + 1;
+			currentSRV = entityIndex;
 			g_theRenderer->CreateShaderResourceView(nextSRV.ptr, tex);
 		}
 
