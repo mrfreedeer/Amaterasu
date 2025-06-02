@@ -54,7 +54,8 @@ void Basic3DMode::Startup()
 	m_allEntities.push_back(sphereProp);
 
 	CreateResourceDescriptors();
-	CreateVertexBuffers();
+	CreateGPUBuffers();
+	
 
 	m_isCursorHidden = true;
 	m_isCursorClipped = true;
@@ -119,6 +120,8 @@ void Basic3DMode::Update(float deltaSeconds)
 
 	DisplayClocksInfo();
 
+
+	UpdateCamera(m_worldCamera, m_worldCameraBuffer);
 }
 
 void Basic3DMode::Render()
@@ -319,7 +322,7 @@ void Basic3DMode::CreateResourceDescriptors()
 		g_theRenderer->CreateConstantBufferView(nextModelCBV.ptr, modelBuffer);
 		g_theRenderer->CreateConstantBufferView(nextDrawCBV.ptr, drawInfoBuffer);
 
-		entity->SetDrawConstants(0, currentModelCBV, currentSRV);
+		entity->SetDrawConstants(0, entityIndex, currentSRV);
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE nextSamplerHandle = samplerHeap->GetNextCPUHandle();
@@ -333,7 +336,7 @@ void Basic3DMode::CreateResourceDescriptors()
 
 }
 
-void Basic3DMode::CreateVertexBuffers()
+void Basic3DMode::CreateGPUBuffers()
 {
 	CommandList* copyCmdList = m_copyCmdLists[m_renderContext->GetBufferIndex()];
 	std::vector<Buffer*> intermediateBuffers;

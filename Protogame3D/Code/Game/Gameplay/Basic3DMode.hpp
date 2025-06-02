@@ -36,7 +36,7 @@ protected:
 	virtual void UpdateDeveloperCheatCodes(float deltaSeconds);
 	virtual void UpdateInput(float deltaSeconds) override;
 	virtual void CreateResourceDescriptors();
-	void CreateVertexBuffers();
+	void CreateGPUBuffers();
 
 private:
 	void DisplayClocksInfo() const;
