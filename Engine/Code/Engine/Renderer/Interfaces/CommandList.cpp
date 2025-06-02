@@ -267,7 +267,7 @@ CommandList& CommandList::SetViewport(AABB2 const& viewport)
 
 CommandList& CommandList::SetViewport(Vec2 const& viewportMin, Vec2 const& viewportMax)
 {
-	D3D12_VIEWPORT apiViewport = { viewportMin.x, viewportMin.y, viewportMax.x, viewportMax.y };
+	D3D12_VIEWPORT apiViewport = { viewportMin.x, viewportMin.y, viewportMax.x, viewportMax.y, 0.0f, 1.0f};
 	m_cmdList->RSSetViewports(1, &apiViewport);
 	return *this;
 }

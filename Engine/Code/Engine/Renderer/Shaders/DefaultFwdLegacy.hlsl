@@ -46,7 +46,7 @@ v2p_t VertexMain(vs_input_t input)
     CameraConstants cameraConstants = cameraCBuffers[CameraBufferInd];
     
     v2p_t v2p;
-    float4 position = float4(input.localPosition, 1);
+    float4 position = float4(input.localPosition, 1.0f);
     float4 modelTransform = mul(modelConstants.ModelMatrix, position);
     float4 modelToViewPos = mul(cameraConstants.ViewMatrix, modelTransform);
     v2p.position = mul(cameraConstants.ProjectionMatrix, modelToViewPos);
