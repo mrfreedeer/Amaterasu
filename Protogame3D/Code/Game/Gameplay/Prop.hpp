@@ -18,19 +18,15 @@ public:
 	~Prop();
 
 	void Update(float deltaSeconds) override;
-	void Render() const override;
-
+	void Render(CommandList* commandList) const override;
+	Texture* GetUsedTexture() const override;
+	Buffer* CreateVertexBuffer();
 private:
 	void InitializeLocalVerts();
 
 	void InitiliazeLocalVertsCube();
 	void InitiliazeLocalVertsGrid();
 	void InitializeLocalVertsSphere();
-
-
-	void RenderMultiColoredCube() const;
-	void RenderGrid() const;
-	void RenderSphere() const;
 
 	Texture* m_texture = nullptr;
 	PropRenderType m_type = PropRenderType::CUBE;

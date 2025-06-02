@@ -9,7 +9,7 @@ public:
 	~Player();
 
 	void Update(float deltaSeconds);
-	void Render() const;
+	void Render(CommandList* cmdList) const;
 
 
 private:

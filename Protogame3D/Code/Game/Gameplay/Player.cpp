@@ -30,8 +30,9 @@ void Player::Update(float deltaSeconds)
 }
 
 
-void Player::Render() const
+void Player::Render(CommandList* cmdList) const
 {
+	UNUSED(cmdList);
 }
 
 void Player::UpdateInput()

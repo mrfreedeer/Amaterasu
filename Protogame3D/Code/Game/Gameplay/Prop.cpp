@@ -27,19 +27,19 @@ Prop::Prop(Game* pointerToGame, Vec3 const& startingWorldPosition, PropRenderTyp
 	Entity(pointerToGame, startingWorldPosition),
 	m_type(renderType)
 {
-
+	InitializeLocalVerts();
 }
 
 Prop::~Prop()
 {
-	delete m_modelBuffer;
-	m_modelBuffer = nullptr;
+
 }
 
 
 void Prop::InitializeLocalVerts()
 {
 	CreateModelBuffer(g_theRenderer);
+	CreateDrawInfoBuffer(g_theRenderer);
 
 	switch (m_type)
 	{
@@ -53,6 +53,7 @@ void Prop::InitializeLocalVerts()
 		InitializeLocalVertsSphere();
 		break;
 	}
+	
 }
 
 void Prop::InitiliazeLocalVertsCube()
@@ -135,41 +136,36 @@ void Prop::Update(float deltaSeconds)
 	}
 }
 
-void Prop::Render() const
+void Prop::Render(CommandList* commandList) const
 {
-	/*g_theRenderer->SetModelColor(m_modelColor);
-	Mat44 modelMatrix = GetModelMatrix();
-	g_theRenderer->SetModelMatrix(modelMatrix);*/
+	Buffer* vertexBuffer = GetVertexBuffer();
 
+	commandList->SetVertexBuffers(&vertexBuffer, 1, 0);
+	commandList->DrawInstance((unsigned int)m_verts.size(), 1, 0, 0);
+}
+
+Texture* Prop::GetUsedTexture() const
+{
 	switch (m_type) {
-	case PropRenderType::CUBE:
-		RenderMultiColoredCube();
-		break;
-	case PropRenderType::GRID:
-		RenderGrid();
-		break;
-	case PropRenderType::SPHERE:
-		RenderSphere();
-		break;
+	case PropRenderType::CUBE:		return g_textures[(int)GAME_TEXTURE::CompanionCube];
+	case PropRenderType::SPHERE:	return  g_textures[(int)GAME_TEXTURE::TestUV];
 	}
+	
+	return g_theRenderer->GetDefaultTexture();
 }
 
-void Prop::RenderMultiColoredCube() const
+Buffer* Prop::CreateVertexBuffer()
 {
-	/*g_theRenderer->BindTexture(g_textures[(int)GAME_TEXTURE::CompanionCube]);
-	g_theRenderer->DrawVertexArray(m_verts);*/
-}
+	BufferDesc vBufferDsc = {};
+	vBufferDsc.m_data = m_verts.data();
+	vBufferDsc.m_debugName = "UploadVBuffer";
+	vBufferDsc.m_memoryUsage = MemoryUsage::Default;
+	vBufferDsc.m_size = sizeof(Vertex_PCU) * m_verts.size();
+	vBufferDsc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
+	vBufferDsc.m_type = BufferType::Vertex;
 
-void Prop::RenderGrid() const
-{
-	//g_theRenderer->BindTexture(nullptr);
-	//g_theRenderer->DrawVertexArray(m_verts);
+	Buffer* intermediateBuffer = nullptr;
+	m_vertexBuffer = g_theRenderer->CreateDefaultBuffer(vBufferDsc, &intermediateBuffer);
 
-}
-
-void Prop::RenderSphere() const
-{
-	//g_theRenderer->BindTexture(g_textures[(int)GAME_TEXTURE::TestUV]);
-	////g_theRenderer->BindTexture(nullptr);
-	//g_theRenderer->DrawVertexArray(m_verts);
+	return intermediateBuffer;
 }
