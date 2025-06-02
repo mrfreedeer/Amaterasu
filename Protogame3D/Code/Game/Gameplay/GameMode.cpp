@@ -40,6 +40,11 @@ void GameMode::Startup()
 
 	m_depthTarget = g_theRenderer->CreateTexture(defaultDrtDesc);
 
+
+	m_copyFence = g_theRenderer->CreateFence(CommandListType::COPY);
+	m_frameFence = g_theRenderer->CreateFence(CommandListType::DIRECT);
+	m_gpuFence = g_theRenderer->CreateFence(CommandListType::DIRECT);
+
 	//// Add these to resource vector to better handle state decay
 	//m_resources.push_back(m_renderTarget);
 	//m_resources.push_back(m_depthTarget);
@@ -100,6 +105,12 @@ void GameMode::Shutdown()
 
 	delete m_UICameraBuffer;
 	m_UICameraBuffer = nullptr;
+
+	delete m_opaqueDefault2D;
+	m_opaqueDefault2D = nullptr;
+
+	delete m_alphaDefault2D;
+	m_alphaDefault2D = nullptr;
 }
 
 void GameMode::UpdateDeveloperCheatCodes(float deltaSeconds)
@@ -188,15 +199,24 @@ void GameMode::UpdateEntities(float deltaSeconds)
 
 void GameMode::RenderEntities() const
 {
+	CommandList* cmdList = m_renderContext->GetCommandList();
+	DescriptorHeap* cbvHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	for (int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
 		Entity* entity = m_allEntities[entityIndex];
-		entity->Render();
+
+		if (entity != m_player) {
+			Buffer* drawInfo = entity->GetDrawInfoBuffer();
+
+			unsigned int drawInfoOffset = m_cbvStart + entityIndex;
+			cmdList->SetDescriptorTable(PARAM_DRAW_INFO_BUFFERS, cbvHeap->GetGPUHandleAtOffset(drawInfoOffset), PipelineType::Graphics);
+		}
+		entity->Render(cmdList);
 	}
 }
 
 void GameMode::RenderUI() 
 {
-	m_renderContext->BeginCamera(m_UICamera);
+	//m_renderContext->BeginCamera(m_UICamera);
 
 	//AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
 	//AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
@@ -207,6 +227,78 @@ void GameMode::RenderUI()
 	//std::vector<Vertex_PCU> gameInfoVerts;
 
 	//g_theConsole->Render(devConsoleBounds);
-	m_renderContext->EndCamera(m_UICamera);
+	//m_renderContext->EndCamera(m_UICamera);
 
+}
+
+void GameMode::CreateRendererObjects(char const* debugName, unsigned int* descriptorCounts)
+{
+	RenderContextDesc ctxDesc = {};
+	CommandListDesc cmdListDesc = {};
+	cmdListDesc.m_initialState = nullptr;
+	cmdListDesc.m_type = CommandListType::DIRECT;
+	cmdListDesc.m_debugName = debugName ;
+	cmdListDesc.m_debugName += "Graphics";
+
+	ctxDesc.m_cmdListDesc = cmdListDesc;
+	ctxDesc.m_renderer = g_theRenderer;
+
+	cmdListDesc.m_type = CommandListType::COPY;
+	cmdListDesc.m_debugName = debugName;
+	cmdListDesc.m_debugName += "CopyList";
+
+	m_copyCmdLists = new CommandList * [2];
+	// For double buffering
+	m_copyCmdLists[0] = g_theRenderer->CreateCommandList(cmdListDesc);
+	m_copyCmdLists[1] = g_theRenderer->CreateCommandList(cmdListDesc);
+
+	DescriptorHeapDesc heapDesc = {};
+	heapDesc.m_debugName = debugName;
+	heapDesc.m_debugName += "Heap";
+	heapDesc.m_flags = DescriptorHeapFlags::ShaderVisible;
+	heapDesc.m_numDescriptors = 128;
+	heapDesc.m_type = DescriptorHeapType::CBV_SRV_UAV;
+
+	ctxDesc.m_descriptorCounts = descriptorCounts;
+
+	m_renderContext = new RenderContext(ctxDesc);
+
+	ShaderPipeline defaultLegacy = g_theRenderer->GetEngineShader(EngineShaderPipelines::LegacyForward);
+	PipelineStateDesc psoDesc = {};
+	psoDesc.m_blendModes[0] = BlendMode::OPAQUE;
+	psoDesc.m_byteCodes[ShaderType::Vertex] = defaultLegacy.m_firstShader;
+	psoDesc.m_byteCodes[ShaderType::Pixel] = defaultLegacy.m_pixelShader;
+	psoDesc.m_cullMode = CullMode::BACK;
+	psoDesc.m_debugName = "Opaque2D";
+	psoDesc.m_depthEnable = true;
+	psoDesc.m_depthFunc = DepthFunc::LESSEQUAL;
+	psoDesc.m_depthStencilFormat = TextureFormat::D24_UNORM_S8_UINT;
+	psoDesc.m_fillMode = FillMode::SOLID;
+	psoDesc.m_renderTargetCount = 1;
+	psoDesc.m_renderTargetFormats[0] = TextureFormat::R8G8B8A8_UNORM;
+	psoDesc.m_topology = TopologyType::TRIANGLELIST;
+	psoDesc.m_type = PipelineType::Graphics;
+	psoDesc.m_windingOrder = WindingOrder::COUNTERCLOCKWISE;
+
+	m_opaqueDefault2D = g_theRenderer->CreatePipelineState(psoDesc);
+
+	// Alpha for font rendering
+	psoDesc.m_blendModes[0] = BlendMode::ALPHA;
+	psoDesc.m_debugName = "Alpha2D";
+	m_alphaDefault2D = g_theRenderer->CreatePipelineState(psoDesc);
+
+	BufferDesc cameraBuffDesc = {};
+	CameraConstants cameraConstants = m_worldCamera.GetCameraConstants();
+	cameraBuffDesc.m_data = &cameraConstants;
+	cameraBuffDesc.m_debugName = "UICamConst";
+	cameraBuffDesc.m_memoryUsage = MemoryUsage::Dynamic;
+	cameraBuffDesc.m_size = sizeof(cameraConstants);
+	cameraBuffDesc.m_stride.m_strideBytes = sizeof(CameraConstants);
+	cameraBuffDesc.m_type = BufferType::Constant;
+
+	m_worldCameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
+
+	cameraConstants = m_UICamera.GetCameraConstants();
+	cameraBuffDesc.m_data = &cameraConstants;
+	m_UICameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
 }

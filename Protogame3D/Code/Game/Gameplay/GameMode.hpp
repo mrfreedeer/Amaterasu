@@ -12,6 +12,7 @@ class Game;
 class Fence;
 class CommandList;
 class Resource;
+struct Sampler;
 
 class GameMode {
 public:
@@ -32,6 +33,7 @@ protected:
 	virtual void UpdateEntities(float deltaSeconds);
 	virtual void RenderEntities() const;
 	virtual void RenderUI();
+	virtual void CreateRendererObjects(char const* debugName, unsigned int* descriptorCounts);
 protected:
 	Game* m_game = nullptr;
 	RenderContext* m_renderContext = nullptr;
@@ -43,13 +45,21 @@ protected:
 	Texture* m_depthTarget = nullptr;
 	Buffer* m_UICameraBuffer = nullptr;
 	Buffer* m_worldCameraBuffer = nullptr;
+	Sampler* m_defaultSampler = nullptr;
+	Sampler* m_defaultTextSampler = nullptr;
 	std::vector<Resource*> m_resources;
+	PipelineState* m_opaqueDefault2D = nullptr;
+	PipelineState* m_alphaDefault2D = nullptr;
 	Camera m_worldCamera;
 	Camera m_UICamera;
 	Vec2 m_UISize = {};
 	Vec2 m_worldSize = {};
 
 	float m_timeAlive = 0.0f;
+	unsigned int m_cameraCBVStart = 0;
+	unsigned int m_cbvStart = 0;
+	unsigned int m_drawInfoCBVStart = 0;
+	unsigned int m_modelCBVStart = 0;
 	Clock m_clock;
 
 	EntityList m_allEntities;
