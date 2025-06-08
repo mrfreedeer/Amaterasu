@@ -1,6 +1,8 @@
 #include "Engine/Core/DevConsole.hpp"
 #include "Engine/Core/VertexUtils.hpp"
 #include "Engine/Renderer/Renderer.hpp"
+#include "Engine/Renderer/Camera.hpp"
+#include "Engine/Renderer/Interfaces/CommandList.hpp"
 #include "Engine/Renderer/BitmapFont.hpp"
 #include "Engine/Network/RemoteConsole.hpp"
 #include "Engine/Core/XmlUtils.hpp"
@@ -30,8 +32,14 @@ DevConsole::DevConsole(DevConsoleConfig const& config) :
 	m_historyIndex = 0;
 	m_scrollingIndex = m_historyIndex;
 
+	DescriptorHeapDesc desc = {};
+	desc.m_debugName = "DevConsoleRscHeap";
+	desc.m_flags = DescriptorHeapFlags::ShaderVisible;
+	desc.m_heap = nullptr;
+	desc.m_numDescriptors = 2;
+	desc.m_type = DescriptorHeapType::CBV_SRV_UAV;
 
-
+	Renderer* renderer =  m_config.m_renderer;
 }
 
 DevConsole::~DevConsole()
@@ -41,7 +49,6 @@ DevConsole::~DevConsole()
 
 void DevConsole::Startup()
 {
-	
 	m_linesMutex.lock();
 	m_lines.clear();
 	m_lines.reserve(600);
@@ -182,21 +189,34 @@ void DevConsole::AddLine(Rgba8 const& color, std::string const& text)
 	m_linesMutex.unlock();
 }
 
-void DevConsole::Render(AABB2 const& bounds, Renderer* rendererOverride) const
+void DevConsole::Render(AABB2 const& bounds, CommandList* cmdListOverride) const
 {
-	if (m_mode == DevConsoleMode::HIDDEN || !m_config.m_renderer) return;
+	bool hasAnyCmdList = (m_config.m_cmdList || cmdListOverride);
+	if (m_mode == DevConsoleMode::HIDDEN || !hasAnyCmdList) return;
 
-	Renderer* usedRenderer = m_config.m_renderer;
-	if (rendererOverride) {
-		usedRenderer = rendererOverride;
+	CommandList* usedCmdList = m_config.m_cmdList;
+	if (cmdListOverride) {
+		usedCmdList = cmdListOverride;
 	}
 
 	std::string fullFontPath = "Data/Images/" + m_config.m_font;
-	//#TODO DX12 FIXTHIS
 
-	static BitmapFont* usedFont = usedRenderer->CreateOrGetBitmapFont(fullFontPath.c_str());
+	static BitmapFont* usedFont = m_config.m_renderer->CreateOrGetBitmapFont(fullFontPath.c_str());
+	static bool createdDescriptors = false;
 
-	Render_OpenFull(bounds, *usedRenderer, *usedFont, m_config.m_fontAspect);
+	if (!createdDescriptors) {
+		createdDescriptors = true;
+		size_t texDescriptor = m_rscHeap->GetNextCPUHandle().ptr;
+		m_config.m_renderer->CreateShaderResourceView(texDescriptor, &usedFont->GetTexture());
+		
+		size_t cameraDescriptor = m_rscHeap->GetNextCPUHandle().ptr;
+		m_config.m_renderer->CreateShaderResourceView(cameraDescriptor, m_usedCamera->GetCameraBuffer());
+
+
+	}
+
+
+	Render_OpenFull(bounds, *usedCmdList, *usedFont, m_config.m_fontAspect);
 }
 
 DevConsoleMode DevConsole::GetMode() const
@@ -210,6 +230,21 @@ void DevConsole::SetMode(DevConsoleMode newMode)
 	if (m_mode == DevConsoleMode::SHOWN) {
 		m_caretStopwatch.Restart();
 	}
+}
+
+void DevConsole::SetCommandList(CommandList* cmdList)
+{
+	m_config.m_cmdList = cmdList;
+}
+
+void DevConsole::SetRenderer(Renderer* renderer)
+{
+	m_config.m_renderer = renderer;
+}
+
+void DevConsole::SetCamera(Camera const& camera)
+{
+	m_usedCamera = &camera;
 }
 
 void DevConsole::ToggleMode(DevConsoleMode mode)
@@ -232,11 +267,6 @@ void DevConsole::ToggleMode(DevConsoleMode mode)
 	}
 }
 
-void DevConsole::SetRenderer(Renderer* newRenderer)
-{
-	m_config.m_renderer = newRenderer;
-}
-
 void DevConsole::Clear()
 {
 	m_linesMutex.lock();
@@ -244,7 +274,7 @@ void DevConsole::Clear()
 	m_linesMutex.unlock();
 }
 
-void DevConsole::Render_OpenFull(AABB2 const& bounds, Renderer& renderer, BitmapFont& font, float fontAspect) const
+void DevConsole::Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, BitmapFont& font, float fontAspect) const
 {
 	AABB2 inputBounds = bounds;
 	float cellHeight = bounds.m_maxs.y / m_config.m_maxLinesShown;
@@ -253,14 +283,12 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, Renderer& renderer, Bitmap
 
 	float minGroupTextHeight = bounds.m_mins.y + cellHeight;
 
-	std::vector<Vertex_PCU> blackOverlayVerts;
-	std::vector<Vertex_PCU> whiteInputOverlayVerts;
+	std::vector<Vertex_PCU> overlayVerts;
 
-	blackOverlayVerts.reserve(6);
-	whiteInputOverlayVerts.reserve(6);
+	overlayVerts.reserve(12);
 
-	AddVertsForAABB2D(blackOverlayVerts, bounds, Rgba8::TRANSPARENT_BLACK);
-	AddVertsForAABB2D(whiteInputOverlayVerts, inputBounds, Rgba8::TRANSPARENT_WHITE);
+	AddVertsForAABB2D(overlayVerts, bounds, Rgba8::TRANSPARENT_BLACK);
+	AddVertsForAABB2D(overlayVerts, inputBounds, Rgba8::TRANSPARENT_WHITE);
 
 	std::vector<Vertex_PCU> textVerts;
 	textVerts.reserve(m_lines.size() * 40);
@@ -282,26 +310,26 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, Renderer& renderer, Bitmap
 	}
 
 	m_linesMutex.unlock();
+
 	//#TODO DX12 FIXTHIS
 
 	/*renderer.BindTexture(nullptr);
 	renderer.SetBlendMode(BlendMode::ALPHA);
-	renderer.DrawVertexArray(blackOverlayVerts);
-	renderer.DrawVertexArray(whiteInputOverlayVerts);
+	renderer.DrawVertexArray(overlayVerts);
 
 	Render_InputCaret(renderer, font, fontAspect, cellHeight);
 
 	renderer.BindTexture(&font.GetTexture());
 	renderer.DrawVertexArray(textVerts);*/
 
-	Render_UserInput(renderer, font, fontAspect, cellHeight);
+	Render_UserInput(cmdList, font, fontAspect, cellHeight);
 
 #if defined(ENGINE_USE_NETWORK)
 	m_remoteConsole->Render(renderer);
 #endif
 }
 
-void DevConsole::Render_InputCaret(Renderer& renderer, BitmapFont& font, float fontAspect, float cellHeight) const
+void DevConsole::Render_InputCaret(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight) const
 {
 	std::string strAtCaretPos = m_inputText.substr(0, m_caretPosition);
 	float inputTextWidth = font.GetTextWidth(cellHeight, strAtCaretPos, fontAspect);
@@ -321,7 +349,7 @@ void DevConsole::Render_InputCaret(Renderer& renderer, BitmapFont& font, float f
 	//renderer.DrawVertexArray(caretVertexes);
 }
 
-void DevConsole::Render_UserInput(Renderer& renderer, BitmapFont& font, float fontAspect, float cellHeight) const
+void DevConsole::Render_UserInput(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight) const
 {
 	std::vector<Vertex_PCU> userInputTextVerts;
 

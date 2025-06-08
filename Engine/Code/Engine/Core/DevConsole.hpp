@@ -11,7 +11,10 @@
 #include <vector>
 #include <mutex>
 
+class Camera;
 class Renderer;
+class CommandList;
+class DescriptorHeap;
 class BitmapFont;
 class RemoteConsole;
 
@@ -30,8 +33,9 @@ enum class DevConsoleMode {
 };
 
 struct DevConsoleConfig {
-	Renderer* m_renderer = nullptr;
 	DevConsoleMode m_mode = DevConsoleMode::HIDDEN;
+	CommandList* m_cmdList = nullptr;
+	Renderer* m_renderer = nullptr;
 	std::string m_font = "";
 	float m_fontAspect = 0.6f;
 	float m_maxLinesShown = 20.5f;
@@ -61,15 +65,16 @@ public:
 	bool ExecuteXmlCommandScriptNode(XMLElement const& cmdScriptXmlElement);
 	bool ExecuteXmlCommandScriptFile(std::filesystem::path const& filePath);
 	void AddLine(Rgba8 const& color, std::string const& text);
-	void Render(AABB2 const& bounds, Renderer* rendererOverride = nullptr) const;
+	void Render(AABB2 const& bounds, CommandList* cmdListOverride = nullptr) const;
 
 	DevConsoleMode GetMode() const;
 	void SetMode(DevConsoleMode newMode);
+	void SetCommandList(CommandList* cmdList);
+	void SetRenderer(Renderer* renderer);
+	void SetCamera(Camera const& camera);
 	void ToggleMode(DevConsoleMode mode);
 
-	void SetRenderer(Renderer* newRenderer);
 	void Clear();
-
 
 	static Rgba8 const ERROR_COLOR;
 	static Rgba8 const WARNING_COLOR;
@@ -87,9 +92,9 @@ public:
 	RemoteConsole* m_remoteConsole = nullptr;
 
 protected:
-	void Render_OpenFull(AABB2 const& bounds, Renderer& renderer, BitmapFont& font, float fontAspect = 1.0f) const;
-	void Render_InputCaret(Renderer& renderer, BitmapFont& font, float fontAspect, float cellHeight) const;
-	void Render_UserInput(Renderer& renderer, BitmapFont& font, float fontAspect, float cellHeight) const;
+	void Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, BitmapFont& font, float fontAspect = 1.0f) const;
+	void Render_InputCaret(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight) const;
+	void Render_UserInput(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight) const;
 
 	std::vector<std::string> ProcessCommandLine(std::string const& commandLine) const;
 protected:
@@ -109,5 +114,9 @@ protected:
 	int	m_historyIndex = -1;
 	int m_scrollingIndex = -1;
 
-
+	// Heap for CBV and SRV
+	DescriptorHeap* m_rscHeap = nullptr;
+	// Sampler heap
+	DescriptorHeap* m_samplerHeap = nullptr;
+	Camera const* m_usedCamera = nullptr;
 };
