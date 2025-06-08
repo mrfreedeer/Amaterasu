@@ -63,8 +63,8 @@ public:
 	CommandList& SetDescriptorTable(unsigned int paramIndex, D3D12_GPU_DESCRIPTOR_HANDLE baseGPUDescriptor, PipelineType pipelineType);
 	CommandList& SetDescriptorTable(unsigned int paramIndex, size_t baseGPUDescriptor, PipelineType pipelineType);
 	CommandList& SetGraphicsRootConstants(unsigned int count, unsigned int* constants);
-	CommandList& SetViewport(AABB2 const& viewport);
-	CommandList& SetViewport(Vec2 const& viewportMin, Vec2 const& viewportMax);
+	CommandList& SetViewport(AABB2 const& viewport, float depthMin = 0.0f, float depthMax = 1.0f);
+	CommandList& SetViewport(Vec2 const& viewportMin, Vec2 const& viewportMax, float depthMin = 0.0f, float depthMax = 1.0f);
 	CommandList& SetScissorRect(AABB2 const& rect);
 	CommandList& SetScissorRect(Vec2 const& rectMin, Vec2 const& rectMax);
 	/// <summary>

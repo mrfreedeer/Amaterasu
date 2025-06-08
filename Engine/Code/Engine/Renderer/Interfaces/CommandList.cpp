@@ -258,16 +258,16 @@ CommandList& CommandList::SetGraphicsRootConstants(unsigned int count, unsigned 
 	return *this;
 }
 
-CommandList& CommandList::SetViewport(AABB2 const& viewport)
+CommandList& CommandList::SetViewport(AABB2 const& viewport, float depthMin /*= 0.0f*/, float depthMax /*= 1.0f*/)
 {
-	D3D12_VIEWPORT apiViewport = {viewport.m_mins.x, viewport.m_mins.y, viewport.m_maxs.x, viewport.m_maxs.y};
+	D3D12_VIEWPORT apiViewport = {viewport.m_mins.x, viewport.m_mins.y, viewport.m_maxs.x, viewport.m_maxs.y, depthMin, depthMax};
 	m_cmdList->RSSetViewports(1, &apiViewport);
 	return *this;
 }
 
-CommandList& CommandList::SetViewport(Vec2 const& viewportMin, Vec2 const& viewportMax)
+CommandList& CommandList::SetViewport(Vec2 const& viewportMin, Vec2 const& viewportMax, float depthMin /*= 0.0f*/, float depthMax /*= 1.0f*/)
 {
-	D3D12_VIEWPORT apiViewport = { viewportMin.x, viewportMin.y, viewportMax.x, viewportMax.y, 0.0f, 1.0f};
+	D3D12_VIEWPORT apiViewport = { viewportMin.x, viewportMin.y, viewportMax.x, viewportMax.y, depthMin, depthMax};
 	m_cmdList->RSSetViewports(1, &apiViewport);
 	return *this;
 }
