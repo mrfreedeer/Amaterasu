@@ -121,7 +121,7 @@ void Basic3DMode::Update(float deltaSeconds)
 	DisplayClocksInfo();
 
 
-	UpdateCamera(m_worldCamera, m_worldCameraBuffer);
+	UpdateCamera(m_worldCamera, m_worldCamera.GetCameraBuffer());
 }
 
 void Basic3DMode::Render()
@@ -295,12 +295,14 @@ void Basic3DMode::CreateResourceDescriptors()
 	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 
 	unsigned int texturesPerEntity = 1;
-	m_cbvStart= (texturesPerEntity * (unsigned int)m_allEntities.size()) + 1;
+	m_cbvStart= (texturesPerEntity * (unsigned int)m_allEntities.size()) + 1; // First will be default texture
 	m_drawInfoCBVStart = m_cbvStart;
 	m_cameraCBVStart = m_cbvStart + (unsigned int)m_allEntities.size();
-	m_modelCBVStart = m_cameraCBVStart + 2;
+	m_modelCBVStart = m_cameraCBVStart + 2; // 2 Cameras
 	D3D12_CPU_DESCRIPTOR_HANDLE defaultTexHandle = resourcesHeap->GetNextCPUHandle();
+	D3D12_CPU_DESCRIPTOR_HANDLE defaultModelBuffer = resourcesHeap->GetCPUHandleAtOffset(m_modelCBVStart);
 	g_theRenderer->CreateShaderResourceView(defaultTexHandle.ptr, g_theRenderer->GetDefaultTexture());
+	g_theRenderer->CreateShaderResourceView(defaultModelBuffer.ptr, g_theRenderer->GetDefaultModelBuffer());
 
 	for (unsigned int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
 		Entity* entity = m_allEntities[entityIndex];
@@ -312,8 +314,8 @@ void Basic3DMode::CreateResourceDescriptors()
 			currentSRV = entityIndex;
 			g_theRenderer->CreateShaderResourceView(nextSRV.ptr, tex);
 		}
-
-		unsigned int currentModelCBV = m_modelCBVStart + entityIndex;
+		// Model buffer is at slot 0
+		unsigned int currentModelCBV = m_modelCBVStart + entityIndex + 1;
 		unsigned int currentDrawCBV = m_drawInfoCBVStart + entityIndex;
 		D3D12_CPU_DESCRIPTOR_HANDLE nextModelCBV = resourcesHeap->GetCPUHandleAtOffset(currentModelCBV);
 		D3D12_CPU_DESCRIPTOR_HANDLE nextDrawCBV = resourcesHeap->GetCPUHandleAtOffset(currentDrawCBV);
@@ -322,7 +324,7 @@ void Basic3DMode::CreateResourceDescriptors()
 		g_theRenderer->CreateConstantBufferView(nextModelCBV.ptr, modelBuffer);
 		g_theRenderer->CreateConstantBufferView(nextDrawCBV.ptr, drawInfoBuffer);
 
-		entity->SetDrawConstants(0, entityIndex, currentSRV);
+		entity->SetDrawConstants(0, entityIndex + 1, currentSRV);
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE nextSamplerHandle = samplerHeap->GetNextCPUHandle();
@@ -331,8 +333,8 @@ void Basic3DMode::CreateResourceDescriptors()
 	m_defaultTextSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::POINTCLAMP);
 
 
-	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetCPUHandleAtOffset(m_cameraCBVStart).ptr, m_worldCameraBuffer);
-	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetCPUHandleAtOffset(m_cameraCBVStart + 1).ptr, m_UICameraBuffer);
+	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetCPUHandleAtOffset(m_cameraCBVStart).ptr, m_worldCamera.GetCameraBuffer());
+	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetCPUHandleAtOffset(m_cameraCBVStart + 1).ptr, m_UICamera.GetCameraBuffer());
 
 }
 

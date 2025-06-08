@@ -100,7 +100,7 @@ void AttractScreenMode::Startup()
 	nextSamplerHandle = samplerHeap->GetNextCPUHandle();
 	m_defaultTextSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::POINTCLAMP);
 
-	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, m_UICameraBuffer);
+	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, m_UICamera.GetCameraBuffer());
 	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultModelBuffer());
 	g_theRenderer->CreateShaderResourceView(resourcesHeap->GetNextCPUHandle().ptr, g_theRenderer->GetDefaultTexture());
 	g_theRenderer->CreateShaderResourceView(resourcesHeap->GetNextCPUHandle().ptr, m_testTexture);

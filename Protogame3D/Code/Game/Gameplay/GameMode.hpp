@@ -44,8 +44,6 @@ protected:
 	CommandList** m_copyCmdLists = nullptr;
 	Texture* m_renderTarget = nullptr;
 	Texture* m_depthTarget = nullptr;
-	Buffer* m_UICameraBuffer = nullptr;
-	Buffer* m_worldCameraBuffer = nullptr;
 	Sampler* m_defaultSampler = nullptr;
 	Sampler* m_defaultTextSampler = nullptr;
 	std::vector<Resource*> m_resources;

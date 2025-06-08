@@ -100,11 +100,19 @@ void GameMode::Shutdown()
 	delete m_gpuFence;
 	m_gpuFence = nullptr;
 
-	delete m_worldCameraBuffer;
-	m_worldCameraBuffer = nullptr;
+	Buffer* worldCameraBuffer = m_worldCamera.GetCameraBuffer();
+	m_worldCamera.SetCameraBuffer(nullptr);
 
-	delete m_UICameraBuffer;
-	m_UICameraBuffer = nullptr;
+	Buffer* UICameraBuffer = m_UICamera.GetCameraBuffer();
+	m_UICamera.SetCameraBuffer(nullptr);
+
+	if (worldCameraBuffer) {
+		delete worldCameraBuffer;
+	}
+
+	if (UICameraBuffer) {
+		delete UICameraBuffer;
+	}
 
 	delete m_opaqueDefault2D;
 	m_opaqueDefault2D = nullptr;
@@ -222,18 +230,31 @@ void GameMode::RenderEntities() const
 
 void GameMode::RenderUI() 
 {
-	//m_renderContext->BeginCamera(m_UICamera);
+	m_UICamera.SetColorTarget(m_renderTarget);
+	m_UICamera.SetDepthTarget(m_depthTarget);
+	m_renderContext->BeginCamera(m_UICamera);
+	CommandList* cmdList = m_renderContext->GetCommandList();
+	DescriptorHeap* resourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 
-	//AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
-	//AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
+	cmdList->BindPipelineState(m_alphaDefault2D);
+	cmdList->SetRenderTargets(1, &m_renderTarget, false, m_depthTarget);
+	cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
+	// UI Camera will be slot 1
+	cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, resourcesHeap->GetGPUHandleAtOffset(m_cameraCBVStart + 1), PipelineType::Graphics);
+	cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, resourcesHeap->GetGPUHandleAtOffset(m_modelCBVStart), PipelineType::Graphics);
+	cmdList->SetDescriptorTable(PARAM_TEXTURES, resourcesHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+	// Text Sampler will always be allocated at descriptor slot 1
+	cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleAtOffset(1), PipelineType::Graphics);
+	cmdList->SetTopology(TopologyType::TRIANGLELIST);
+	unsigned int drawConstants[16] = { 0 };
+	cmdList->SetGraphicsRootConstants(16, drawConstants);
 
-	//Material* default2DMat = g_theMaterialSystem->GetMaterialForName("Default2DMaterial");
-	//g_theRenderer->BindMaterial(default2DMat);
+	AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
+	AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
 
-	//std::vector<Vertex_PCU> gameInfoVerts;
-
-	//g_theConsole->Render(devConsoleBounds);
-	//m_renderContext->EndCamera(m_UICamera);
+	g_theConsole->Render(devConsoleBounds);
+	m_renderContext->EndCamera(m_UICamera);
 
 }
 
@@ -302,9 +323,11 @@ void GameMode::CreateRendererObjects(char const* debugName, unsigned int* descri
 	cameraBuffDesc.m_stride.m_strideBytes = sizeof(CameraConstants);
 	cameraBuffDesc.m_type = BufferType::Constant;
 
-	m_worldCameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
+	Buffer* worldCameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
+	m_worldCamera.SetCameraBuffer(worldCameraBuffer);
 
 	cameraConstants = m_UICamera.GetCameraConstants();
 	cameraBuffDesc.m_data = &cameraConstants;
-	m_UICameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
+	Buffer* UICameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
+	m_UICamera.SetCameraBuffer(UICameraBuffer);
 }
