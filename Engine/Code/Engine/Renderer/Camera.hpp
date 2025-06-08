@@ -10,6 +10,7 @@
 struct CameraConstants;
 
 class Texture;
+class Buffer;
 enum class CameraMode {
 	Orthographic = 1,
 	Perspective,
@@ -25,6 +26,9 @@ public:
 
 	void SetDepthTarget(Texture* depth);
 	Texture* GetDepthTarget() const;
+
+	void SetCameraBuffer(Buffer* buffer);
+	Buffer* GetCameraBuffer() const;
 
 	void SetOrthoView(Vec2 const& bottomLeft, Vec2 const& topRight);
 	void SetPerspectiveView(float aspect, float fov, float nearZ, float farZ);
@@ -80,5 +84,6 @@ protected:
 	AABB2 m_viewPort = AABB2::ZERO_TO_ONE;
 
 	Texture* m_colorTargets[8] = {};
+	Buffer* m_cbv = nullptr;
 	Texture* m_depthTarget = nullptr;
 };

@@ -22,6 +22,16 @@ Texture* Camera::GetDepthTarget() const
 	return m_depthTarget;
 }
 
+void Camera::SetCameraBuffer(Buffer* buffer)
+{
+	m_cbv = buffer;
+}
+
+Buffer* Camera::GetCameraBuffer() const
+{
+	return m_cbv;
+}
+
 void Camera::SetOrthoView(Vec2 const& leftPoint, Vec2 const& rightPoint)
 {
 	this->bottomLeft = leftPoint;
