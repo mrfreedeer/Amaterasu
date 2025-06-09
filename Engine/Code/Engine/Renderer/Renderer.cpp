@@ -432,7 +432,7 @@ void Renderer::CreateDefaultRootSignature()
 	descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded model buffers
 	descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (UINT)-1, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded camera buffers
 	descRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 2, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);				// Draw constants
-	descRange[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 128, 0, 3);																// Game CBuffers
+	descRange[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 128, 1, 2);																// Game CBuffers
 	descRange[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded textures
 	descRange[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 128, 0, 0);																// Game UAVs
 	descRange[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);															// There might be max a sampler per RT (I've only used 1 ever)
@@ -447,7 +447,7 @@ void Renderer::CreateDefaultRootSignature()
 	rootParams[6].InitAsDescriptorTable(1, &descRange[6]);
 
 	// Legacy will used root parameter constants for draw constants
-	rootParams[7].InitAsConstants(16, 0, 4);
+	rootParams[7].InitAsConstants(16, 2, 3);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignDesc(_countof(rootParams), rootParams);
 	rootSignDesc.Desc_1_2.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -1464,6 +1464,16 @@ Renderer& Renderer::CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHe
 	m_device->CopyDescriptorsSimple(numDescriptors, src->GetCPUHandleAtOffset(offsetStart), dest->GetCPUHandleAtOffset(offsetEnd), heapType);
 	return *this;
 }
+
+Renderer& Renderer::CopyDescriptor(size_t src, DescriptorHeap* dest, unsigned int offsetEnd /*= 0*/)
+{
+	D3D12_DESCRIPTOR_HEAP_TYPE heapType = LocalToD3D12(dest->GetType());
+	D3D12_CPU_DESCRIPTOR_HANDLE startHandle = {src};
+	m_device->CopyDescriptorsSimple(1, startHandle, dest->GetCPUHandleAtOffset(offsetEnd), heapType);
+
+	return *this;
+}
+
 
 Renderer& Renderer::ExecuteCmdLists(CommandListType type, unsigned int count, CommandList** cmdLists)
 {

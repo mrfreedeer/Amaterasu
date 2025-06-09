@@ -78,6 +78,7 @@ public:
 	CommandQueue* CreateCommandQueue(CommandQueueDesc const& desc);
 	Fence* CreateFence(CommandListType managerType, unsigned int initialValue = 0);
 	Renderer& CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* src, DescriptorHeap* dest, unsigned int offsetStart = 0, unsigned int offsetEnd = 0);
+	Renderer& CopyDescriptor(size_t src, DescriptorHeap* dest, unsigned int offsetEnd = 0);
 	Renderer& ExecuteCmdLists(CommandListType type, unsigned int count, CommandList** cmdLists);
 
 	//-------------------------- Resource views --------------------------

@@ -28,7 +28,7 @@ struct ModelConstants
 
 ConstantBuffer<CameraConstants> cameraCBuffers[] : register(b0, space0);
 ConstantBuffer<ModelConstants> modelCBuffers[] : register(b0, space1);
-cbuffer PerDrawConstants : register(b0, space2)
+cbuffer PerDrawConstants : register(b2, space3)
 {
     uint CameraBufferInd;
     uint ModelBufferInd;
