@@ -18,6 +18,8 @@ class DescriptorHeap;
 class BitmapFont;
 class RemoteConsole;
 
+struct PipelineState;
+
 struct DevConsoleLine {
 
 	DevConsoleLine(Rgba8 const& color, std::string const& text, int frameNumber);
@@ -71,6 +73,7 @@ public:
 	void SetMode(DevConsoleMode newMode);
 	void SetCommandList(CommandList* cmdList);
 	void SetRenderer(Renderer* renderer);
+	void SetPSO(PipelineState* pso);
 	void SetCamera(Camera const& camera);
 	void ToggleMode(DevConsoleMode mode);
 
@@ -119,4 +122,6 @@ protected:
 	// Sampler heap
 	DescriptorHeap* m_samplerHeap = nullptr;
 	Camera const* m_usedCamera = nullptr;
+
+	PipelineState* m_pso = nullptr;
 };

@@ -1,8 +1,10 @@
 #include "Engine/Core/DevConsole.hpp"
 #include "Engine/Core/VertexUtils.hpp"
 #include "Engine/Renderer/Renderer.hpp"
+#include "Engine/Renderer/Interfaces/PipelineState.hpp"
 #include "Engine/Renderer/Camera.hpp"
 #include "Engine/Renderer/Interfaces/CommandList.hpp"
+#include "Engine/Renderer/Interfaces/Buffer.hpp"
 #include "Engine/Renderer/BitmapFont.hpp"
 #include "Engine/Network/RemoteConsole.hpp"
 #include "Engine/Core/XmlUtils.hpp"
@@ -32,18 +34,10 @@ DevConsole::DevConsole(DevConsoleConfig const& config) :
 	m_historyIndex = 0;
 	m_scrollingIndex = m_historyIndex;
 
-	DescriptorHeapDesc desc = {};
-	desc.m_debugName = "DevConsoleRscHeap";
-	desc.m_flags = DescriptorHeapFlags::ShaderVisible;
-	desc.m_heap = nullptr;
-	desc.m_numDescriptors = 2;
-	desc.m_type = DescriptorHeapType::CBV_SRV_UAV;
-
 	Renderer* renderer =  m_config.m_renderer;
 }
 
 DevConsole::~DevConsole()
-
 {
 }
 
@@ -63,6 +57,26 @@ void DevConsole::Startup()
 	m_remoteConsole = new RemoteConsole(remoteConfig);
 	m_remoteConsole->Startup();
 #endif
+
+	DescriptorHeapDesc desc = {};
+	desc.m_debugName = "DevConsoleRscHeap";
+	desc.m_flags = DescriptorHeapFlags::ShaderVisible;
+	desc.m_heap = nullptr;
+	// 0. Default Tex
+	// 1. Font Rendering
+	// 2. CBV
+	// 3. Model
+	desc.m_numDescriptors = 4;	
+	desc.m_type = DescriptorHeapType::CBV_SRV_UAV;
+
+	m_rscHeap = m_config.m_renderer->CreateDescriptorHeap(desc, desc.m_debugName.c_str());
+
+	desc.m_debugName = "DevConsoleSamplerHeap";
+	desc.m_type = DescriptorHeapType::Sampler;
+	desc.m_numDescriptors = 1;
+	
+	m_samplerHeap = m_config.m_renderer->CreateDescriptorHeap(desc, desc.m_debugName.c_str());
+	m_config.m_renderer->CreateSampler(m_samplerHeap->GetNextCPUHandle().ptr, SamplerMode::POINTCLAMP);
 }
 
 void DevConsole::Shutdown()
@@ -70,6 +84,12 @@ void DevConsole::Shutdown()
 #if defined(ENGINE_USE_NETWORK)
 	m_remoteConsole->Shutdown();
 #endif
+	delete m_samplerHeap;
+	m_samplerHeap = nullptr;
+
+	delete m_rscHeap;
+	m_rscHeap = nullptr;
+
 }
 
 void DevConsole::BeginFrame()
@@ -202,19 +222,24 @@ void DevConsole::Render(AABB2 const& bounds, CommandList* cmdListOverride) const
 	std::string fullFontPath = "Data/Images/" + m_config.m_font;
 
 	static BitmapFont* usedFont = m_config.m_renderer->CreateOrGetBitmapFont(fullFontPath.c_str());
-	static bool createdDescriptors = false;
+	static bool copiedDescriptors = false;
 
-	if (!createdDescriptors) {
-		createdDescriptors = true;
-		size_t texDescriptor = m_rscHeap->GetNextCPUHandle().ptr;
-		m_config.m_renderer->CreateShaderResourceView(texDescriptor, &usedFont->GetTexture());
+	if (!copiedDescriptors) {
+		copiedDescriptors = true;
 		
-		size_t cameraDescriptor = m_rscHeap->GetNextCPUHandle().ptr;
-		m_config.m_renderer->CreateShaderResourceView(cameraDescriptor, m_usedCamera->GetCameraBuffer());
+		Texture* defaultTex = m_config.m_renderer->GetDefaultTexture();
+		Buffer* defaultModelBuffer = m_config.m_renderer->GetDefaultModelBuffer();
 
+		size_t defaultTexSRV = defaultTex->GetShaderResourceView()->m_descriptor.ptr;
+		size_t texSRV = usedFont->GetTexture().GetShaderResourceView()->m_descriptor.ptr;
+		size_t cbv = m_usedCamera->GetCameraBuffer()->GetConstantBufferView()->m_descriptor.ptr;
+		size_t modelCBV = defaultModelBuffer->GetConstantBufferView()->m_descriptor.ptr;
 
+		m_config.m_renderer->CopyDescriptor(defaultTexSRV, m_rscHeap);
+		m_config.m_renderer->CopyDescriptor(texSRV, m_rscHeap, 1);
+		m_config.m_renderer->CopyDescriptor(cbv, m_rscHeap, 2);
+		m_config.m_renderer->CopyDescriptor(modelCBV, m_rscHeap, 3);
 	}
-
 
 	Render_OpenFull(bounds, *usedCmdList, *usedFont, m_config.m_fontAspect);
 }
@@ -240,6 +265,11 @@ void DevConsole::SetCommandList(CommandList* cmdList)
 void DevConsole::SetRenderer(Renderer* renderer)
 {
 	m_config.m_renderer = renderer;
+}
+
+void DevConsole::SetPSO(PipelineState* pso)
+{
+	m_pso = pso;
 }
 
 void DevConsole::SetCamera(Camera const& camera)
@@ -312,6 +342,18 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, Bitm
 	m_linesMutex.unlock();
 
 	//#TODO DX12 FIXTHIS
+	cmdList.BindPipelineState(m_pso);
+	DescriptorHeap* usedHeaps[2] = {m_rscHeap, m_samplerHeap};
+	cmdList.SetDescriptorHeaps(2, usedHeaps);
+
+	cmdList.SetDescriptorTable(PARAM_TEXTURES, m_rscHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+	cmdList.SetDescriptorTable(PARAM_CAMERA_BUFFERS, m_rscHeap->GetGPUHandleAtOffset(2), PipelineType::Graphics);
+	cmdList.SetDescriptorTable(PARAM_MODEL_BUFFERS, m_rscHeap->GetGPUHandleAtOffset(3), PipelineType::Graphics);
+	cmdList.SetDescriptorTable(PARAM_SAMPLERS, m_samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+
+	unsigned int drawConstants[16] = {0,0,0};
+	cmdList.SetGraphicsRootConstants(16, drawConstants);
+
 
 	/*renderer.BindTexture(nullptr);
 	renderer.SetBlendMode(BlendMode::ALPHA);
