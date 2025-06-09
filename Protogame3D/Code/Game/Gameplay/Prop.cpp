@@ -39,7 +39,6 @@ Prop::~Prop()
 void Prop::InitializeLocalVerts()
 {
 	CreateModelBuffer(g_theRenderer);
-	CreateDrawInfoBuffer(g_theRenderer);
 
 	switch (m_type)
 	{

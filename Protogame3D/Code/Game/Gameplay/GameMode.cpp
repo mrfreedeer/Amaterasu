@@ -215,14 +215,17 @@ void GameMode::RenderEntities() const
 {
 	CommandList* cmdList = m_renderContext->GetCommandList();
 	DescriptorHeap* cbvHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+	unsigned int drawConstants[16] = { 0 };
 	for (int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
 		Entity* entity = m_allEntities[entityIndex];
 
 		if (entity != m_player) {
-			Buffer* drawInfo = entity->GetDrawInfoBuffer();
+			drawConstants[0] = entity->m_cameraIndex;
+			drawConstants[1] = entity->m_modelIndex;
+			drawConstants[2] = entity->m_textureIndex;
 
-			unsigned int drawInfoOffset = m_cbvStart + entityIndex;
-			cmdList->SetDescriptorTable(PARAM_DRAW_INFO_BUFFERS, cbvHeap->GetGPUHandleAtOffset(drawInfoOffset), PipelineType::Graphics);
+			cmdList->SetGraphicsRootConstants(16, drawConstants);
+
 		}
 		entity->Render(cmdList);
 	}
@@ -330,4 +333,6 @@ void GameMode::CreateRendererObjects(char const* debugName, unsigned int* descri
 	cameraBuffDesc.m_data = &cameraConstants;
 	Buffer* UICameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
 	m_UICamera.SetCameraBuffer(UICameraBuffer);
+
+	g_theConsole->SetPSO(m_alphaDefault2D);
 }

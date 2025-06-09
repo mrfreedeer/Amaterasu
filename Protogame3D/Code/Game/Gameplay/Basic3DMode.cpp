@@ -318,11 +318,8 @@ void Basic3DMode::CreateResourceDescriptors()
 		unsigned int currentModelCBV = m_modelCBVStart + entityIndex + 1;
 		unsigned int currentDrawCBV = m_drawInfoCBVStart + entityIndex;
 		D3D12_CPU_DESCRIPTOR_HANDLE nextModelCBV = resourcesHeap->GetCPUHandleAtOffset(currentModelCBV);
-		D3D12_CPU_DESCRIPTOR_HANDLE nextDrawCBV = resourcesHeap->GetCPUHandleAtOffset(currentDrawCBV);
 		Buffer* modelBuffer = entity->GetModelBuffer();
-		Buffer* drawInfoBuffer = entity->GetDrawInfoBuffer();
 		g_theRenderer->CreateConstantBufferView(nextModelCBV.ptr, modelBuffer);
-		g_theRenderer->CreateConstantBufferView(nextDrawCBV.ptr, drawInfoBuffer);
 
 		entity->SetDrawConstants(0, entityIndex + 1, currentSRV);
 	}

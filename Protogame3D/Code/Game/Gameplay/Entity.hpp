@@ -19,16 +19,19 @@ public:
 	virtual void Update(float deltaTime);
 	virtual void Render(CommandList* cmdList) const = 0;
 	virtual void CreateModelBuffer(Renderer* renderer);
-	virtual void CreateDrawInfoBuffer(Renderer* renderer);
 
 	virtual Texture* GetUsedTexture() const { return nullptr; }
 	virtual Mat44 GetModelMatrix() const;
-	virtual Buffer* GetDrawInfoBuffer() const { return m_drawConstants; }
 	virtual Buffer* GetModelBuffer() const { return m_modelBuffer; }
 	virtual Buffer* GetVertexBuffer() const { return m_vertexBuffer; }
 	virtual void UpdateModelBuffer();
-	virtual void UpdateDrawInfoBuffer();
 	virtual void SetDrawConstants(unsigned int cameraInd, unsigned int modelInd, unsigned int textureInd);
+
+	// For managing bindless style resource access
+// Camera index will most likely be always 0
+	unsigned int m_cameraIndex = 0;
+	unsigned int m_textureIndex = 0;
+	unsigned int m_modelIndex = 0;
 public:
 	Vec3 m_position = Vec3::ZERO;
 	Vec3 m_velocity = Vec3::ZERO;
@@ -38,17 +41,12 @@ public:
 protected:
 	Game* m_game = nullptr;
 	Buffer* m_modelBuffer = nullptr;
-	Buffer* m_drawConstants = nullptr;
 	Buffer* m_vertexBuffer = nullptr;
 	std::vector<Vertex_PCU> m_verts;
 
 	Rgba8 m_modelColor = Rgba8::WHITE;
 
-	// For managing bindless style resource access
-	// Camera index will most likely be always 0
-	unsigned int m_cameraIndex = 0;
-	unsigned int m_textureIndex = 0;
-	unsigned int m_modelIndex = 0;
+
 };
 
 typedef std::vector<Entity*> EntityList;

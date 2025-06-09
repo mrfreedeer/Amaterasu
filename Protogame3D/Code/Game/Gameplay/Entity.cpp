@@ -23,10 +23,6 @@ Entity::~Entity()
 		m_vertexBuffer = nullptr;
 	}
 
-	if (m_drawConstants) {
-		delete m_drawConstants;
-		m_drawConstants = nullptr;
-	}
 }
 
 void Entity::Update(float deltaTime)
@@ -35,9 +31,6 @@ void Entity::Update(float deltaTime)
 	m_orientation += m_angularVelocity * deltaTime;
 	if (m_modelBuffer) {
 		UpdateModelBuffer();
-	}
-	if (m_drawConstants) {
-		UpdateDrawInfoBuffer();
 	}
 }
 
@@ -51,18 +44,6 @@ void Entity::CreateModelBuffer(Renderer* renderer)
 	bufferDesc.m_type = BufferType::Constant;
 
 	m_modelBuffer = renderer->CreateBuffer(bufferDesc);
-}
-
-void Entity::CreateDrawInfoBuffer(Renderer* renderer)
-{
-	BufferDesc bufferDesc = {};
-	bufferDesc.m_debugName = "Draw CBuffer";
-	bufferDesc.m_memoryUsage = MemoryUsage::Dynamic;
-	bufferDesc.m_size = sizeof(DrawInfoConstants);
-	bufferDesc.m_stride.m_strideBytes = sizeof(DrawInfoConstants);
-	bufferDesc.m_type = BufferType::Constant;
-
-	m_drawConstants = renderer->CreateBuffer(bufferDesc);
 }
 
 Mat44 Entity::GetModelMatrix() const
@@ -79,16 +60,6 @@ void Entity::UpdateModelBuffer()
 	m_modelColor.GetAsFloats(updatedModel.ModelColor);
 	m_modelBuffer->CopyToBuffer(&updatedModel, sizeof(ModelConstants));
 
-}
-
-void Entity::UpdateDrawInfoBuffer()
-{
-	DrawInfoConstants updatedDrawInfo = {};
-	updatedDrawInfo.CameraBufferInd = m_cameraIndex;
-	updatedDrawInfo.ModelBufferInd = m_modelIndex;
-	updatedDrawInfo.TextureStart = m_textureIndex;
-
-	m_drawConstants->CopyToBuffer(&updatedDrawInfo, sizeof(DrawInfoConstants));
 }
 
 void Entity::SetDrawConstants(unsigned int cameraInd, unsigned int modelInd, unsigned int textureInd)
