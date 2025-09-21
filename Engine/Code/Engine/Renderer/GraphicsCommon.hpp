@@ -247,8 +247,8 @@ enum RootParameterIndex : unsigned int {
 	PARAM_TEXTURES,
 	PARAM_GAME_UAVS,
 	PARAM_SAMPLERS,
-	PARAM_ROOT_CONSTANTS
-
+	PARAM_ROOT_CONSTANTS,
+	PARAM_ROOT_CBV_SRV_UAV_COUNT = PARAM_GAME_UAVS + 1
 };
 
 static const char* DesciptorHeapStrings[] = { "CBV_SRV_UAV", "Sampler", "RTV", "DSV"};
