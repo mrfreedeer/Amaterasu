@@ -55,9 +55,15 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::GetCPUHandleHeapStart()
 	return m_descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
+size_t DescriptorHeap::GetDescriptorCount() const
+{
+	return (size_t)m_config.m_numDescriptors - m_remainingDescriptors;
+}
+
 DescriptorSet::~DescriptorSet()
 {
 	for (int heapInd = 0; heapInd < (int)DescriptorHeapType::NUM_TYPES; heapInd++) {
 		delete m_descriptorHeaps[heapInd];
+		m_descriptorHeaps[heapInd] = nullptr;
 	}
 }

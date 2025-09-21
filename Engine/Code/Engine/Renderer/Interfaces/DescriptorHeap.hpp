@@ -27,6 +27,7 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandleAtOffset(size_t offset);
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandleHeapStart();
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandleHeapStart();
+	size_t GetDescriptorCount() const;
 	DescriptorHeapType GetType() const { return m_config.m_type; }
 private:
 	DescriptorHeap(DescriptorHeapDesc const& desc);
