@@ -150,7 +150,7 @@ Texture* Prop::GetUsedTexture() const
 	case PropRenderType::SPHERE:	return  g_textures[(int)GAME_TEXTURE::TestUV];
 	}
 	
-	return g_theRenderer->GetDefaultTexture();
+	return nullptr;
 }
 
 Buffer* Prop::CreateVertexBuffer()
