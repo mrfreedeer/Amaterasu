@@ -37,7 +37,7 @@ protected:
 	virtual void CreateRendererObjects(char const* debugName, unsigned int* descriptorCounts);
 protected:
 	Game* m_game = nullptr;
-	RenderContext* m_renderContext = nullptr;
+	RenderContext* m_renderContext = nullptr; 
 	Fence* m_copyFence = nullptr;
 	Fence* m_frameFence = nullptr;
 	Fence* m_gpuFence = nullptr;
@@ -55,10 +55,6 @@ protected:
 	Vec2 m_worldSize = {};
 
 	float m_timeAlive = 0.0f;
-	unsigned int m_cameraCBVStart = 0;
-	unsigned int m_cbvStart = 0;
-	unsigned int m_drawInfoCBVStart = 0;
-	unsigned int m_modelCBVStart = 0;
 	Clock m_clock;
 
 	EntityList m_allEntities;

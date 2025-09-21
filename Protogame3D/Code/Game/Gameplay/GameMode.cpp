@@ -11,6 +11,7 @@ GameMode::~GameMode()
 
 void GameMode::Startup()
 {
+	g_theConsole->SetCamera(m_UICamera);
 	m_isCursorHidden = false;
 	m_isCursorClipped = false;
 	m_isCursorRelative = false;
@@ -76,14 +77,14 @@ void GameMode::Shutdown()
 	m_player = nullptr;
 
 	for (SoundPlaybackID playbackId : g_soundPlaybackIDs) {
-		if(playbackId == MISSING_SOUND_ID) continue;
+		if (playbackId == MISSING_SOUND_ID) continue;
 
 		g_theAudio->StopSound(playbackId);
 	}
 
 	delete m_renderContext;
 	m_renderContext = nullptr;
-	
+
 	for (unsigned int listIndex = 0; listIndex < g_theRenderer->GetBackBufferCount(); listIndex++) {
 		delete m_copyCmdLists[listIndex];
 		m_copyCmdLists[listIndex] = nullptr;
@@ -119,6 +120,7 @@ void GameMode::Shutdown()
 
 	delete m_alphaDefault2D;
 	m_alphaDefault2D = nullptr;
+
 }
 
 void GameMode::UpdateDeveloperCheatCodes(float deltaSeconds)
@@ -218,20 +220,19 @@ void GameMode::RenderEntities() const
 	unsigned int drawConstants[16] = { 0 };
 	for (int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
 		Entity* entity = m_allEntities[entityIndex];
+		if (entity == m_player) continue;
 
-		if (entity != m_player) {
-			drawConstants[0] = entity->m_cameraIndex;
-			drawConstants[1] = entity->m_modelIndex;
-			drawConstants[2] = entity->m_textureIndex;
+		drawConstants[0] = entity->m_cameraIndex;
+		drawConstants[1] = entity->m_modelIndex;
+		drawConstants[2] = entity->m_textureIndex;
 
-			cmdList->SetGraphicsRootConstants(16, drawConstants);
+		cmdList->SetGraphicsRootConstants(16, drawConstants);
 
-		}
 		entity->Render(cmdList);
 	}
 }
 
-void GameMode::RenderUI() 
+void GameMode::RenderUI()
 {
 	m_UICamera.SetColorTarget(m_renderTarget);
 	m_UICamera.SetDepthTarget(m_depthTarget);
@@ -240,12 +241,15 @@ void GameMode::RenderUI()
 	DescriptorHeap* resourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 
+	unsigned int cameraDescriptorStart= m_renderContext->GetDescriptorStart(PARAM_CAMERA_BUFFERS);
+	unsigned int modelDescriptorStart= m_renderContext->GetDescriptorStart(PARAM_MODEL_BUFFERS);
+
 	cmdList->BindPipelineState(m_alphaDefault2D);
 	cmdList->SetRenderTargets(1, &m_renderTarget, false, m_depthTarget);
 	cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
 	// UI Camera will be slot 1
-	cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, resourcesHeap->GetGPUHandleAtOffset(m_cameraCBVStart + 1), PipelineType::Graphics);
-	cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, resourcesHeap->GetGPUHandleAtOffset(m_modelCBVStart), PipelineType::Graphics);
+	cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, resourcesHeap->GetGPUHandleAtOffset(cameraDescriptorStart + 1), PipelineType::Graphics);
+	cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, resourcesHeap->GetGPUHandleAtOffset(modelDescriptorStart), PipelineType::Graphics);
 	cmdList->SetDescriptorTable(PARAM_TEXTURES, resourcesHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
 	// Text Sampler will always be allocated at descriptor slot 1
 	cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleAtOffset(1), PipelineType::Graphics);
@@ -256,7 +260,7 @@ void GameMode::RenderUI()
 	AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
 	AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
 
-	g_theConsole->Render(devConsoleBounds);
+	g_theConsole->Render(devConsoleBounds, cmdList);
 	m_renderContext->EndCamera(m_UICamera);
 
 }
@@ -291,6 +295,15 @@ void GameMode::CreateRendererObjects(char const* debugName, unsigned int* descri
 
 	ctxDesc.m_descriptorCounts = descriptorCounts;
 
+	unsigned int rscDescriptorCounts = descriptorCounts[(int)DescriptorHeapType::CBV_SRV_UAV];
+	unsigned int equalDistribution = (rscDescriptorCounts - 2) / 5; 
+
+	ctxDesc.m_rscDescriptorDistribution[PARAM_CAMERA_BUFFERS] = 2;		// Just 2 needed for world and UI
+	ctxDesc.m_rscDescriptorDistribution[PARAM_MODEL_BUFFERS]  = equalDistribution;
+	ctxDesc.m_rscDescriptorDistribution[PARAM_DRAW_INFO_BUFFERS] = equalDistribution;
+	ctxDesc.m_rscDescriptorDistribution[PARAM_GAME_BUFFERS] = equalDistribution;
+	ctxDesc.m_rscDescriptorDistribution[PARAM_TEXTURES] = equalDistribution;
+	ctxDesc.m_rscDescriptorDistribution[PARAM_GAME_UAVS] = equalDistribution;
 	m_renderContext = new RenderContext(ctxDesc);
 
 	ShaderPipeline defaultLegacy = g_theRenderer->GetEngineShader(EngineShaderPipelines::LegacyForward);
