@@ -1322,6 +1322,8 @@ Sampler* Renderer::CreateSampler(size_t handle, SamplerMode samplerMode)
 
 	m_device->CreateSampler(&samplerDesc, d3d12Handle);
 
+	newSampler->m_descriptor = handle;
+
 	return newSampler;
 }
 
@@ -1458,14 +1460,14 @@ Fence* Renderer::CreateFence(CommandListType managerType, unsigned int initialVa
 	return outFence;
 }
 
-Renderer& Renderer::CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* src, DescriptorHeap* dest, unsigned int offsetStart, unsigned int offsetEnd)
+Renderer& Renderer::CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* dst, DescriptorHeap* src, unsigned int offsetStart, unsigned int offsetEnd)
 {
 	D3D12_DESCRIPTOR_HEAP_TYPE heapType = LocalToD3D12(src->GetType());
-	m_device->CopyDescriptorsSimple(numDescriptors, src->GetCPUHandleAtOffset(offsetStart), dest->GetCPUHandleAtOffset(offsetEnd), heapType);
+	m_device->CopyDescriptorsSimple(numDescriptors, dst->GetCPUHandleAtOffset(offsetStart), src->GetCPUHandleAtOffset(offsetEnd), heapType);
 	return *this;
 }
 
-Renderer& Renderer::CopyDescriptor(size_t src, DescriptorHeap* dest, unsigned int offsetEnd /*= 0*/)
+Renderer& Renderer::CopyDescriptor(DescriptorHeap* dest, size_t src, unsigned int offsetEnd /*= 0*/)
 {
 	D3D12_DESCRIPTOR_HEAP_TYPE heapType = LocalToD3D12(dest->GetType());
 	D3D12_CPU_DESCRIPTOR_HANDLE startHandle = {src};
@@ -1584,7 +1586,22 @@ RenderContext::RenderContext(RenderContextDesc const& config) :
 		m_cmdList[listInd] = renderer->CreateCommandList(m_config.m_cmdListDesc);
 	}
 
-	m_descriptorSet = renderer->CreateDescriptorSet(config.m_descriptorCounts, true, "CTX");
+	m_descriptorSet = renderer->CreateDescriptorSet(config.m_descriptorCounts, true, "CTXDescriptorSet");
+	m_CPUdescriptorSet = renderer->CreateDescriptorSet(config.m_descriptorCounts, false, "CPU_CTXDescriptorSet");
+
+
+	unsigned int rscDescriptorCount = config.m_descriptorCounts[(int)DescriptorHeapType::CBV_SRV_UAV];
+
+	unsigned int currentStart = 0;
+	for (int typeIndex = 0; typeIndex < PARAM_ROOT_CBV_SRV_UAV_COUNT; typeIndex++) {
+		m_rscDescriptorStart[typeIndex] = currentStart;
+		currentStart += config.m_rscDescriptorDistribution[typeIndex];
+
+		if (currentStart > rscDescriptorCount) {
+			ERROR_AND_DIE("INVALID DESCRIPTOR DISTRIBUTION. THIS COULD LEAD TO CRASH");
+		}
+		
+	}
 }
 
 RenderContext::~RenderContext()
@@ -1600,6 +1617,9 @@ RenderContext::~RenderContext()
 
 	delete m_descriptorSet;
 	m_descriptorSet = nullptr;
+
+	delete m_CPUdescriptorSet;
+	m_CPUdescriptorSet = nullptr;
 }
 
 RenderContext& RenderContext::BeginCamera(Camera const& camera)
@@ -1665,6 +1685,30 @@ RenderContext& RenderContext::Execute()
 CommandList* RenderContext::GetCommandList()
 {
 	return m_cmdList[m_currentIndex];
+}
+
+unsigned int RenderContext::GetCurrentDescriptorIndex(RootParameterIndex paramType) const
+{
+	return m_rscDescriptorStart[paramType] + m_rscDescriptorCount[paramType];
+}
+
+unsigned int RenderContext::GetDescriptorCountForCopy() const
+{
+	unsigned int lastParam = PARAM_ROOT_CBV_SRV_UAV_COUNT - 1;
+	return m_rscDescriptorStart[lastParam] + m_rscDescriptorCount[lastParam];
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::GetNextCPUDescriptor(RootParameterIndex paramType)
+{
+	DescriptorHeap* rscDescriptor = GetCPUDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+
+	unsigned int nextOffset = GetCurrentDescriptorIndex(paramType);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE nextDescriptor = rscDescriptor->GetCPUHandleAtOffset(nextOffset);
+
+	m_rscDescriptorCount[paramType] += 1;
+
+	return nextDescriptor;
 }
 
 RenderContext& RenderContext::Close()

@@ -77,8 +77,8 @@ public:
 	CommandList* CreateCommandList(CommandListDesc const& desc);
 	CommandQueue* CreateCommandQueue(CommandQueueDesc const& desc);
 	Fence* CreateFence(CommandListType managerType, unsigned int initialValue = 0);
-	Renderer& CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* src, DescriptorHeap* dest, unsigned int offsetStart = 0, unsigned int offsetEnd = 0);
-	Renderer& CopyDescriptor(size_t src, DescriptorHeap* dest, unsigned int offsetEnd = 0);
+	Renderer& CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* dst, DescriptorHeap* src, unsigned int offsetStart = 0, unsigned int offsetEnd = 0);
+	Renderer& CopyDescriptor(DescriptorHeap* dest, size_t src, unsigned int offsetEnd = 0);
 	Renderer& ExecuteCmdLists(CommandListType type, unsigned int count, CommandList** cmdLists);
 
 	//-------------------------- Resource views --------------------------
@@ -217,6 +217,7 @@ struct RenderContextDesc {
 	Renderer* m_renderer = nullptr;
 	// All descriptor heaps will be considered shader visible
 	unsigned int* m_descriptorCounts = nullptr;
+	unsigned int m_rscDescriptorDistribution[PARAM_ROOT_CBV_SRV_UAV_COUNT] = {};
 	CommandListDesc m_cmdListDesc = {};
 };
 class RenderContext {
@@ -231,8 +232,15 @@ public:
 	RenderContext& Execute();
 	CommandList* GetCommandList();
 	DescriptorHeap* GetDescriptorHeap(DescriptorHeapType heapType) { return m_descriptorSet->GetDescriptorHeap(heapType); }
+	DescriptorHeap* GetCPUDescriptorHeap(DescriptorHeapType heapType) { return m_CPUdescriptorSet->GetDescriptorHeap(heapType); }
 	DescriptorSet* GetDescriptorSet() { return m_descriptorSet; }
 	unsigned int GetBufferIndex() const { return m_currentIndex; }
+	unsigned int GetDescriptorCount(RootParameterIndex paramType) const { return m_rscDescriptorCount[paramType]; }
+	unsigned int GetDescriptorStart(RootParameterIndex paramType) const { return m_rscDescriptorStart[paramType]; }
+	unsigned int GetCurrentDescriptorIndex(RootParameterIndex paramType) const;
+	unsigned int GetDescriptorCountForCopy() const; 
+
+	D3D12_CPU_DESCRIPTOR_HANDLE GetNextCPUDescriptor(RootParameterIndex paramType);
 
 	RenderContext& Close();
 	RenderContext& CloseAll();
@@ -243,7 +251,14 @@ private:
 	D3D12_RECT m_scissorRect = {};
 	CommandList** m_cmdList = nullptr;
 	DescriptorSet* m_descriptorSet = nullptr;
+	DescriptorSet* m_CPUdescriptorSet = nullptr;
 	Camera const* m_currentCamera = nullptr;
 	unsigned int m_currentIndex = 0;
 	unsigned int m_backBufferCount = 0;
+
+	// Helpers for tracking where a resource descriptor type starts, and how many elements
+	unsigned int m_rscDescriptorStart[PARAM_ROOT_CBV_SRV_UAV_COUNT] = {};
+	unsigned int m_rscDescriptorCount[PARAM_ROOT_CBV_SRV_UAV_COUNT] = {};
 };
+
+
