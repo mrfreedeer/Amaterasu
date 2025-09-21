@@ -77,6 +77,17 @@ void DevConsole::Startup()
 	
 	m_samplerHeap = m_config.m_renderer->CreateDescriptorHeap(desc, desc.m_debugName.c_str());
 	m_config.m_renderer->CreateSampler(m_samplerHeap->GetNextCPUHandle().ptr, SamplerMode::POINTCLAMP);
+
+	// Create layout VBuffer as it will always have the same size, but verts may vary
+	BufferDesc vBufferDesc = {};
+	vBufferDesc.m_data = nullptr;
+	vBufferDesc.m_debugName = "DevConsoleLayotVBuffer";
+	vBufferDesc.m_memoryUsage = MemoryUsage::Dynamic;
+	vBufferDesc.m_size = sizeof(Vertex_PCU) * 12;
+	vBufferDesc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
+	vBufferDesc.m_type = BufferType::Vertex;
+
+	m_layoutVBuffer = m_config.m_renderer->CreateBuffer(vBufferDesc);
 }
 
 void DevConsole::Shutdown()
@@ -90,6 +101,11 @@ void DevConsole::Shutdown()
 	delete m_rscHeap;
 	m_rscHeap = nullptr;
 
+	delete m_textVBuffer;
+	m_textVBuffer = nullptr;
+
+	delete m_layoutVBuffer;
+	m_layoutVBuffer = nullptr;
 }
 
 void DevConsole::BeginFrame()
@@ -209,7 +225,7 @@ void DevConsole::AddLine(Rgba8 const& color, std::string const& text)
 	m_linesMutex.unlock();
 }
 
-void DevConsole::Render(AABB2 const& bounds, CommandList* cmdListOverride) const
+void DevConsole::Render(AABB2 const& bounds, CommandList* cmdListOverride)
 {
 	bool hasAnyCmdList = (m_config.m_cmdList || cmdListOverride);
 	if (m_mode == DevConsoleMode::HIDDEN || !hasAnyCmdList) return;
@@ -235,10 +251,10 @@ void DevConsole::Render(AABB2 const& bounds, CommandList* cmdListOverride) const
 		size_t cbv = m_usedCamera->GetCameraBuffer()->GetConstantBufferView()->m_descriptor.ptr;
 		size_t modelCBV = defaultModelBuffer->GetConstantBufferView()->m_descriptor.ptr;
 
-		m_config.m_renderer->CopyDescriptor(defaultTexSRV, m_rscHeap);
-		m_config.m_renderer->CopyDescriptor(texSRV, m_rscHeap, 1);
-		m_config.m_renderer->CopyDescriptor(cbv, m_rscHeap, 2);
-		m_config.m_renderer->CopyDescriptor(modelCBV, m_rscHeap, 3);
+		m_config.m_renderer->CopyDescriptor(m_rscHeap, defaultTexSRV);
+		m_config.m_renderer->CopyDescriptor(m_rscHeap, texSRV, 1);
+		m_config.m_renderer->CopyDescriptor(m_rscHeap, cbv, 2);
+		m_config.m_renderer->CopyDescriptor(m_rscHeap, modelCBV, 3);
 	}
 
 	Render_OpenFull(bounds, *usedCmdList, *usedFont, m_config.m_fontAspect);
@@ -304,7 +320,7 @@ void DevConsole::Clear()
 	m_linesMutex.unlock();
 }
 
-void DevConsole::Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, BitmapFont& font, float fontAspect) const
+void DevConsole::Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, BitmapFont& font, float fontAspect)
 {
 	AABB2 inputBounds = bounds;
 	float cellHeight = bounds.m_maxs.y / m_config.m_maxLinesShown;
@@ -341,6 +357,13 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, Bitm
 
 	m_linesMutex.unlock();
 
+	m_layoutVBuffer->CopyToBuffer(overlayVerts.data(), overlayVerts.size() * sizeof(Vertex_PCU));
+
+	size_t textVBufferSize = textVerts.size() * sizeof(Vertex_PCU);
+
+	ResizeOrCopyToBuffer(textVerts.data(), textVBufferSize, m_textVBuffer);
+
+
 	//#TODO DX12 FIXTHIS
 	cmdList.BindPipelineState(m_pso);
 	DescriptorHeap* usedHeaps[2] = {m_rscHeap, m_samplerHeap};
@@ -353,6 +376,14 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, Bitm
 
 	unsigned int drawConstants[16] = {0,0,0};
 	cmdList.SetGraphicsRootConstants(16, drawConstants);
+
+	cmdList.SetVertexBuffers(&m_layoutVBuffer, 1);
+	cmdList.DrawInstance((unsigned int)overlayVerts.size(), 1, 0, 0);
+
+	drawConstants[1] = {1};
+	cmdList.SetGraphicsRootConstants(16, drawConstants);
+	cmdList.SetVertexBuffers(&m_textVBuffer, 1);
+	cmdList.DrawInstance((unsigned int)textVerts.size(), 1, 0, 0);
 
 
 	/*renderer.BindTexture(nullptr);
@@ -371,7 +402,7 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, Bitm
 #endif
 }
 
-void DevConsole::Render_InputCaret(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight) const
+void DevConsole::Render_InputCaret(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight)
 {
 	std::string strAtCaretPos = m_inputText.substr(0, m_caretPosition);
 	float inputTextWidth = font.GetTextWidth(cellHeight, strAtCaretPos, fontAspect);
@@ -391,7 +422,7 @@ void DevConsole::Render_InputCaret(CommandList& cmdList, BitmapFont& font, float
 	//renderer.DrawVertexArray(caretVertexes);
 }
 
-void DevConsole::Render_UserInput(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight) const
+void DevConsole::Render_UserInput(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight)
 {
 	std::vector<Vertex_PCU> userInputTextVerts;
 
@@ -401,6 +432,27 @@ void DevConsole::Render_UserInput(CommandList& cmdList, BitmapFont& font, float 
 	//#TODO DX12 FIXTHIS
 
 	//renderer.DrawVertexArray(userInputTextVerts);
+}
+
+void DevConsole::ResizeOrCopyToBuffer(void* data, size_t totalSize, Buffer*& buffer)
+{
+	// VBuffer does not exist or is too small
+	if (!buffer || (totalSize > buffer->GetSize())) {
+		if (buffer) delete buffer;
+
+		BufferDesc vBufferDesc = {};
+		vBufferDesc.m_data = data;
+		vBufferDesc.m_debugName = "DevConsoleTextVBuffer";
+		vBufferDesc.m_memoryUsage = MemoryUsage::Dynamic;
+		vBufferDesc.m_size = totalSize;
+		vBufferDesc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
+		vBufferDesc.m_type = BufferType::Vertex;
+
+		buffer = m_config.m_renderer->CreateBuffer(vBufferDesc);
+	}
+	else {
+		buffer->CopyToBuffer(data, totalSize);
+	}
 }
 
 Strings DevConsole::ProcessCommandLine(std::string const& commandLine) const

@@ -13,6 +13,7 @@
 
 class Camera;
 class Renderer;
+class Buffer;
 class CommandList;
 class DescriptorHeap;
 class BitmapFont;
@@ -67,7 +68,7 @@ public:
 	bool ExecuteXmlCommandScriptNode(XMLElement const& cmdScriptXmlElement);
 	bool ExecuteXmlCommandScriptFile(std::filesystem::path const& filePath);
 	void AddLine(Rgba8 const& color, std::string const& text);
-	void Render(AABB2 const& bounds, CommandList* cmdListOverride = nullptr) const;
+	void Render(AABB2 const& bounds, CommandList* cmdListOverride = nullptr);
 
 	DevConsoleMode GetMode() const;
 	void SetMode(DevConsoleMode newMode);
@@ -95,9 +96,10 @@ public:
 	RemoteConsole* m_remoteConsole = nullptr;
 
 protected:
-	void Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, BitmapFont& font, float fontAspect = 1.0f) const;
-	void Render_InputCaret(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight) const;
-	void Render_UserInput(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight) const;
+	void Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, BitmapFont& font, float fontAspect = 1.0f);
+	void Render_InputCaret(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight);
+	void Render_UserInput(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight);
+	void ResizeOrCopyToBuffer(void* data, size_t totalSize, Buffer*& buffer);
 
 	std::vector<std::string> ProcessCommandLine(std::string const& commandLine) const;
 protected:
@@ -124,4 +126,6 @@ protected:
 	Camera const* m_usedCamera = nullptr;
 
 	PipelineState* m_pso = nullptr;
+	Buffer* m_layoutVBuffer = nullptr;
+	Buffer* m_textVBuffer = nullptr;
 };
