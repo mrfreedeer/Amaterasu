@@ -34,7 +34,6 @@ void Basic3DMode::Startup()
 
 	pointerToSelf = this;
 
-
 	Player* player = new Player(m_game, Vec3(27.0f, -12.0f, 14.0f), &m_worldCamera);
 	m_player = player;
 	m_player->m_orientation = EulerAngles(521.0f, 36.0f, 0.0f);
@@ -55,7 +54,6 @@ void Basic3DMode::Startup()
 
 	CreateResourceDescriptors();
 	CreateGPUBuffers();
-	
 
 	m_isCursorHidden = true;
 	m_isCursorClipped = true;
@@ -137,6 +135,11 @@ void Basic3DMode::Render()
 	DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 	DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
+
+	unsigned int cameraDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_CAMERA_BUFFERS);
+	unsigned int modelDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_MODEL_BUFFERS);
+	unsigned int textureDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_TEXTURES);
+
 	{
 		m_renderContext->BeginCamera(m_worldCamera);
 		cmdList->ResourceBarrier(_countof(rscBarriers), rscBarriers);
@@ -145,13 +148,11 @@ void Basic3DMode::Render()
 		cmdList->ClearDepthStencilView(m_depthTarget, 1.0f);
 		cmdList->SetRenderTargets(1, &m_renderTarget, false, m_depthTarget);
 		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
-		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(m_cameraCBVStart), PipelineType::Graphics);
-		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(m_modelCBVStart), PipelineType::Graphics);
-		cmdList->SetDescriptorTable(PARAM_TEXTURES, cbvSRVUAVHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(cameraDescriptorStart), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, cbvSRVUAVHeap->GetGPUHandleAtOffset(modelDescriptorStart), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_TEXTURES, cbvSRVUAVHeap->GetGPUHandleAtOffset(textureDescriptorStart), PipelineType::Graphics);
 		cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
 		cmdList->SetTopology(TopologyType::TRIANGLELIST);
-		unsigned int drawConstants[16] = { 0 };
-		cmdList->SetGraphicsRootConstants(16, drawConstants);
 
 		RenderEntities();
 		m_renderContext->EndCamera(m_worldCamera);
@@ -291,37 +292,40 @@ void Basic3DMode::UpdateInput(float deltaSeconds)
 
 void Basic3DMode::CreateResourceDescriptors()
 {
-	DescriptorHeap* resourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
-	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+	DescriptorHeap* resourcesHeap = m_renderContext->GetCPUDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+	DescriptorHeap* samplerHeap = m_renderContext->GetCPUDescriptorHeap(DescriptorHeapType::Sampler);
 
-	unsigned int texturesPerEntity = 1;
-	m_cbvStart= (texturesPerEntity * (unsigned int)m_allEntities.size()) + 1; // First will be default texture
-	m_drawInfoCBVStart = m_cbvStart;
-	m_cameraCBVStart = m_cbvStart + (unsigned int)m_allEntities.size();
-	m_modelCBVStart = m_cameraCBVStart + 2; // 2 Cameras
-	D3D12_CPU_DESCRIPTOR_HANDLE defaultTexHandle = resourcesHeap->GetNextCPUHandle();
-	D3D12_CPU_DESCRIPTOR_HANDLE defaultModelBuffer = resourcesHeap->GetCPUHandleAtOffset(m_modelCBVStart);
+	D3D12_CPU_DESCRIPTOR_HANDLE defaultTexHandle = m_renderContext->GetNextCPUDescriptor(PARAM_TEXTURES);
+	D3D12_CPU_DESCRIPTOR_HANDLE defaultModelBuffer = m_renderContext->GetNextCPUDescriptor(PARAM_MODEL_BUFFERS);
 	g_theRenderer->CreateShaderResourceView(defaultTexHandle.ptr, g_theRenderer->GetDefaultTexture());
 	g_theRenderer->CreateShaderResourceView(defaultModelBuffer.ptr, g_theRenderer->GetDefaultModelBuffer());
 
 	for (unsigned int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
 		Entity* entity = m_allEntities[entityIndex];
 		if(entity == m_player) continue;
-		D3D12_CPU_DESCRIPTOR_HANDLE nextSRV = resourcesHeap->GetNextCPUHandle();
+
+		// Get current slot for textures
+		unsigned int currentModelInd = m_renderContext->GetDescriptorCount(PARAM_MODEL_BUFFERS);
+		unsigned int currentSRVInd = m_renderContext->GetDescriptorCount(PARAM_TEXTURES);
+
+		D3D12_CPU_DESCRIPTOR_HANDLE nextSRV = m_renderContext->GetNextCPUDescriptor(PARAM_TEXTURES);
 		Texture* tex = entity->GetUsedTexture();
-		unsigned int currentSRV = 0;
+
 		if (tex) {
-			currentSRV = entityIndex;
 			g_theRenderer->CreateShaderResourceView(nextSRV.ptr, tex);
 		}
-		// Model buffer is at slot 0
-		unsigned int currentModelCBV = m_modelCBVStart + entityIndex + 1;
-		unsigned int currentDrawCBV = m_drawInfoCBVStart + entityIndex;
-		D3D12_CPU_DESCRIPTOR_HANDLE nextModelCBV = resourcesHeap->GetCPUHandleAtOffset(currentModelCBV);
+		else {
+			// if no texture, then point to the default one. 
+			// which is at the start of the textures
+			currentSRVInd = 0;
+		}
+
+		D3D12_CPU_DESCRIPTOR_HANDLE nextModelCBV = m_renderContext->GetNextCPUDescriptor(PARAM_MODEL_BUFFERS);
 		Buffer* modelBuffer = entity->GetModelBuffer();
 		g_theRenderer->CreateConstantBufferView(nextModelCBV.ptr, modelBuffer);
 
-		entity->SetDrawConstants(0, entityIndex + 1, currentSRV);
+
+		entity->SetDrawConstants(0, currentModelInd, currentSRVInd);
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE nextSamplerHandle = samplerHeap->GetNextCPUHandle();
@@ -329,9 +333,19 @@ void Basic3DMode::CreateResourceDescriptors()
 	nextSamplerHandle = samplerHeap->GetNextCPUHandle();
 	m_defaultTextSampler = g_theRenderer->CreateSampler(nextSamplerHandle.ptr, SamplerMode::POINTCLAMP);
 
+	D3D12_CPU_DESCRIPTOR_HANDLE nextCameraHandle = m_renderContext->GetNextCPUDescriptor(PARAM_CAMERA_BUFFERS);
 
-	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetCPUHandleAtOffset(m_cameraCBVStart).ptr, m_worldCamera.GetCameraBuffer());
-	g_theRenderer->CreateConstantBufferView(resourcesHeap->GetCPUHandleAtOffset(m_cameraCBVStart + 1).ptr, m_UICamera.GetCameraBuffer());
+	g_theRenderer->CreateConstantBufferView(nextCameraHandle.ptr, m_worldCamera.GetCameraBuffer());
+	nextCameraHandle = m_renderContext->GetNextCPUDescriptor(PARAM_CAMERA_BUFFERS);
+
+	g_theRenderer->CreateConstantBufferView(nextCameraHandle.ptr, m_UICamera.GetCameraBuffer());
+
+
+	DescriptorHeap* GPUresourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+	DescriptorHeap* GPUsamplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+
+	g_theRenderer->CopyDescriptorHeap(m_renderContext->GetDescriptorCountForCopy(), GPUresourcesHeap, resourcesHeap);
+	g_theRenderer->CopyDescriptorHeap((unsigned int)samplerHeap->GetDescriptorCount(), GPUsamplerHeap, samplerHeap);
 
 }
 
