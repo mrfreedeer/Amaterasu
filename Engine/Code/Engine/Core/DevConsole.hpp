@@ -128,4 +128,6 @@ protected:
 	PipelineState* m_pso = nullptr;
 	Buffer* m_layoutVBuffer = nullptr;
 	Buffer* m_textVBuffer = nullptr;
+	Buffer* m_userInputVBuffer = nullptr;
+	Buffer* m_caretVBuffer = nullptr;
 };

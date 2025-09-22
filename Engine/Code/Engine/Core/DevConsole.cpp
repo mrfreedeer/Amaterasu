@@ -34,7 +34,7 @@ DevConsole::DevConsole(DevConsoleConfig const& config) :
 	m_historyIndex = 0;
 	m_scrollingIndex = m_historyIndex;
 
-	Renderer* renderer =  m_config.m_renderer;
+	Renderer* renderer = m_config.m_renderer;
 }
 
 DevConsole::~DevConsole()
@@ -66,7 +66,7 @@ void DevConsole::Startup()
 	// 1. Font Rendering
 	// 2. CBV
 	// 3. Model
-	desc.m_numDescriptors = 4;	
+	desc.m_numDescriptors = 4;
 	desc.m_type = DescriptorHeapType::CBV_SRV_UAV;
 
 	m_rscHeap = m_config.m_renderer->CreateDescriptorHeap(desc, desc.m_debugName.c_str());
@@ -74,7 +74,7 @@ void DevConsole::Startup()
 	desc.m_debugName = "DevConsoleSamplerHeap";
 	desc.m_type = DescriptorHeapType::Sampler;
 	desc.m_numDescriptors = 1;
-	
+
 	m_samplerHeap = m_config.m_renderer->CreateDescriptorHeap(desc, desc.m_debugName.c_str());
 	m_config.m_renderer->CreateSampler(m_samplerHeap->GetNextCPUHandle().ptr, SamplerMode::POINTCLAMP);
 
@@ -103,6 +103,12 @@ void DevConsole::Shutdown()
 
 	delete m_textVBuffer;
 	m_textVBuffer = nullptr;
+
+	delete m_userInputVBuffer;
+	m_userInputVBuffer = nullptr;
+
+	delete m_caretVBuffer;
+	m_caretVBuffer = nullptr;
 
 	delete m_layoutVBuffer;
 	m_layoutVBuffer = nullptr;
@@ -172,7 +178,7 @@ bool DevConsole::Execute(std::string const& consoleCommandText)
 bool DevConsole::EventExecuteXMLFile(EventArgs& args)
 {
 	std::string fileName = args.GetValue("filename", "unnamed");
-	if(fileName == "unnamed") return false;
+	if (fileName == "unnamed") return false;
 
 	return ExecuteXmlCommandScriptFile(fileName);
 }
@@ -238,25 +244,21 @@ void DevConsole::Render(AABB2 const& bounds, CommandList* cmdListOverride)
 	std::string fullFontPath = "Data/Images/" + m_config.m_font;
 
 	static BitmapFont* usedFont = m_config.m_renderer->CreateOrGetBitmapFont(fullFontPath.c_str());
-	static bool copiedDescriptors = false;
 
-	if (!copiedDescriptors) {
-		copiedDescriptors = true;
-		
-		Texture* defaultTex = m_config.m_renderer->GetDefaultTexture();
-		Texture* squirrelFontTex = &usedFont->GetTexture();
-		Buffer* defaultModelBuffer = m_config.m_renderer->GetDefaultModelBuffer();
+	Texture* defaultTex = m_config.m_renderer->GetDefaultTexture();
+	Texture* squirrelFontTex = &usedFont->GetTexture();
+	Buffer* defaultModelBuffer = m_config.m_renderer->GetDefaultModelBuffer();
 
-		size_t defaultTexSRV = defaultTex->GetShaderResourceView()->m_descriptor.ptr;
-		size_t texSRV = squirrelFontTex->GetShaderResourceView()->m_descriptor.ptr;
-		size_t cbv = m_usedCamera->GetCameraBuffer()->GetConstantBufferView()->m_descriptor.ptr;
-		size_t modelCBV = defaultModelBuffer->GetConstantBufferView()->m_descriptor.ptr;
-
-		m_config.m_renderer->CopyDescriptor(m_rscHeap, defaultTexSRV);
-		m_config.m_renderer->CopyDescriptor(m_rscHeap, texSRV, 1);
-		m_config.m_renderer->CopyDescriptor(m_rscHeap, cbv, 2);
-		m_config.m_renderer->CopyDescriptor(m_rscHeap, modelCBV, 3);
-	}
+	size_t defaultTexSRV = defaultTex->GetShaderResourceView()->m_descriptor.ptr;
+	size_t texSRV = squirrelFontTex->GetShaderResourceView()->m_descriptor.ptr;
+	size_t cbv = m_usedCamera->GetCameraBuffer()->GetConstantBufferView()->m_descriptor.ptr;
+	size_t modelCBV = defaultModelBuffer->GetConstantBufferView()->m_descriptor.ptr;
+	
+	// Always copy descriptors, as we do not know if they have changed between scenes
+	m_config.m_renderer->CopyDescriptor(m_rscHeap, defaultTexSRV);
+	m_config.m_renderer->CopyDescriptor(m_rscHeap, texSRV, 1);
+	m_config.m_renderer->CopyDescriptor(m_rscHeap, cbv, 2);
+	m_config.m_renderer->CopyDescriptor(m_rscHeap, modelCBV, 3);
 
 	Render_OpenFull(bounds, *usedCmdList, *usedFont, m_config.m_fontAspect);
 }
@@ -364,10 +366,8 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, Bitm
 
 	ResizeOrCopyToBuffer(textVerts.data(), textVBufferSize, m_textVBuffer);
 
-
-	//#TODO DX12 FIXTHIS
 	cmdList.BindPipelineState(m_pso);
-	DescriptorHeap* usedHeaps[2] = {m_rscHeap, m_samplerHeap};
+	DescriptorHeap* usedHeaps[2] = { m_rscHeap, m_samplerHeap };
 	cmdList.SetDescriptorHeaps(2, usedHeaps);
 
 	cmdList.SetDescriptorTable(PARAM_TEXTURES, m_rscHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
@@ -375,29 +375,22 @@ void DevConsole::Render_OpenFull(AABB2 const& bounds, CommandList& cmdList, Bitm
 	cmdList.SetDescriptorTable(PARAM_MODEL_BUFFERS, m_rscHeap->GetGPUHandleAtOffset(3), PipelineType::Graphics);
 	cmdList.SetDescriptorTable(PARAM_SAMPLERS, m_samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
 
-	unsigned int drawConstants[16] = {0,0,0};
+	unsigned int drawConstants[16] = { 0,0,0 };
 	cmdList.SetGraphicsRootConstants(16, drawConstants);
 
 	cmdList.SetVertexBuffers(&m_layoutVBuffer, 1);
 	cmdList.DrawInstance((unsigned int)overlayVerts.size(), 1, 0, 0);
 
-	drawConstants[1] = {1};
+	// Render caret first, as it uses default texture
+	Render_InputCaret(cmdList, font, fontAspect, cellHeight);
+
+	// Set texture to squirrel font, which is in descriptor slot 1
+	drawConstants[2] = { 1 };
 	cmdList.SetGraphicsRootConstants(16, drawConstants);
 	cmdList.SetVertexBuffers(&m_textVBuffer, 1);
 	cmdList.DrawInstance((unsigned int)textVerts.size(), 1, 0, 0);
 
-
-	/*renderer.BindTexture(nullptr);
-	renderer.SetBlendMode(BlendMode::ALPHA);
-	renderer.DrawVertexArray(overlayVerts);
-
-	Render_InputCaret(renderer, font, fontAspect, cellHeight);
-
-	renderer.BindTexture(&font.GetTexture());
-	renderer.DrawVertexArray(textVerts);*/
-
 	Render_UserInput(cmdList, font, fontAspect, cellHeight);
-
 #if defined(ENGINE_USE_NETWORK)
 	m_remoteConsole->Render(renderer);
 #endif
@@ -418,21 +411,29 @@ void DevConsole::Render_InputCaret(CommandList& cmdList, BitmapFont& font, float
 	caretColor.a = (m_caretVisible) ? 255 : 0;
 
 	AddVertsForAABB2D(caretVertexes, caretAABB2, caretColor);
-	//#TODO DX12 FIXTHIS
+	size_t caretVBufferSize = caretVertexes.size() * sizeof(Vertex_PCU);
+	ResizeOrCopyToBuffer(caretVertexes.data(), caretVBufferSize, m_caretVBuffer);
 
-	//renderer.DrawVertexArray(caretVertexes);
+	cmdList.SetVertexBuffers(&m_caretVBuffer, 1);
+	cmdList.DrawInstance((unsigned int)caretVertexes.size(), 1, 0, 0);
 }
 
 void DevConsole::Render_UserInput(CommandList& cmdList, BitmapFont& font, float fontAspect, float cellHeight)
 {
 	std::vector<Vertex_PCU> userInputTextVerts;
 
+
 	float lineWidth = font.GetTextWidth(cellHeight, m_inputText);
 	AABB2 inputLineAABB2(Vec2::ZERO, Vec2(lineWidth, cellHeight));
 	font.AddVertsForTextInBox2D(userInputTextVerts, inputLineAABB2, cellHeight, m_inputText, Rgba8::CYAN, fontAspect, Vec2::ZERO, TextBoxMode::OVERRUN);
-	//#TODO DX12 FIXTHIS
 
-	//renderer.DrawVertexArray(userInputTextVerts);
+	// Nothing to render, return
+	if (userInputTextVerts.size() == 0) return;
+	size_t textVBufferSize = userInputTextVerts.size() * sizeof(Vertex_PCU);
+	ResizeOrCopyToBuffer(userInputTextVerts.data(), textVBufferSize, m_userInputVBuffer);
+
+	cmdList.SetVertexBuffers(&m_userInputVBuffer, 1);
+	cmdList.DrawInstance((unsigned int)userInputTextVerts.size(), 1, 0, 0);
 }
 
 void DevConsole::ResizeOrCopyToBuffer(void* data, size_t totalSize, Buffer*& buffer)
