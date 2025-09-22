@@ -296,9 +296,12 @@ void Basic3DMode::CreateResourceDescriptors()
 	DescriptorHeap* samplerHeap = m_renderContext->GetCPUDescriptorHeap(DescriptorHeapType::Sampler);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE defaultTexHandle = m_renderContext->GetNextCPUDescriptor(PARAM_TEXTURES);
+	D3D12_CPU_DESCRIPTOR_HANDLE squirrelFontTexHandle = m_renderContext->GetNextCPUDescriptor(PARAM_TEXTURES);
 	D3D12_CPU_DESCRIPTOR_HANDLE defaultModelBuffer = m_renderContext->GetNextCPUDescriptor(PARAM_MODEL_BUFFERS);
+
 	g_theRenderer->CreateShaderResourceView(defaultTexHandle.ptr, g_theRenderer->GetDefaultTexture());
-	g_theRenderer->CreateShaderResourceView(defaultModelBuffer.ptr, g_theRenderer->GetDefaultModelBuffer());
+	g_theRenderer->CreateShaderResourceView(squirrelFontTexHandle.ptr, &g_squirrelFont->GetTexture());
+	g_theRenderer->CreateConstantBufferView(defaultModelBuffer.ptr, g_theRenderer->GetDefaultModelBuffer());
 
 	for (unsigned int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
 		Entity* entity = m_allEntities[entityIndex];
