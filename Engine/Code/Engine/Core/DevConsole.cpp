@@ -244,10 +244,11 @@ void DevConsole::Render(AABB2 const& bounds, CommandList* cmdListOverride)
 		copiedDescriptors = true;
 		
 		Texture* defaultTex = m_config.m_renderer->GetDefaultTexture();
+		Texture* squirrelFontTex = &usedFont->GetTexture();
 		Buffer* defaultModelBuffer = m_config.m_renderer->GetDefaultModelBuffer();
 
 		size_t defaultTexSRV = defaultTex->GetShaderResourceView()->m_descriptor.ptr;
-		size_t texSRV = usedFont->GetTexture().GetShaderResourceView()->m_descriptor.ptr;
+		size_t texSRV = squirrelFontTex->GetShaderResourceView()->m_descriptor.ptr;
 		size_t cbv = m_usedCamera->GetCameraBuffer()->GetConstantBufferView()->m_descriptor.ptr;
 		size_t modelCBV = defaultModelBuffer->GetConstantBufferView()->m_descriptor.ptr;
 
