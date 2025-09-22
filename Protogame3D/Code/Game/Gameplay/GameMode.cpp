@@ -258,7 +258,6 @@ void GameMode::RenderUI()
 	cmdList->SetGraphicsRootConstants(16, drawConstants);
 
 	AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
-	AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
 
 	g_theConsole->Render(devConsoleBounds, cmdList);
 	m_renderContext->EndCamera(m_UICamera);

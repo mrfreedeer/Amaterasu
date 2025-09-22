@@ -260,21 +260,7 @@ void AttractScreenMode::RenderUI()
 	}
 	m_renderContext->EndCamera(m_UICamera);
 
-
-	//AABB2 devConsoleBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
-	//AABB2 screenBounds(m_UICamera.GetOrthoBottomLeft(), m_UICamera.GetOrthoTopRight());
-
-	//Material* default2DMat = g_theMaterialSystem->GetMaterialForName("Default2DMaterial");
-	//g_theRenderer->BindMaterial(default2DMat);
-
-	//std::vector<Vertex_PCU> gameInfoVerts;
-
-	//g_theConsole->Render(devConsoleBounds);
-	//g_theRenderer->EndCamera(m_UICamera);
-
-	m_renderContext->EndCamera(m_UICamera);
-
-
+	GameMode::RenderUI();
 }
 
 void AttractScreenMode::UpdateTextAnimation(float deltaTime, std::string text, Vec2 textLocation)
