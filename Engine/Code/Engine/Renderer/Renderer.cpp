@@ -1340,7 +1340,7 @@ Sampler* Renderer::CreateSampler(size_t handle, SamplerMode samplerMode)
 
 	m_device->CreateSampler(&samplerDesc, d3d12Handle);
 
-	newSampler->m_descriptor = handle;
+	newSampler->m_descriptor = (unsigned int)handle;
 
 	return newSampler;
 }
