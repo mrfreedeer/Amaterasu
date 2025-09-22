@@ -1040,6 +1040,10 @@ ResourceView* Renderer::CreateRenderTargetView(size_t handle, Texture* renderTar
 		newRTV->m_owner = renderTarget;
 		newRTV->m_valid = true;
 
+		if (renderTarget->m_rtv) {
+			delete renderTarget->m_rtv;
+		}
+
 		renderTarget->m_rtv = newRTV;
 
 		m_device->CreateRenderTargetView(renderTarget->m_rawRsc, &viewDesc, newRTV->m_descriptor);
@@ -1061,6 +1065,10 @@ ResourceView* Renderer::CreateShaderResourceView(size_t handle, Texture* texture
 		newSRV->m_descriptor = { handle };
 		newSRV->m_owner = texture;
 		newSRV->m_valid = true;
+
+		if (texture->m_srv) {
+			delete texture->m_srv;
+		}
 
 		texture->m_srv = newSRV;
 
@@ -1088,6 +1096,10 @@ ResourceView* Renderer::CreateShaderResourceView(size_t handle, Buffer* buffer)
 	newSRV->m_owner = buffer;
 	newSRV->m_valid = true;
 
+	if (buffer->m_srv) {
+		delete buffer->m_srv;
+	}
+
 	buffer->m_srv = newSRV;
 
 	m_device->CreateShaderResourceView(buffer->m_rawRsc, &srvDesc, newSRV->m_descriptor);
@@ -1108,6 +1120,9 @@ ResourceView* Renderer::CreateDepthStencilView(size_t handle, Texture* depthText
 		newDSV->m_owner = depthTexture;
 		newDSV->m_valid = true;
 
+		if (depthTexture->m_dsv) {
+			delete depthTexture->m_dsv;
+		}
 
 		depthTexture->m_dsv = newDSV;
 
@@ -1129,6 +1144,9 @@ ResourceView* Renderer::CreateConstantBufferView(size_t handle, Buffer* cBuffer)
 	newCBV->m_owner = cBuffer;
 	newCBV->m_valid = true;
 
+	if (cBuffer->m_cbv) {
+		delete cBuffer->m_cbv;
+	}
 	cBuffer->m_cbv = newCBV;
 
 	m_device->CreateConstantBufferView(&cBufferView, newCBV->m_descriptor);
@@ -1471,7 +1489,7 @@ Renderer& Renderer::CopyDescriptor(DescriptorHeap* dest, size_t src, unsigned in
 {
 	D3D12_DESCRIPTOR_HEAP_TYPE heapType = LocalToD3D12(dest->GetType());
 	D3D12_CPU_DESCRIPTOR_HANDLE startHandle = {src};
-	m_device->CopyDescriptorsSimple(1, startHandle, dest->GetCPUHandleAtOffset(offsetEnd), heapType);
+	m_device->CopyDescriptorsSimple(1, dest->GetCPUHandleAtOffset(offsetEnd), startHandle, heapType);
 
 	return *this;
 }
