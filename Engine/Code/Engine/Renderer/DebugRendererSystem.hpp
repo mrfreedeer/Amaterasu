@@ -14,9 +14,12 @@ struct Mat44;
 //------------------------------------------------------------------------
 enum class DebugRenderMode
 {
+	UNDEFINED  = -1,
 	ALWAYS = 0,
 	USEDEPTH,
 	XRAY,
+	WIRE,
+	TEXT,
 	NUM_DEBUG_RENDER_MODES
 };
 
@@ -26,6 +29,7 @@ struct DebugRenderConfig
 	Renderer* m_renderer = nullptr;
 	bool m_startHidden = false;
 	std::string m_fontName = "";
+	CommandQueue* m_cmdQueue = nullptr;
 };
 
 // Setup
