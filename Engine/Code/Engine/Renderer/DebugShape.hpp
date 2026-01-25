@@ -6,7 +6,7 @@
 #include "Engine/Renderer/DebugRendererSystem.hpp"
 
 #include <vector>
-enum class ScrenTextType {
+enum class ScreenTextType {
 	ScreenMessage,
 	FreeText,
 	NUM_SCREEN_TEXT_TYPES
@@ -17,28 +17,61 @@ class Camera;
 class Texture;
 struct Mat44;
 
+enum DebugShapeFlagsBit : unsigned int {
+	DebugWorldShape = (1 << 0),
+	DebugWorldShapeText = (1 << 1),
+	DebugWorldShapeValid = (1 << 2)
+};
+
+enum DebugShapeType : unsigned int {
+	INVALID = -1,
+	DEBUG_RENDER_WORLD_POINT,
+	DEBUG_RENDER_WORLD_LINE,
+	DEBUG_RENDER_WORLD_ARROW,
+	DEBUG_RENDER_WORLD_BOX,
+	DEBUG_RENDER_WORLD_WIRE_CYLINDER,
+	DEBUG_RENDER_WORLD_WIRE_SPHERE,
+	DEBUG_RENDER_WORLD_WIRE_BOX,
+	DEBUG_RENDER_WORLD_BASIS,
+	DEBUG_RENDER_WORLD_TEXT,
+	DEBUG_RENDER_WORLD_BILLBOARD_TEXT,
+	DEBUG_RENDER_SCREEN_TEXT,
+	DEBUG_RENDER_MESSAGE,
+	DEBUG_RENDER_NUM_TYPES
+};
+
+struct DebugShapeInfo {
+	unsigned int m_startVertex		= 0;
+	unsigned int m_vertexCount		= 0;
+	unsigned int m_flags			= 0;
+	unsigned char m_stacks			= 16;		// 16 is the default of the systen for stacks and slices
+	unsigned char m_slices			= 16;
+	float m_duration				= 0.0f;
+	float m_radius					= 0.0f;
+	Stopwatch m_stopwach;
+	DebugShapeType m_shapeType		= INVALID;
+	Mat44 m_modelMatrix				= Mat44();
+	DebugRenderMode m_renderMode	= DebugRenderMode::UNDEFINED;
+	ScreenTextType m_textType		= ScreenTextType::FreeText;
+	Rgba8 m_startColor				= Rgba8::WHITE;
+	Rgba8 m_endColor				= Rgba8::WHITE;
+	std::string m_text				= "";
+};
+
 struct DebugShape {
 
 public:
-	DebugShape(Mat44 const& modelMatrix, DebugRenderMode debugRenderMode, float duration, Clock const& parentClock, Rgba8 startColor = Rgba8::WHITE, Rgba8 endColor = Rgba8::WHITE, Texture const* texture = nullptr);
-	DebugShape(std::string const& text, ScrenTextType screenTextType, float duration, Clock const& parentClock, Rgba8 startColor = Rgba8::WHITE, Rgba8 endColor = Rgba8::WHITE, Texture const* texture = nullptr);
+	DebugShape(DebugShapeInfo const& info): m_info(info){}
 
 	bool CanShapeBeDeleted();
+	bool IsShapeValid() const { return m_info.m_flags & DebugShapeFlagsBit::DebugWorldShapeValid; }
+	void MarkForDeletion() { m_info.m_flags &= ~DebugShapeFlagsBit::DebugWorldShapeValid; }
 	void Render(Renderer* renderer) const;
-	Mat44 const& GetModelMatrix() const { return m_modelMatrix; }
+	Mat44 const& GetModelMatrix() const { return m_info.m_modelMatrix; }
 	Mat44 const GetBillboardModelMatrix(Camera const& camera) const;
 	Rgba8 const GetModelColor() const;
+	unsigned int GetVertexCount() const { return m_info.m_vertexCount; }
+	DebugRenderMode GetRenderMode() const { return m_info.m_renderMode; }
 public:
-	std::vector<Vertex_PCU> m_verts;
-	Texture const* m_texture = nullptr;
-	Stopwatch m_stopwach;
-	Mat44 m_modelMatrix;
-	DebugRenderMode m_debugRenderMode = DebugRenderMode::USEDEPTH;
-	ScrenTextType m_screenTextType = ScrenTextType::FreeText;
-	Rgba8 m_startColor;
-	Rgba8 m_endColor;
-	bool m_isBillboard = false;
-	bool m_isWorldShape = true;
-	bool  m_isWorldText = false;
-	std::string m_text = "";
+	DebugShapeInfo m_info = {};
 };
