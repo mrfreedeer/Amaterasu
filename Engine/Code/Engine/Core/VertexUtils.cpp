@@ -524,6 +524,36 @@ void AddVertsForIndexedQuad3D(std::vector<Vertex_PCU>& verts, std::vector<unsign
 	indices.push_back(two);
 }
 
+unsigned int CalcVertCountForSphere(int stacks, int slices)
+{
+	// Assumes a vertex construction without indices. So a quad contains 6 vertices and a sphere contains stacks * slices quads
+	return stacks * slices * 6;
+}
+
+unsigned int CalcVertCountForCylinder(int slices)
+{
+	// Assumes a vertex construction without indices. So a quad contains 6 vertices and 6 more for top and bottom. 12 * slices
+	return slices * 12;
+}
+
+unsigned int CalcVertCountForArrow3D(int slices)
+{
+	unsigned int vertsCylinder = CalcVertCountForCylinder(slices);
+	unsigned int vertsCone = CalcVertCountForCone3D(slices);
+	return vertsCylinder + vertsCone;
+}
+
+unsigned int CalcVertCountForCone3D(int slices)
+{
+	// Assumes a vertex construction without indices. So 3 verts for base, and 3 for the side triangle
+	return 6 * slices;
+}
+
+unsigned int CalcVertCountForAABB3D()
+{
+	return 36; // Trivial 6 verts per quad and 6 quads
+}
+
 void AddVertsForQuad3D(std::vector<Vertex_PCU>& verts, Vec3 const& bottomLeft, Vec3 const& bottomRight, Vec3 const& topRight, Vec3 const& topLeft, const Rgba8& color, const AABB2& UVs)
 {
 	// Right Quad

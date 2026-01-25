@@ -55,3 +55,9 @@ void AddVertsForQuad3D(std::vector<Vertex_PNCU>& verts, Vec3 const& bottomLeft, 
 void AddVertsForRoundedQuad3D(std::vector<Vertex_PNCU>& vertexes, Vec3 const& topLeft, Vec3 const& bottomLeft, Vec3 const& bottomRight, Vec3 const& topRight, const Rgba8& color = Rgba8::WHITE, const AABB2& UVs = AABB2::ZERO_TO_ONE);
 void AddVertsForIndexedQuad3D(std::vector<Vertex_PCU>& verts, std::vector<unsigned int>& indices, Vec3 const& bottomLeft, Vec3 const& bottomRight, Vec3 const& topRight, Vec3 const& topLeft, const Rgba8& color = Rgba8::WHITE, const AABB2& UVs = AABB2::ZERO_TO_ONE);
 void AddVertsForIndexedQuad3D(std::vector<Vertex_PNCU>& verts, std::vector<unsigned int>& indices, Vec3 const& bottomLeft, Vec3 const& bottomRight, Vec3 const& topRight, Vec3 const& topLeft, const Rgba8& color = Rgba8::WHITE, const AABB2& UVs = AABB2::ZERO_TO_ONE);
+
+unsigned int CalcVertCountForSphere(int stacks, int slices);
+unsigned int CalcVertCountForCylinder(int slices = 16);
+unsigned int CalcVertCountForArrow3D(int slices = 16);
+unsigned int CalcVertCountForCone3D(int slices = 16);
+unsigned int CalcVertCountForAABB3D();
