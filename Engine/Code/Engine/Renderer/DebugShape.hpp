@@ -41,27 +41,29 @@ enum DebugShapeType : unsigned int {
 };
 
 struct DebugShapeInfo {
-	unsigned int m_startVertex		= 0;
-	unsigned int m_vertexCount		= 0;
-	unsigned int m_flags			= 0;
-	unsigned char m_stacks			= 16;		// 16 is the default of the systen for stacks and slices
-	unsigned char m_slices			= 16;
-	float m_duration				= 0.0f;
-	float m_radius					= 0.0f;
+	unsigned int m_startVertex = 0;
+	unsigned int m_vertexCount = 0;
+	unsigned int m_flags = 0;
+	unsigned char m_stacks = 16;		// 16 is the default of the systen for stacks and slices
+	unsigned char m_slices = 16;
+	float m_duration = 0.0f;
+	float m_radius = 0.0f;
+	Vec3 m_start = Vec3::ZERO;
+	Vec3 m_end = Vec3::ZERO;
 	Stopwatch m_stopwach;
-	DebugShapeType m_shapeType		= INVALID;
-	Mat44 m_modelMatrix				= Mat44();
-	DebugRenderMode m_renderMode	= DebugRenderMode::UNDEFINED;
-	ScreenTextType m_textType		= ScreenTextType::FreeText;
-	Rgba8 m_startColor				= Rgba8::WHITE;
-	Rgba8 m_endColor				= Rgba8::WHITE;
-	std::string m_text				= "";
+	DebugShapeType m_shapeType = INVALID;
+	Mat44 m_modelMatrix = Mat44();
+	DebugRenderMode m_renderMode = DebugRenderMode::UNDEFINED;
+	ScreenTextType m_textType = ScreenTextType::FreeText;
+	Rgba8 m_startColor = Rgba8::WHITE;
+	Rgba8 m_endColor = Rgba8::WHITE;
+	std::string m_text = "";
 };
 
 struct DebugShape {
 
 public:
-	DebugShape(DebugShapeInfo const& info): m_info(info){}
+	DebugShape(DebugShapeInfo const& info) : m_info(info) {}
 
 	bool CanShapeBeDeleted();
 	bool IsShapeValid() const { return m_info.m_flags & DebugShapeFlagsBit::DebugWorldShapeValid; }
@@ -72,6 +74,13 @@ public:
 	Rgba8 const GetModelColor() const;
 	unsigned int GetVertexCount() const { return m_info.m_vertexCount; }
 	DebugRenderMode GetRenderMode() const { return m_info.m_renderMode; }
+	DebugShapeType GetType() const { return m_info.m_shapeType; }
+	float GetRadius() const { return m_info.m_radius; }
+	unsigned char GetStacks() const { return m_info.m_stacks; }
+	unsigned char GetSlices() const { return m_info.m_slices; }
+	Vec3 GetStart() const { return m_info.m_start; }
+	Vec3 GetEnd() const { return m_info.m_end; }
+	unsigned int GetVertexStart() const { return m_info.m_startVertex; }
 public:
 	DebugShapeInfo m_info = {};
 };

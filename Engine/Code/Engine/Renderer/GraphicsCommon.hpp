@@ -26,6 +26,7 @@ inline void ThrowIfFailed(long hr, char const* errorMsg) {
 // Default shaders offered by the Engine
 enum EngineShaderPipelines {
 	LegacyForward,
+	Debug,
 	NUM_ENGINE_SHADERS
 };
 
