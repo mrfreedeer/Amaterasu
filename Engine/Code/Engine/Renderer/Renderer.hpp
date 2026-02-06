@@ -215,8 +215,9 @@ private:
 
 struct RenderContextDesc {
 	Renderer* m_renderer = nullptr;
-	// All descriptor heaps will be considered shader visible
+	// All descriptor heaps will be considered shader visible CBV_SRV_UAV, SAMPLER, RTV, DSV
 	unsigned int* m_descriptorCounts = nullptr;
+	// What will be the descriptor distribution for CBV_SRV_UAV for each of the PARAMS in the root signature
 	unsigned int m_rscDescriptorDistribution[PARAM_ROOT_CBV_SRV_UAV_COUNT] = {};
 	CommandListDesc m_cmdListDesc = {};
 };

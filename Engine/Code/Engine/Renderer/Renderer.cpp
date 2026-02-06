@@ -602,6 +602,13 @@ void Renderer::LoadEngineShaders()
 	legacyDefaultDesc.m_firstShaderType = ShaderType::Vertex;
 
 	m_engineShaders[(int)EngineShaderPipelines::LegacyForward] = CreateOrGetShaderPipeline(legacyDefaultDesc);
+
+	ShaderPipelineDesc legacyDebug = {};
+	legacyDebug.m_name = "LegacyDebug";
+	legacyDebug.m_path = ENGINE_DIR "Renderer/Shaders/DebugFwdLegacy.hlsl";
+	legacyDebug.m_firstShaderType = ShaderType::Vertex;
+
+	m_engineShaders[(int)EngineShaderPipelines::Debug] = CreateOrGetShaderPipeline(legacyDebug);
 }
 
 Shader* Renderer::CreateShader(ShaderDesc const& shaderDesc)
