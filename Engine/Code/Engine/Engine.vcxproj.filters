@@ -680,5 +680,8 @@
     <FxCompile Include="Renderer\Shaders\DefaultFwdLegacy.hlsl">
       <Filter>Renderer\Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Renderer\Shaders\DebugFwdLegacy.hlsl">
+      <Filter>Renderer\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

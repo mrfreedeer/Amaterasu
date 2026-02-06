@@ -646,6 +646,9 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Window\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Renderer\Shaders\DebugFwdLegacy.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Renderer\Shaders\DefaultFwdLegacy.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </FxCompile>
