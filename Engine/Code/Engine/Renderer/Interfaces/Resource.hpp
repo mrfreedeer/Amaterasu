@@ -13,6 +13,12 @@ struct ResourceView {
 };
 
 struct TransitionBarrier {
+	TransitionBarrier() = default;
+	TransitionBarrier(Resource* rsc, ResourceStates before, ResourceStates after):
+		m_rsc(rsc),
+		m_before(before),
+		m_after(after)
+		{}
 	ResourceStates m_before = ResourceStates::Common;
 	ResourceStates m_after = ResourceStates::Common;
 	Resource* m_rsc = nullptr;
