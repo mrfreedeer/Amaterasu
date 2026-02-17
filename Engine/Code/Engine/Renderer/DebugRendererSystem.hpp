@@ -2,6 +2,7 @@
 #include <string>
 
 class Renderer;
+class CommandQueue;
 class Clock;
 class Camera;
 

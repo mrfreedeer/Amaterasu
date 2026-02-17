@@ -81,6 +81,9 @@ public:
 	Vec3 GetStart() const { return m_info.m_start; }
 	Vec3 GetEnd() const { return m_info.m_end; }
 	unsigned int GetVertexStart() const { return m_info.m_startVertex; }
+	bool IsBillboarded() const { return m_info.m_shapeType == DEBUG_RENDER_WORLD_BILLBOARD_TEXT; }
 public:
 	DebugShapeInfo m_info = {};
+	unsigned int m_modelMatrixOffset = 0;
+	unsigned int m_debugVertOffset = 0;
 };

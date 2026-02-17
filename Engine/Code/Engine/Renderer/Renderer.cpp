@@ -23,6 +23,7 @@
 #include <Engine/Core/FileUtils.hpp>
 #include <Engine/Renderer/D3D12/lib/dxcapi.h>
 #include <Engine/Renderer/D3D12/lib/d3dx12_root_signature.h>
+#include "DebugRendererSystem.hpp"
 
 
 #pragma comment (lib, "Engine/Renderer/D3D12/lib/dxcompiler.lib")
@@ -287,6 +288,14 @@ Renderer& Renderer::Startup()
 	m_rscCmdList->Reset();
 
 	delete modelBufferUpload;
+
+	DebugRenderConfig debugRenderConfig = {};
+	debugRenderConfig.m_cmdQueue = m_graphicsQueue;
+	//debugRenderConfig.m_fontName ="SquirrelFont";
+	debugRenderConfig.m_renderer = this;
+	debugRenderConfig.m_startHidden = false;
+
+	DebugRenderSystemStartup(debugRenderConfig);
 	return *this;
 }
 
@@ -295,6 +304,7 @@ Renderer& Renderer::Shutdown()
 	m_internalFence->Signal();
 	m_internalFence->Wait();
 
+	DebugRenderSystemShutdown();
 	ShutdownImGui();
 
 	delete m_ImGuiSrvDescHeap;
