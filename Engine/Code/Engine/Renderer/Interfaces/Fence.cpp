@@ -40,7 +40,7 @@ void Fence::Wait()
 	unsigned int currentValue = m_fenceValues[m_currentIndex];
 	m_currentIndex = (m_currentIndex + 1) % m_bufferCount;
 
-	unsigned int completedValue = m_fence->GetCompletedValue();
+	unsigned int completedValue = (unsigned int)m_fence->GetCompletedValue();
 	if (completedValue < currentValue)
 	{
 		ThrowIfFailed(m_fence->SetEventOnCompletion(currentValue, m_fenceEvent), "FAILED TO SET EVENT ON COMPLETION");
@@ -53,6 +53,6 @@ void Fence::Wait()
 
 unsigned int Fence::GetCompletedValue()
 {
-	return m_fence->GetCompletedValue();
+	return (unsigned int)m_fence->GetCompletedValue();
 }
 

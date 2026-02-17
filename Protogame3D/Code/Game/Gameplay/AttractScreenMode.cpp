@@ -152,7 +152,6 @@ void AttractScreenMode::Render()
 	{
 		DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 		DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
-		DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
 		cmdList->ResourceBarrier(3, resourceBarriers);
 
 		cmdList->SetTopology(TopologyType::TRIANGLELIST);
@@ -320,14 +319,12 @@ void AttractScreenMode::RenderTextAnimation()
 		m_UICamera.SetDepthTarget(m_depthTarget);
 
 		TransitionBarrier resourceBarriers[2] = {};
-		Texture* textTexture = &g_squirrelFont->GetTexture();
 
 		resourceBarriers[0] = m_textBuffer->GetTransitionBarrier(ResourceStates::VertexAndCBuffer);
 		CommandList* cmdList = m_renderContext->GetCommandList();
 
 		DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 		DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
-		DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
 		cmdList->ResourceBarrier(1, resourceBarriers);
 
 		cmdList->SetTopology(TopologyType::TRIANGLELIST);

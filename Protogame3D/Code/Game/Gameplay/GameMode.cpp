@@ -216,7 +216,7 @@ void GameMode::UpdateEntities(float deltaSeconds)
 void GameMode::RenderEntities() const
 {
 	CommandList* cmdList = m_renderContext->GetCommandList();
-	DescriptorHeap* cbvHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
+
 	unsigned int drawConstants[16] = { 0 };
 	for (int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
 		Entity* entity = m_allEntities[entityIndex];

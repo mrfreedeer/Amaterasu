@@ -134,7 +134,6 @@ void Basic3DMode::Render()
 	m_worldCamera.SetDepthTarget(m_depthTarget);
 	DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
-	DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
 
 	unsigned int cameraDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_CAMERA_BUFFERS);
 	unsigned int modelDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_MODEL_BUFFERS);

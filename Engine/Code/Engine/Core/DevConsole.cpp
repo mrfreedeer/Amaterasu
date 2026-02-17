@@ -34,7 +34,7 @@ DevConsole::DevConsole(DevConsoleConfig const& config) :
 	m_historyIndex = 0;
 	m_scrollingIndex = m_historyIndex;
 
-	Renderer* renderer = m_config.m_renderer;
+	//Renderer* renderer = m_config.m_renderer;
 }
 
 DevConsole::~DevConsole()
