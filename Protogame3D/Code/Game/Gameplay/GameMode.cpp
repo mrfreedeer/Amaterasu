@@ -59,6 +59,8 @@ void GameMode::Update(float deltaSeconds)
 
 void GameMode::Render()
 {
+	m_worldCamera.SetColorTarget(m_renderTarget);
+	m_worldCamera.SetDepthTarget(m_depthTarget);
 	DebugRenderWorld(m_worldCamera);
 	RenderUI();
 	DebugRenderScreen(m_UICamera);
