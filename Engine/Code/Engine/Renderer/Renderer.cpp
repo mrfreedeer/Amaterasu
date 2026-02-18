@@ -356,6 +356,7 @@ Renderer& Renderer::Shutdown()
 
 Renderer& Renderer::BeginFrame()
 {
+	DebugRenderBeginFrame();
 	BeginFrameImGui();
 	return *this;
 }
@@ -961,6 +962,7 @@ void Renderer::EnableDebugLayer()
 
 Renderer& Renderer::EndFrame()
 {
+	DebugRenderEndFrame();
 	ImGui::EndFrame();
 	m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 
@@ -1377,7 +1379,7 @@ Buffer* Renderer::CreateBuffer(BufferDesc const& desc)
 		DXGI_FORMAT_UNKNOWN, 1, 0, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
 
 	D3D12_RESOURCE_STATES initialState = (desc.m_memoryUsage == MemoryUsage::Dynamic) ? D3D12_RESOURCE_STATE_COPY_SOURCE : D3D12_RESOURCE_STATE_COMMON;
-	m_device->CreateCommittedResource2(&heapType,
+	HRESULT bufferCreationResult = m_device->CreateCommittedResource2(&heapType,
 		D3D12_HEAP_FLAG_NONE,
 		&rscDesc,
 		initialState,
@@ -1385,10 +1387,13 @@ Buffer* Renderer::CreateBuffer(BufferDesc const& desc)
 		NULL,
 		IID_PPV_ARGS(&newBuffer->m_rawRsc));
 
+	ThrowIfFailed(bufferCreationResult, "FAILED CREATING BUFFER");
+
 	// If there is initial data and is upload buffer, then copy to it
 	if (desc.m_data && desc.m_memoryUsage == MemoryUsage::Dynamic) {
 		newBuffer->CopyToBuffer(desc.m_data, desc.m_size);
 	}
+	SetDebugName(newBuffer->m_rawRsc, desc.m_debugName);
 
 	return newBuffer;
 }

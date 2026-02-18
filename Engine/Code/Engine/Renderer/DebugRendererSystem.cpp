@@ -33,7 +33,7 @@ public:
 	void Startup();
 	void Shutdown();
 	void Clear();
-	void ClearVertices() { m_debugVerts.clear();}
+	void ClearVertices() { m_debugVerts.clear(); }
 	void RenderWorld(Camera const& worldCamera);
 	void RenderScreen(Camera const& screenCamera);
 	void ClearExpiredShapes();
@@ -83,7 +83,7 @@ void DebugRenderSystemStartup(const DebugRenderConfig& config)
 }
 
 void DebugRenderSystemShutdown()
-{	
+{
 	s_debugRenderSystem->Shutdown();
 	delete s_debugRenderSystem;
 	s_debugRenderSystem = nullptr;
@@ -150,25 +150,25 @@ void DebugAddWorldPoint(const Vec3& pos, float radius, float duration, const Rgb
 	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(mode);
 
 	DebugShapeInfo shapeInfo = {};
-	shapeInfo.m_startVertex = vertexStart;																			
-	shapeInfo.m_vertexCount = vertexCount;																			
-	shapeInfo.m_flags		= DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;		
-	shapeInfo.m_stacks		= (unsigned char)stacks;																				
-	shapeInfo.m_slices		= (unsigned char)slices;
-	shapeInfo.m_renderMode	= mode;																
-	shapeInfo.m_duration	= duration;																				
-	shapeInfo.m_radius		= radius;																				
-	shapeInfo.m_startColor	= startColor;																			
-	shapeInfo.m_endColor	= endColor;																				
-	shapeInfo.m_shapeType	= DEBUG_RENDER_WORLD_POINT;														
+	shapeInfo.m_startVertex = vertexStart;
+	shapeInfo.m_vertexCount = vertexCount;
+	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
+	shapeInfo.m_stacks = (unsigned char)stacks;
+	shapeInfo.m_slices = (unsigned char)slices;
+	shapeInfo.m_renderMode = mode;
+	shapeInfo.m_duration = duration;
+	shapeInfo.m_radius = radius;
+	shapeInfo.m_startColor = startColor;
+	shapeInfo.m_endColor = endColor;
+	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_POINT;
 
 	DebugShape newShape(shapeInfo);
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
 		unsigned int xRayStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::ALWAYS);
-		
-		shapeInfo.m_renderMode	= DebugRenderMode::ALWAYS;
+
+		shapeInfo.m_renderMode = DebugRenderMode::ALWAYS;
 		shapeInfo.m_startVertex = xRayStart;
 		DebugShape xrayShape(shapeInfo);
 		s_debugRenderSystem->AddShape(xrayShape);
@@ -181,18 +181,18 @@ void DebugAddWorldLine(const Vec3& start, const Vec3& end, float radius, float d
 	unsigned int vertexCount = CalcVertCountForCylinder();
 	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(mode);
 
-	DebugShapeInfo shapeInfo	= {};
-	shapeInfo.m_startVertex		= vertexStart;
-	shapeInfo.m_vertexCount		= vertexCount;
-	shapeInfo.m_flags			= DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
-	shapeInfo.m_renderMode		= mode;
-	shapeInfo.m_duration		= duration;
-	shapeInfo.m_radius			= radius;
-	shapeInfo.m_startColor		= startColor;
-	shapeInfo.m_start			= start;
-	shapeInfo.m_end				= end;
-	shapeInfo.m_endColor		= endColor;
-	shapeInfo.m_shapeType		= DEBUG_RENDER_WORLD_LINE;
+	DebugShapeInfo shapeInfo = {};
+	shapeInfo.m_startVertex = vertexStart;
+	shapeInfo.m_vertexCount = vertexCount;
+	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
+	shapeInfo.m_renderMode = mode;
+	shapeInfo.m_duration = duration;
+	shapeInfo.m_radius = radius;
+	shapeInfo.m_startColor = startColor;
+	shapeInfo.m_start = start;
+	shapeInfo.m_end = end;
+	shapeInfo.m_endColor = endColor;
+	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_LINE;
 
 	DebugShape newShape(shapeInfo);
 	s_debugRenderSystem->AddShape(newShape);
@@ -214,18 +214,18 @@ void DebugAddWorldWireCylinder(const Vec3& base, const Vec3& top, float radius, 
 	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(mode);
 	unsigned int vertexCount = CalcVertCountForCylinder();
 
-	DebugShapeInfo shapeInfo	= {};
-	shapeInfo.m_startVertex		= vertexStart;
-	shapeInfo.m_vertexCount		= vertexCount;
-	shapeInfo.m_flags			= DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
-	shapeInfo.m_renderMode		= mode;
-	shapeInfo.m_duration		= duration;
-	shapeInfo.m_radius			= radius;
-	shapeInfo.m_startColor		= startColor;
-	shapeInfo.m_start			= base;
-	shapeInfo.m_end				= top;
-	shapeInfo.m_endColor		= endColor;
-	shapeInfo.m_shapeType		= DEBUG_RENDER_WORLD_WIRE_CYLINDER;
+	DebugShapeInfo shapeInfo = {};
+	shapeInfo.m_startVertex = vertexStart;
+	shapeInfo.m_vertexCount = vertexCount;
+	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
+	shapeInfo.m_renderMode = mode;
+	shapeInfo.m_duration = duration;
+	shapeInfo.m_radius = radius;
+	shapeInfo.m_startColor = startColor;
+	shapeInfo.m_start = base;
+	shapeInfo.m_end = top;
+	shapeInfo.m_endColor = endColor;
+	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_WIRE_CYLINDER;
 
 	DebugShape newShape(shapeInfo);
 	s_debugRenderSystem->AddShape(newShape);
@@ -334,7 +334,7 @@ void DebugAddWorldBasis(const Mat44& basis, float duration, const Rgba8& startCo
 	shapeInfo.m_startColor = startColor;
 	shapeInfo.m_modelMatrix = modelMatrix;
 	shapeInfo.m_endColor = endColor;
-	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_POINT;
+	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_BASIS;
 
 	DebugShape newShape(shapeInfo);
 	s_debugRenderSystem->AddShape(newShape);
@@ -373,7 +373,7 @@ void DebugAddMessage(const std::string& text, float duration, const Rgba8& start
 DebugRenderSystem::DebugRenderSystem(DebugRenderConfig config) :
 	m_config(config)
 {
-	
+
 }
 
 DebugRenderSystem::~DebugRenderSystem()
@@ -394,8 +394,8 @@ void DebugRenderSystem::Startup()
 	CreateRenderObjects();
 
 	unsigned int backBufferCount = m_config.m_renderer->GetBackBufferCount();
-	m_vertexBuffers = new Buffer*[backBufferCount];
-	m_modelCBO = new Buffer*[backBufferCount];
+	m_vertexBuffers = new Buffer * [backBufferCount];
+	m_modelCBO = new Buffer * [backBufferCount];
 
 	memset(m_vertexBuffers, 0, sizeof(Buffer*) * backBufferCount);
 	memset(m_modelCBO, 0, sizeof(Buffer*) * backBufferCount);
@@ -407,7 +407,7 @@ void DebugRenderSystem::Shutdown()
 	for (unsigned int debugRenderTypeIndex = 0; debugRenderTypeIndex < (unsigned int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugRenderTypeIndex++) {
 		PipelineState*& pso = m_debugPSOs[debugRenderTypeIndex];
 		delete pso;
-		pso	= nullptr;
+		pso = nullptr;
 	}
 
 	for (unsigned int bufferIndex = 0; bufferIndex < renderer->GetBackBufferCount(); bufferIndex++) {
@@ -451,8 +451,8 @@ void DebugRenderSystem::Clear()
 void DebugRenderSystem::RenderWorld(Camera const& worldCamera)
 {
 	bool hasAnyShapes = ContainsAnyShapes();
-	if(!hasAnyShapes) return;
-	
+	if (!hasAnyShapes) return;
+
 	// Construct all the shapes
 	AddVertsForShapes(worldCamera);
 
@@ -465,7 +465,7 @@ void DebugRenderSystem::RenderWorld(Camera const& worldCamera)
 
 	IssueDrawCalls(worldCamera);
 
-	
+
 }
 
 void DebugRenderSystem::RenderScreen(Camera const& screenCamera)
@@ -505,7 +505,7 @@ void DebugRenderSystem::AddShape(DebugShape const& newShape)
 	}
 
 	// no slot was found, then pushback to vector
-	if (wasShapeAdded)
+	if (!wasShapeAdded)
 	{
 		shapesContainer.push_back(newShape);
 	}
@@ -523,6 +523,8 @@ void DebugRenderSystem::ResetCmdLists()
 void DebugRenderSystem::EndFrame()
 {
 	m_renderContext->EndFrame();
+	delete m_intermediateBuffer;
+	m_intermediateBuffer = nullptr;
 }
 
 void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
@@ -532,13 +534,13 @@ void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
 		std::vector<DebugShape>& shapesContainer = m_debugShapes[debugMode];
 		for (unsigned int shapeIndex = 0; shapeIndex < (unsigned int)shapesContainer.size(); shapeIndex++) {
 			DebugShape& shape = shapesContainer[shapeIndex];
-			
-			if(!shape.IsShapeValid()) continue; // Shape is marked as deleted, so continue
+
+			if (!shape.IsShapeValid()) continue; // Shape is marked as deleted, so continue
 
 			// Set vertex offset for rendering
 			shape.m_debugVertOffset = (unsigned int)m_debugVerts.size();
 			AddVertsForDebugShape(shape);
-			
+
 			shape.m_modelMatrixOffset = (unsigned int)m_modelMatrices.size();
 			if (shape.IsBillboarded()) {
 				m_modelMatrices.push_back(shape.GetBillboardModelMatrix(renderCam));
@@ -610,7 +612,7 @@ void DebugRenderSystem::CreatePSOs()
 
 	// Debug Depth
 	PipelineStateDesc psoDesc = {};
-	psoDesc.m_blendModes[0] = {BlendMode::OPAQUE};
+	psoDesc.m_blendModes[0] = { BlendMode::OPAQUE };
 	psoDesc.m_windingOrder = WindingOrder::COUNTERCLOCKWISE;
 	psoDesc.m_cullMode = CullMode::BACK;
 	psoDesc.m_fillMode = FillMode::SOLID;
@@ -643,6 +645,7 @@ void DebugRenderSystem::CreatePSOs()
 	m_debugPSOs[(int)DebugRenderMode::XRAY] = renderer->CreatePipelineState(psoDesc);
 
 	// TEXT!!
+	m_debugPSOs[(int)DebugRenderMode::TEXT] = renderer->CreatePipelineState(psoDesc);
 }
 
 void DebugRenderSystem::CreateRenderObjects()
@@ -673,7 +676,7 @@ void DebugRenderSystem::CreateRenderObjects()
 	std::string copyDebugName = "DbgCopyCmdList";;
 	copyCmdListDesc.m_initialState = nullptr;
 	copyCmdListDesc.m_type = CommandListType::COPY;
-	m_copyCommandLists = new CommandList*[backbufferCount];
+	m_copyCommandLists = new CommandList * [backbufferCount];
 
 	for (unsigned int bufferIndex = 0; bufferIndex < backbufferCount; bufferIndex++) {
 		copyDebugName += std::to_string(bufferIndex);
@@ -690,11 +693,11 @@ void DebugRenderSystem::CreateOrUpdateVertexBuffer()
 	BufferDesc bufferDesc = {};
 	bufferDesc.m_type = BufferType::Vertex;
 	bufferDesc.m_debugName = "DebugVtxBuff";
-	bufferDesc.m_memoryUsage = MemoryUsage::Dynamic;
+	bufferDesc.m_memoryUsage = MemoryUsage::Default;
 	bufferDesc.m_data = nullptr; // Manually handling data copying
 	bufferDesc.m_size = m_debugVerts.size() * sizeof(Vertex_PCU);
 	bufferDesc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
-	
+
 	// Create buffer
 	Buffer*& currentVtxBuffer = GetVertexBuffer();
 	CommandList* copyCmdList = GetCopyCmdList();
@@ -702,7 +705,7 @@ void DebugRenderSystem::CreateOrUpdateVertexBuffer()
 	bool shouldCreateVtxBuffer = (currentVtxBuffer == nullptr) || (currentVtxBuffer->GetSize() < bufferDesc.m_size);
 
 	if (shouldCreateVtxBuffer) {
-		if(currentVtxBuffer) delete currentVtxBuffer;
+		if (currentVtxBuffer) delete currentVtxBuffer;
 
 		currentVtxBuffer = renderer->CreateBuffer(bufferDesc);
 	}
@@ -726,14 +729,13 @@ void DebugRenderSystem::CreateOrUpdateVertexBuffer()
 	copyCmdList->CopyBuffer(currentVtxBuffer, m_intermediateBuffer);
 
 	copyCmdList->Close();
-	
+	renderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
+
 	m_copyFence->SignalGPU();
 	m_copyFence->Wait();
 	renderer->InsertWaitInQueue(CommandListType::DIRECT, m_copyFence);
 
-	renderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
 
-	
 }
 
 void DebugRenderSystem::CreateModelBuffers()
@@ -743,20 +745,19 @@ void DebugRenderSystem::CreateModelBuffers()
 	bufferDesc.m_type = BufferType::Constant;
 	bufferDesc.m_debugName = "DebugModelBuff";
 	bufferDesc.m_memoryUsage = MemoryUsage::Default;
-	bufferDesc.m_data = m_modelMatrices.data(); 
+	bufferDesc.m_data = m_modelMatrices.data();
 	bufferDesc.m_size = m_modelMatrices.size() * sizeof(Mat44);
 	bufferDesc.m_stride.m_strideBytes = sizeof(Mat44);
 
-	unsigned int currentIndex = m_renderContext->GetBufferIndex();
 
-	Buffer*& currentModelCBO = m_modelCBO[currentIndex];
+	Buffer*& currentModelCBO = GetModelBuffer();
 	if (currentModelCBO) {
 		delete currentModelCBO;
 		currentModelCBO = nullptr;
 	}
 
 	currentModelCBO = renderer->CreateBuffer(bufferDesc);
-	
+
 	m_renderFence->SignalGPU();
 	m_renderFence->Wait();
 
@@ -766,10 +767,10 @@ void DebugRenderSystem::CreateModelBuffers()
 
 void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 {
-	
+
 	CommandList* cmdList = m_renderContext->GetCommandList();
 	Renderer* renderer = m_config.m_renderer;
-	
+
 	Texture* renderTarget = camera.GetRenderTarget();
 	Texture* depthTarget = camera.GetDepthTarget();
 
@@ -792,35 +793,37 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 	Buffer* vertexBuffer = GetVertexBuffer();
 	Buffer* modelBuffer = GetModelBuffer();
 
-	TransitionBarrier rscBarriers[2] = {};
+	TransitionBarrier rscBarriers[4] = {};
 	// Transition vertex Buffer and model buffer
 	rscBarriers[0] = TransitionBarrier(vertexBuffer, ResourceStates::CopyDest, ResourceStates::VertexAndCBuffer);
 	rscBarriers[1] = TransitionBarrier(modelBuffer, ResourceStates::Common, ResourceStates::VertexAndCBuffer);
+	rscBarriers[2] = TransitionBarrier(renderTarget, ResourceStates::Common, ResourceStates::RenderTarget);
+	rscBarriers[3] = TransitionBarrier(depthTarget, ResourceStates::Common, ResourceStates::DepthWrite);
 
 	unsigned int cameraDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_CAMERA_BUFFERS);
 	unsigned int modelDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_MODEL_BUFFERS);
 	unsigned int textureDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_TEXTURES);
 
+	cmdList->ResourceBarrier(_countof(rscBarriers), rscBarriers);
+	cmdList->SetRenderTargets(1, &renderTarget, false, depthTarget);
+	cmdList->SetTopology(TopologyType::TRIANGLELIST);
 
 	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
 		std::vector<DebugShape>& shapesContainer = m_debugShapes[debugMode];
 
-		cmdList->ResourceBarrier(_countof(rscBarriers), rscBarriers);
 		cmdList->BindPipelineState(m_debugPSOs[debugMode]);
-		cmdList->SetRenderTargets(1, &renderTarget, false, depthTarget);
 		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
-		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, resourcesHeap->GetGPUHandleAtOffset(cameraDescriptorStart), PipelineType::Graphics);
-		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, resourcesHeap->GetGPUHandleAtOffset(modelDescriptorStart), PipelineType::Graphics);
-		cmdList->SetDescriptorTable(PARAM_TEXTURES, resourcesHeap->GetGPUHandleAtOffset(textureDescriptorStart), PipelineType::Graphics);
-		cmdList->SetDescriptorTable(PARAM_SAMPLERS, samplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
-		cmdList->SetTopology(TopologyType::TRIANGLELIST);
+		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, GPUresourcesHeap->GetGPUHandleAtOffset(cameraDescriptorStart), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, GPUresourcesHeap->GetGPUHandleAtOffset(modelDescriptorStart), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_TEXTURES, GPUresourcesHeap->GetGPUHandleAtOffset(textureDescriptorStart), PipelineType::Graphics);
+		cmdList->SetDescriptorTable(PARAM_SAMPLERS, GPUsamplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
 
 		for (unsigned int shapeIndex = 0; shapeIndex < shapesContainer.size(); shapeIndex++) {
 			DebugShape& shape = shapesContainer[shapeIndex];
 
 			if (!shape.IsShapeValid()) continue; // Shape is marked as deleted, so continue
 
-			cmdList->DrawInstance(shape.GetVertexCount(),1, shape.GetVertexStart(), 0);
+			cmdList->DrawInstance(shape.GetVertexCount(), 1, shape.GetVertexStart(), 0);
 		}
 	}
 
@@ -837,8 +840,8 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 bool DebugRenderSystem::ContainsAnyShapes() const
 {
 	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
-		std::vector<DebugShape>const & shapesContainer = m_debugShapes[debugMode];
-		if(shapesContainer.size() > 0) return true;
+		std::vector<DebugShape>const& shapesContainer = m_debugShapes[debugMode];
+		if (shapesContainer.size() > 0) return true;
 	}
 
 	return false;
@@ -846,18 +849,18 @@ bool DebugRenderSystem::ContainsAnyShapes() const
 
 CommandList* DebugRenderSystem::GetCopyCmdList()
 {
-	unsigned int currentBackBuferIndex = m_config.m_renderer->GetCurrentBufferIndex();
+	unsigned int currentBackBuferIndex = m_renderContext->GetBufferIndex();
 	return m_copyCommandLists[currentBackBuferIndex];
 }
 
 Buffer*& DebugRenderSystem::GetVertexBuffer()
 {
-	unsigned int currentBackBuferIndex = m_config.m_renderer->GetCurrentBufferIndex();
+	unsigned int currentBackBuferIndex = m_renderContext->GetBufferIndex();
 	return m_vertexBuffers[currentBackBuferIndex];
 }
 
 Buffer*& DebugRenderSystem::GetModelBuffer()
 {
-	unsigned int currentBackBuferIndex = m_config.m_renderer->GetCurrentBufferIndex();
+	unsigned int currentBackBuferIndex = m_renderContext->GetBufferIndex();
 	return m_modelCBO[currentBackBuferIndex];
 }
