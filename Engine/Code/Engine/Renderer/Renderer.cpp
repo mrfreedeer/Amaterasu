@@ -978,7 +978,9 @@ DescriptorHeap* Renderer::CreateDescriptorHeap(DescriptorHeapDesc& desc, char co
 	heapDesc.Flags = (D3D12_DESCRIPTOR_HEAP_FLAGS)static_cast<uint8_t>(desc.m_flags);
 
 	ID3D12DescriptorHeap* descriptorHeap = nullptr;
-	char const* errorString = Stringf("FAILED TO CRATE DESCRIPTOR HEAP %s", debugName).c_str();
+
+	std::string errorMessage = Stringf("FAILED TO CRATE DESCRIPTOR HEAP %s", debugName);
+	char const* errorString = errorMessage.c_str();
 	ThrowIfFailed(m_device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&descriptorHeap)), errorString);
 
 	desc.m_heap = descriptorHeap;
@@ -1014,6 +1016,7 @@ DescriptorSet* Renderer::CreateDescriptorSet(unsigned int* descriptorCounts, boo
 
 	return newSet;
 }
+
 
 CommandList* Renderer::CreateCommandList(CommandListDesc const& desc)
 {
@@ -1705,7 +1708,7 @@ RenderContext& RenderContext::BeginCamera(Camera const& camera)
 RenderContext& RenderContext::EndCamera(Camera const& camera)
 {
 	GUARANTEE_OR_DIE(m_currentCamera == &camera, "THE CAMERA WAS SWITCHED MID RENDER PASS")
-		return *this;
+	return *this;
 }
 
 RenderContext& RenderContext::EndFrame()
@@ -1736,6 +1739,16 @@ unsigned int RenderContext::GetDescriptorCountForCopy() const
 {
 	unsigned int lastParam = PARAM_ROOT_CBV_SRV_UAV_COUNT - 1;
 	return m_rscDescriptorStart[lastParam] + m_rscDescriptorCount[lastParam];
+}
+
+void RenderContext::ResetDescriptors()
+{
+	m_CPUdescriptorSet->Reset();
+
+	DescriptorHeap* rtHeap = GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
+	DescriptorHeap* drtHeap = GetDescriptorHeap(DescriptorHeapType::DepthStencilView);
+	rtHeap->Reset();
+	drtHeap->Reset();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::GetNextCPUDescriptor(RootParameterIndex paramType)

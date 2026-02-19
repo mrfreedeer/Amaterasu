@@ -240,6 +240,7 @@ public:
 	unsigned int GetDescriptorStart(RootParameterIndex paramType) const { return m_rscDescriptorStart[paramType]; }
 	unsigned int GetCurrentDescriptorIndex(RootParameterIndex paramType) const;
 	unsigned int GetDescriptorCountForCopy() const; 
+	void ResetDescriptors();
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetNextCPUDescriptor(RootParameterIndex paramType);
 
