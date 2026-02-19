@@ -7,6 +7,7 @@
 
 bool DebugShape::CanShapeBeDeleted()
 {
+	if(m_info.m_duration == -1.0f) return false;
 	return m_info.m_stopwach.HasDurationElapsed();
 }
 

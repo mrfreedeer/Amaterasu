@@ -32,15 +32,17 @@ public:
 	// Actions
 	void Startup();
 	void Shutdown();
+	void BeginFrame();
+	void EndFrame();
 	void Clear();
 	void ClearVertices() { m_debugVerts.clear(); }
 	void RenderWorld(Camera const& worldCamera);
 	void RenderScreen(Camera const& screenCamera);
 	void ClearExpiredShapes();
+	void ClearDescriptors();
 	void ClearModelMatrices() { m_modelMatrices.clear(); }
 	void AddShape(DebugShape const& newShape);
 	void ResetCmdLists();
-	void EndFrame();
 
 private:
 	void AddVertsForShapes(Camera const& renderCam);
@@ -50,7 +52,7 @@ private:
 	void CreateOrUpdateVertexBuffer();
 	void CreateModelBuffers();
 	void IssueDrawCalls(Camera const& camera);
-	bool ContainsAnyShapes() const;
+	bool ContainsAnyWorldShapes() const;
 
 	CommandList* GetCopyCmdList();
 	Buffer*& GetVertexBuffer();
@@ -60,6 +62,7 @@ private:
 	DebugRenderConfig m_config = {};
 	Clock m_clock = {};
 	bool m_hidden = false;
+	bool m_hasAnyWorldShape = false;
 	unsigned int m_vertexCounts[(int)DebugRenderMode::NUM_DEBUG_RENDER_MODES] = {};
 	CommandList** m_copyCommandLists = nullptr;
 	RenderContext* m_renderContext = nullptr;
@@ -121,7 +124,7 @@ Clock const& DebugRenderGetClock()
 
 void DebugRenderBeginFrame()
 {
-	s_debugRenderSystem->ClearVertices();
+	s_debugRenderSystem->BeginFrame();
 }
 
 void DebugRenderWorld(const Camera& camera)
@@ -137,8 +140,6 @@ void DebugRenderScreen(const Camera& camera)
 void DebugRenderEndFrame()
 {
 	// Clear expired shapes for next frame
-	s_debugRenderSystem->ClearExpiredShapes();
-	s_debugRenderSystem->ClearModelMatrices();
 	s_debugRenderSystem->EndFrame();
 }
 
@@ -399,6 +400,7 @@ void DebugRenderSystem::Startup()
 
 	memset(m_vertexBuffers, 0, sizeof(Buffer*) * backBufferCount);
 	memset(m_modelCBO, 0, sizeof(Buffer*) * backBufferCount);
+	m_renderContext->CloseAll();
 }
 
 void DebugRenderSystem::Shutdown()
@@ -441,6 +443,14 @@ void DebugRenderSystem::Shutdown()
 
 }
 
+void DebugRenderSystem::BeginFrame()
+{
+	m_renderFence->Signal();
+	m_renderFence->Wait();
+	ClearVertices();
+	ClearDescriptors();
+}
+
 void DebugRenderSystem::Clear()
 {
 	for (int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
@@ -450,21 +460,36 @@ void DebugRenderSystem::Clear()
 
 void DebugRenderSystem::RenderWorld(Camera const& worldCamera)
 {
-	bool hasAnyShapes = ContainsAnyShapes();
-	if (!hasAnyShapes) return;
+	ResetCmdLists();
+	Renderer* renderer = m_config.m_renderer;
+	CommandList* cmdList = m_renderContext->GetCommandList();
 
-	// Construct all the shapes
-	AddVertsForShapes(worldCamera);
+	bool hasAnyShapes = ContainsAnyWorldShapes();
+	if (hasAnyShapes) {
+		// Construct all the shapes
+		AddVertsForShapes(worldCamera);
 
-	// Create vertex buffer
-	CreateOrUpdateVertexBuffer();
+		// Create vertex buffer
+		CreateOrUpdateVertexBuffer();
 
-	// Create model buffer list with initial Data upload
-	CreateModelBuffers();
-	// issue render calls, normal draw calls first
+		// Create model buffer list with initial Data upload
+		CreateModelBuffers();
+		// issue render calls, normal draw calls first
 
-	IssueDrawCalls(worldCamera);
+		IssueDrawCalls(worldCamera);
+	}
+	else {
+		// Close copy command list, to make sure it's ready for next frame's use, even if no vtx buffer was created
+		CommandList* copyCmdList = GetCopyCmdList();
+		copyCmdList->Close();
+	}
 
+	// Always close and execute every frame, or we risk having the command list in an undefined state
+	m_renderContext->Close();
+	renderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
+
+	m_renderFence->SignalGPU();
+	m_renderFence->Wait();
 
 }
 
@@ -475,17 +500,29 @@ void DebugRenderSystem::RenderScreen(Camera const& screenCamera)
 
 void DebugRenderSystem::ClearExpiredShapes()
 {
+	bool wasAnyShapeValid = false;
 	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
 		std::vector<DebugShape>& shapesContainer = m_debugShapes[debugMode];
 
 		for (unsigned int shapeIndex = 0; shapeIndex < shapesContainer.size(); shapeIndex++) {
 			DebugShape& shape = shapesContainer[shapeIndex];
-			if (shape.IsShapeValid() && shape.CanShapeBeDeleted()) {
-				shape.MarkForDeletion();
+			if (shape.IsShapeValid()) {
+				if (shape.CanShapeBeDeleted()) {
+					shape.MarkForDeletion();
+				}
+				else {
+					// There are shapes that have persisted through this frame
+					wasAnyShapeValid = true;
+				}
 			}
 		}
 	}
+	m_hasAnyWorldShape = wasAnyShapeValid;
+}
 
+void DebugRenderSystem::ClearDescriptors()
+{
+	m_renderContext->ResetDescriptors();
 }
 
 void DebugRenderSystem::AddShape(DebugShape const& newShape)
@@ -511,6 +548,7 @@ void DebugRenderSystem::AddShape(DebugShape const& newShape)
 	}
 
 	vertexCount += newShape.GetVertexCount();
+	m_hasAnyWorldShape = true;
 }
 
 void DebugRenderSystem::ResetCmdLists()
@@ -522,6 +560,9 @@ void DebugRenderSystem::ResetCmdLists()
 
 void DebugRenderSystem::EndFrame()
 {
+	ClearExpiredShapes();
+	ClearModelMatrices();
+	
 	m_renderContext->EndFrame();
 	delete m_intermediateBuffer;
 	m_intermediateBuffer = nullptr;
@@ -681,10 +722,12 @@ void DebugRenderSystem::CreateRenderObjects()
 	for (unsigned int bufferIndex = 0; bufferIndex < backbufferCount; bufferIndex++) {
 		copyDebugName += std::to_string(bufferIndex);
 		m_copyCommandLists[bufferIndex] = renderer->CreateCommandList(copyCmdListDesc);
+		m_copyCommandLists[bufferIndex]->Close();
 	}
 
 	m_copyFence = renderer->CreateFence(CommandListType::COPY);
 	m_renderFence = renderer->CreateFence(CommandListType::DIRECT);
+
 }
 
 void DebugRenderSystem::CreateOrUpdateVertexBuffer()
@@ -828,23 +871,13 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 	}
 
 	m_renderContext->EndCamera(camera);
-
-	m_renderContext->CloseAll();
-	renderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
-
-	m_renderFence->SignalGPU();
-	m_renderFence->Wait();
+	
 }
 
 
-bool DebugRenderSystem::ContainsAnyShapes() const
+bool DebugRenderSystem::ContainsAnyWorldShapes() const
 {
-	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
-		std::vector<DebugShape>const& shapesContainer = m_debugShapes[debugMode];
-		if (shapesContainer.size() > 0) return true;
-	}
-
-	return false;
+	return m_hasAnyWorldShape;
 }
 
 CommandList* DebugRenderSystem::GetCopyCmdList()
