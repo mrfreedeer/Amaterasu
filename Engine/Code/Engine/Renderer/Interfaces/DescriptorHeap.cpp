@@ -67,3 +67,17 @@ DescriptorSet::~DescriptorSet()
 		m_descriptorHeaps[heapInd] = nullptr;
 	}
 }
+
+void DescriptorSet::Reset()
+{
+	for (int heapInd = 0; heapInd < (int)DescriptorHeapType::NUM_TYPES; heapInd++) {
+		m_descriptorHeaps[heapInd]->Reset();
+	}
+}
+
+void DescriptorHeap::Reset()
+{
+	m_remainingDescriptors = m_config.m_numDescriptors;
+	m_currentDescriptor = m_descriptorHeap->GetCPUDescriptorHandleForHeapStart().ptr;
+}
+

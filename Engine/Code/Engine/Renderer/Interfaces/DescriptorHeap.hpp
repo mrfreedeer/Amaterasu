@@ -29,10 +29,10 @@ public:
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandleHeapStart();
 	size_t GetDescriptorCount() const;
 	DescriptorHeapType GetType() const { return m_config.m_type; }
-private:
-	DescriptorHeap(DescriptorHeapDesc const& desc);
+	void Reset();
 
-private:
+protected:
+	DescriptorHeap(DescriptorHeapDesc const& desc);
 	DescriptorHeapDesc m_config = {};
 	ID3D12DescriptorHeap* m_descriptorHeap = nullptr;
 	size_t m_remainingDescriptors = 0;
@@ -45,4 +45,6 @@ struct DescriptorSet {
 	~DescriptorSet();
 	DescriptorHeap* m_descriptorHeaps[(int)DescriptorHeapType::NUM_TYPES] = {};
 	DescriptorHeap* GetDescriptorHeap(DescriptorHeapType heapType) { return m_descriptorHeaps[(int)heapType]; }
+	void Reset();
 };
+
