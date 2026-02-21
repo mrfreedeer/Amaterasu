@@ -22,6 +22,7 @@ public:
 	virtual void Startup();
 	virtual void Update(float deltaSeconds);
 	virtual void Render();
+	virtual void RenderPostProcess() = 0;
 	virtual void Shutdown();
 
 protected:
@@ -34,10 +35,12 @@ protected:
 	virtual void UpdateEntities(float deltaSeconds);
 	virtual void RenderEntities() const;
 	virtual void RenderUI();
+	virtual void RenderDebug();
 	virtual void CreateRendererObjects(char const* debugName, unsigned int* descriptorCounts);
 protected:
 	Game* m_game = nullptr;
 	RenderContext* m_renderContext = nullptr; 
+	RenderContext* m_postRenderContext = nullptr;
 	Fence* m_copyFence = nullptr;
 	Fence* m_frameFence = nullptr;
 	Fence* m_gpuFence = nullptr;

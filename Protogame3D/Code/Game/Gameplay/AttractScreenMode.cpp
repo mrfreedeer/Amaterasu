@@ -56,13 +56,13 @@ void AttractScreenMode::CreateResources()
 	copyCmdList->Close();
 	g_theRenderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
 	m_copyFence->SignalGPU();
+	m_copyFence->Wait();
 
 	// Waiting for the copying to be done
 	g_theRenderer->InsertWaitInQueue(CommandListType::DIRECT, m_copyFence);
-	//g_theRenderer->InsertWaitInQueue(CommandListType::COPY, m_copyFence);
-	DebuggerPrintf("CopyQueueValue: %d", m_copyFence->GetCompletedValue());
+	////g_theRenderer->InsertWaitInQueue(CommandListType::COPY, m_copyFence);
+	//DebuggerPrintf("CopyQueueValue: %d", m_copyFence->GetCompletedValue());
 
-	m_copyFence->Wait();
 	delete intermTestTri;
 	delete intermTestTex;
 
@@ -108,6 +108,7 @@ void AttractScreenMode::Startup()
 
 	// It's expected that the cmd list will be closed
 	m_renderContext->CloseAll();
+	m_postRenderContext->CloseAll();
 }
 
 void AttractScreenMode::Update(float deltaSeconds)

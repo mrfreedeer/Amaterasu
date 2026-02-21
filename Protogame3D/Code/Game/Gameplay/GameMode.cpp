@@ -59,15 +59,15 @@ void GameMode::Update(float deltaSeconds)
 
 void GameMode::Render()
 {
-	m_worldCamera.SetColorTarget(m_renderTarget);
-	m_worldCamera.SetDepthTarget(m_depthTarget);
-	DebugRenderWorld(m_worldCamera);
 	RenderUI();
-	DebugRenderScreen(m_UICamera);
 }
 
 void GameMode::Shutdown()
 {
+	Fence* debugRenderFence = DebugRenderGetFence();
+	debugRenderFence->Signal();
+	debugRenderFence->Wait();
+
 	for (int entityIndex = 0; entityIndex < m_allEntities.size(); entityIndex++) {
 		Entity*& entity = m_allEntities[entityIndex];
 		if (entity) {
@@ -86,6 +86,9 @@ void GameMode::Shutdown()
 
 	delete m_renderContext;
 	m_renderContext = nullptr;
+
+	delete m_postRenderContext;
+	m_postRenderContext = nullptr;
 
 	for (unsigned int listIndex = 0; listIndex < g_theRenderer->GetBackBufferCount(); listIndex++) {
 		delete m_copyCmdLists[listIndex];
@@ -266,6 +269,15 @@ void GameMode::RenderUI()
 
 }
 
+void GameMode::RenderDebug()
+{
+	DebugRenderWorld(m_worldCamera);
+	DebugRenderScreen(m_UICamera);
+
+	Fence* debugRenderFence = DebugRenderGetFence();
+	g_theRenderer->InsertWaitInQueue(CommandListType::DIRECT, debugRenderFence);
+}
+
 void GameMode::CreateRendererObjects(char const* debugName, unsigned int* descriptorCounts)
 {
 	RenderContextDesc ctxDesc = {};
@@ -307,6 +319,10 @@ void GameMode::CreateRendererObjects(char const* debugName, unsigned int* descri
 	ctxDesc.m_rscDescriptorDistribution[PARAM_GAME_UAVS] = equalDistribution;
 	m_renderContext = new RenderContext(ctxDesc);
 
+	// Create a render context to handle all post-process/after main pass render passes
+	// The descriptor model, and counts are the same 
+	m_postRenderContext = new RenderContext(ctxDesc);
+
 	ShaderPipeline defaultLegacy = g_theRenderer->GetEngineShader(EngineShaderPipelines::LegacyForward);
 	PipelineStateDesc psoDesc = {};
 	psoDesc.m_blendModes[0] = BlendMode::OPAQUE;
@@ -334,7 +350,7 @@ void GameMode::CreateRendererObjects(char const* debugName, unsigned int* descri
 	BufferDesc cameraBuffDesc = {};
 	CameraConstants cameraConstants = m_worldCamera.GetCameraConstants();
 	cameraBuffDesc.m_data = &cameraConstants;
-	cameraBuffDesc.m_debugName = "UICamConst";
+	cameraBuffDesc.m_debugName = "worldCamCB";
 	cameraBuffDesc.m_memoryUsage = MemoryUsage::Dynamic;
 	cameraBuffDesc.m_size = sizeof(cameraConstants);
 	cameraBuffDesc.m_stride.m_strideBytes = sizeof(CameraConstants);
@@ -345,6 +361,7 @@ void GameMode::CreateRendererObjects(char const* debugName, unsigned int* descri
 
 	cameraConstants = m_UICamera.GetCameraConstants();
 	cameraBuffDesc.m_data = &cameraConstants;
+	cameraBuffDesc.m_debugName = "UICamCB";
 	Buffer* UICameraBuffer = g_theRenderer->CreateBuffer(cameraBuffDesc);
 	m_UICamera.SetCameraBuffer(UICameraBuffer);
 

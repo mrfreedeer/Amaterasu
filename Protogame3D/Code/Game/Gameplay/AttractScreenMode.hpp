@@ -13,6 +13,7 @@ public:
 	virtual void Startup() override;
 	virtual void Update(float deltaSeconds) override;
 	virtual void Render() override;
+	virtual void RenderPostProcess() override {}
 	virtual void Shutdown() override;
 protected:
 	virtual void UpdateInput(float deltaSeconds);

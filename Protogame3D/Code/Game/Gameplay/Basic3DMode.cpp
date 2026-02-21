@@ -85,6 +85,7 @@ void Basic3DMode::Startup()
 
 
 	m_renderContext->CloseAll();
+	m_postRenderContext->CloseAll();
 
 	//TextureCreateInfo colorInfo;
 	//colorInfo.m_dimensions = g_theWindow->GetClientDimensions();
@@ -157,7 +158,51 @@ void Basic3DMode::Render()
 		m_renderContext->EndCamera(m_worldCamera);
 	}
 
+	GameMode::Render();
+	TransitionBarrier renderTargetTransition = m_renderTarget->GetTransitionBarrier(ResourceStates::Common);
+	cmdList->ResourceBarrier(1, &renderTargetTransition);
+	cmdList->Close();
 
+	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
+
+	GameMode::RenderDebug();
+
+	// All the rendering in the frame should complete before any post render passes
+	m_frameFence->SignalGPU();
+	m_frameFence->Wait();
+
+	RenderPostProcess();
+
+	g_theRenderer->Present(1);
+
+	// I want the GPU to be done, before continuing
+	m_frameFence->SignalGPU();
+	m_frameFence->Wait();
+
+	m_renderContext->EndFrame();
+}
+
+void Basic3DMode::RenderPostProcess()
+{
+	Texture* backBuffer = g_theRenderer->GetActiveBackBuffer();
+	m_postRenderContext->Reset();
+
+	CommandList* cmdList = m_postRenderContext->GetCommandList();
+	
+	TransitionBarrier copyBarriers[2] = {};
+	copyBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::CopySrc);
+	copyBarriers[1] = backBuffer->GetTransitionBarrier(ResourceStates::CopyDest);
+	cmdList->ResourceBarrier(_countof(copyBarriers), copyBarriers);
+	cmdList->CopyTexture(backBuffer, m_renderTarget);
+
+	TransitionBarrier presentBarrier = backBuffer->GetTransitionBarrier(ResourceStates::Present);
+	cmdList->ResourceBarrier(1, &presentBarrier);
+	cmdList->Close();
+
+	m_frameFence->SignalGPU();
+	m_frameFence->Wait();
+
+	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
 
 	for (int effectInd = 0; effectInd < (int)MaterialEffect::NUM_EFFECTS; effectInd++) {
 		if (m_applyEffects[effectInd]) {
@@ -165,35 +210,15 @@ void Basic3DMode::Render()
 		}
 	}
 
-	GameMode::Render();
-
-	m_renderContext->EndFrame();
-	Texture* backBuffer = g_theRenderer->GetActiveBackBuffer();
-	cmdList->CopyTexture(backBuffer, m_renderTarget);
-	
-	TransitionBarrier presentBarrier = backBuffer->GetTransitionBarrier(ResourceStates::Present);
-	cmdList->ResourceBarrier(1, &presentBarrier);
-
-	cmdList->Close();
-
-
-
-	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
-	g_theRenderer->Present(1);
-
-	// I want the GPU to be done, before continuing
-	m_frameFence->SignalGPU();
-	m_frameFence->Wait();
-
-
+	m_postRenderContext->EndFrame();
 }
 
 void Basic3DMode::Shutdown()
 {
 	pointerToSelf = nullptr;
-	m_frameFence->SignalGPU();
+	m_frameFence->Signal();
 	m_frameFence->Wait();
-	m_copyFence->SignalGPU();
+	m_copyFence->Signal();
 	m_copyFence->Wait();
 
 	GameMode::Shutdown();

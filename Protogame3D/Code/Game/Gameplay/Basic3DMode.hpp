@@ -21,6 +21,7 @@ public:
 	virtual void Startup() override;
 	virtual void Update(float deltaSeconds);
 	virtual void Render() override;
+	virtual void RenderPostProcess() override;
 	virtual void Shutdown() override;
 
 	static bool DebugSpawnWorldWireSphere(EventArgs& eventArgs);
