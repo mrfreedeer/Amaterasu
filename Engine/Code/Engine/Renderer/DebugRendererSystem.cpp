@@ -9,6 +9,7 @@
 #include "Engine/Renderer/Interfaces/Fence.hpp"
 #include "Engine/Renderer/Interfaces/PipelineState.hpp"
 #include "Engine/Renderer/BitmapFont.hpp"
+#include "Engine/Window/Window.hpp"
 #include <vector>
 
 
@@ -23,7 +24,7 @@ public:
 	// Getters
 	Clock const& GetClock() const { return m_clock; }
 	unsigned int GetVertexCount(DebugRenderMode renderMode) const { return m_vertexCounts[(int)renderMode]; }
-
+	Fence* GetFence() const { return m_renderFence; }
 	// Setters
 	void SetVisibility(bool isHidden) { m_hidden = isHidden; }
 	void SetParentClock(Clock& parentClock) { m_clock.SetParent(parentClock); }
@@ -36,11 +37,12 @@ public:
 	void EndFrame();
 	void Clear();
 	void ClearVertices() { m_debugVerts.clear(); }
+	void PreRenderPass();
 	void RenderWorld(Camera const& worldCamera);
 	void RenderScreen(Camera const& screenCamera);
 	void ClearExpiredShapes();
 	void ClearDescriptors();
-	void ClearModelMatrices() { m_modelMatrices.clear(); }
+	void ClearModelMatrices() { m_modelConstants.clear(); }
 	void AddShape(DebugShape const& newShape);
 	void ResetCmdLists();
 
@@ -69,12 +71,14 @@ private:
 	PipelineState* m_debugPSOs[(int)DebugRenderMode::NUM_DEBUG_RENDER_MODES] = {};
 	Buffer** m_modelCBO = nullptr;
 	Buffer** m_vertexBuffers = nullptr;
-	Buffer* m_intermediateBuffer = nullptr;
+	// Intermediate buffers, for copying to default faster GPU memory
+	Buffer* m_intmVtxBuffer = nullptr;
+	Buffer* m_intmModelBuffer = nullptr;
 	Fence* m_copyFence = nullptr;
 	Fence* m_renderFence = nullptr;
 	std::vector<DebugShape> m_debugShapes[(int)DebugRenderMode::NUM_DEBUG_RENDER_MODES] = {};
 	std::vector<Vertex_PCU> m_debugVerts = {};
-	std::vector<Mat44> m_modelMatrices = {};
+	std::vector<ModelConstants> m_modelConstants = {};
 };
 
 DebugRenderSystem* s_debugRenderSystem = nullptr;
@@ -142,6 +146,12 @@ void DebugRenderEndFrame()
 	// Clear expired shapes for next frame
 	s_debugRenderSystem->EndFrame();
 }
+
+Fence* DebugRenderGetFence()
+{
+	return s_debugRenderSystem->GetFence();
+}
+
 
 void DebugAddWorldPoint(const Vec3& pos, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode, int stacks, int slices)
 {
@@ -335,6 +345,7 @@ void DebugAddWorldBasis(const Mat44& basis, float duration, const Rgba8& startCo
 	shapeInfo.m_startColor = startColor;
 	shapeInfo.m_modelMatrix = modelMatrix;
 	shapeInfo.m_endColor = endColor;
+	shapeInfo.m_radius = basisRadius;
 	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_BASIS;
 
 	DebugShape newShape(shapeInfo);
@@ -428,14 +439,16 @@ void DebugRenderSystem::Shutdown()
 	delete[] m_vertexBuffers;
 	delete[] m_modelCBO;
 
-	delete m_intermediateBuffer;
+	delete m_intmVtxBuffer;
+	delete m_intmModelBuffer;
 	delete m_renderContext;
 	delete m_copyFence;
 	delete m_renderFence;
 
 	m_modelCBO = nullptr;
 	m_vertexBuffers = nullptr;
-	m_intermediateBuffer = nullptr;
+	m_intmVtxBuffer = nullptr;
+	m_intmModelBuffer = nullptr;
 	m_renderContext = nullptr;
 	m_modelCBO = nullptr;
 	m_copyFence = nullptr;
@@ -456,6 +469,29 @@ void DebugRenderSystem::Clear()
 	for (int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
 		m_debugShapes[debugMode].clear();
 	}
+
+	// All shapes were emptied, so there is no shape contained
+	m_hasAnyWorldShape = false;
+}
+
+void DebugRenderSystem::PreRenderPass()
+{
+	Renderer* renderer = m_config.m_renderer;
+	CommandList* copyCmdList = GetCopyCmdList();
+
+	// Create vertex buffer
+	CreateOrUpdateVertexBuffer();
+
+	// Create model buffer list with initial Data upload
+	CreateModelBuffers();
+
+	copyCmdList->Close();
+	renderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
+
+	m_copyFence->SignalGPU();
+	m_copyFence->Wait();
+
+	renderer->InsertWaitInQueue(CommandListType::DIRECT, m_copyFence);
 }
 
 void DebugRenderSystem::RenderWorld(Camera const& worldCamera)
@@ -469,13 +505,9 @@ void DebugRenderSystem::RenderWorld(Camera const& worldCamera)
 		// Construct all the shapes
 		AddVertsForShapes(worldCamera);
 
-		// Create vertex buffer
-		CreateOrUpdateVertexBuffer();
+		PreRenderPass();
 
-		// Create model buffer list with initial Data upload
-		CreateModelBuffers();
 		// issue render calls, normal draw calls first
-
 		IssueDrawCalls(worldCamera);
 	}
 	else {
@@ -562,10 +594,17 @@ void DebugRenderSystem::EndFrame()
 {
 	ClearExpiredShapes();
 	ClearModelMatrices();
-	
+
 	m_renderContext->EndFrame();
-	delete m_intermediateBuffer;
-	m_intermediateBuffer = nullptr;
+	if (m_intmVtxBuffer) {
+		delete m_intmVtxBuffer;
+		m_intmVtxBuffer = nullptr;
+	}
+
+	if (m_intmModelBuffer) {
+		delete m_intmModelBuffer;
+		m_intmModelBuffer = nullptr;
+	}
 }
 
 void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
@@ -582,13 +621,19 @@ void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
 			shape.m_debugVertOffset = (unsigned int)m_debugVerts.size();
 			AddVertsForDebugShape(shape);
 
-			shape.m_modelMatrixOffset = (unsigned int)m_modelMatrices.size();
+			shape.m_modelMatrixOffset = (unsigned int)m_modelConstants.size();
+			ModelConstants newModelConstants = {};
+			Rgba8 modelColor = shape.GetModelColor();
+			modelColor.GetAsFloats(newModelConstants.ModelColor);
+
 			if (shape.IsBillboarded()) {
-				m_modelMatrices.push_back(shape.GetBillboardModelMatrix(renderCam));
+				newModelConstants.ModelMatrix = shape.GetBillboardModelMatrix(renderCam);
 			}
 			else {
-				m_modelMatrices.push_back(shape.GetModelMatrix());
+				newModelConstants.ModelMatrix = shape.GetModelMatrix();
 			}
+
+			m_modelConstants.push_back(newModelConstants);
 		}
 	}
 }
@@ -627,9 +672,13 @@ void DebugRenderSystem::AddVertsForDebugShape(DebugShape const& shape)
 		Vec3 jBasis = modelMat.GetJBasis3D();
 		Vec3 kBasis = modelMat.GetKBasis3D();
 
-		AddVertsForArrow3D(m_debugVerts, Vec3::ZERO, iBasis, shape.GetRadius(), shape.GetSlices(), shape.GetModelColor());
-		AddVertsForArrow3D(m_debugVerts, Vec3::ZERO, jBasis, shape.GetRadius(), shape.GetSlices(), shape.GetModelColor());
-		AddVertsForArrow3D(m_debugVerts, Vec3::ZERO, kBasis, shape.GetRadius(), shape.GetSlices(), shape.GetModelColor());
+		float radius = shape.GetRadius();
+		int slices = (int)shape.GetSlices();
+
+		// Hardcoded colors for basis always
+		AddVertsForArrow3D(m_debugVerts, Vec3::ZERO, iBasis, radius, slices, Rgba8::RED);
+		AddVertsForArrow3D(m_debugVerts, Vec3::ZERO, jBasis, radius, slices, Rgba8::GREEN);
+		AddVertsForArrow3D(m_debugVerts, Vec3::ZERO, kBasis, radius, slices, Rgba8::BLUE);
 		break;
 	}
 	case DEBUG_RENDER_WORLD_TEXT:
@@ -753,44 +802,38 @@ void DebugRenderSystem::CreateOrUpdateVertexBuffer()
 		currentVtxBuffer = renderer->CreateBuffer(bufferDesc);
 	}
 
-	if (!m_intermediateBuffer) {
+	if (!m_intmVtxBuffer) {
 		BufferDesc intermediateDesc = bufferDesc;
 		intermediateDesc.m_memoryUsage = MemoryUsage::Dynamic;
 		intermediateDesc.m_debugName = "Intermediate Buffer";
-		m_intermediateBuffer = renderer->CreateBuffer(intermediateDesc);
+		m_intmVtxBuffer = renderer->CreateBuffer(intermediateDesc);
 	}
 
 	// update vertex buffer/upload verts
 	TransitionBarrier copyBarriers[2] = {};
 	copyBarriers[0] = TransitionBarrier(currentVtxBuffer, Common, CopyDest);
-	copyBarriers[1] = TransitionBarrier(m_intermediateBuffer, Common, CopySrc);
+	copyBarriers[1] = TransitionBarrier(m_intmVtxBuffer, Common, CopySrc);
 
 	copyCmdList->ResourceBarrier(_countof(copyBarriers), copyBarriers);
 
-	m_intermediateBuffer->CopyToBuffer(m_debugVerts.data(), bufferDesc.m_size);
+	m_intmVtxBuffer->CopyToBuffer(m_debugVerts.data(), bufferDesc.m_size);
 
-	copyCmdList->CopyBuffer(currentVtxBuffer, m_intermediateBuffer);
-
-	copyCmdList->Close();
-	renderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
-
-	m_copyFence->SignalGPU();
-	m_copyFence->Wait();
-	renderer->InsertWaitInQueue(CommandListType::DIRECT, m_copyFence);
-
+	copyCmdList->CopyBuffer(currentVtxBuffer, m_intmVtxBuffer);
 
 }
 
 void DebugRenderSystem::CreateModelBuffers()
 {
 	Renderer* renderer = m_config.m_renderer;
+	CommandList* copyCmdList = GetCopyCmdList();
+
 	BufferDesc bufferDesc = {};
 	bufferDesc.m_type = BufferType::Constant;
 	bufferDesc.m_debugName = "DebugModelBuff";
 	bufferDesc.m_memoryUsage = MemoryUsage::Default;
-	bufferDesc.m_data = m_modelMatrices.data();
-	bufferDesc.m_size = m_modelMatrices.size() * sizeof(Mat44);
-	bufferDesc.m_stride.m_strideBytes = sizeof(Mat44);
+	bufferDesc.m_data = m_modelConstants.data();
+	bufferDesc.m_size = m_modelConstants.size() * sizeof(ModelConstants);
+	bufferDesc.m_stride.m_strideBytes = sizeof(ModelConstants);
 
 
 	Buffer*& currentModelCBO = GetModelBuffer();
@@ -799,10 +842,15 @@ void DebugRenderSystem::CreateModelBuffers()
 		currentModelCBO = nullptr;
 	}
 
-	currentModelCBO = renderer->CreateBuffer(bufferDesc);
+	currentModelCBO = renderer->CreateDefaultBuffer(bufferDesc, &m_intmModelBuffer);
 
-	m_renderFence->SignalGPU();
-	m_renderFence->Wait();
+	// update vertex buffer/upload verts
+	TransitionBarrier copyBarriers[2] = {};
+	copyBarriers[0] = TransitionBarrier(currentModelCBO, Common, CopyDest);
+	copyBarriers[1] = TransitionBarrier(m_intmModelBuffer, Common, CopySrc);
+
+	copyCmdList->ResourceBarrier(_countof(copyBarriers), copyBarriers);
+	copyCmdList->CopyBuffer(currentModelCBO, m_intmModelBuffer);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE descriptor = m_renderContext->GetNextCPUDescriptor(PARAM_MODEL_BUFFERS);
 	renderer->CreateConstantBufferView(descriptor.ptr, currentModelCBO);
@@ -814,13 +862,17 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 	CommandList* cmdList = m_renderContext->GetCommandList();
 	Renderer* renderer = m_config.m_renderer;
 
-	Texture* renderTarget = camera.GetRenderTarget();
 	Texture* depthTarget = camera.GetDepthTarget();
+	Texture* renderTarget = camera.GetRenderTarget();
 
 	DescriptorHeap* resourcesHeap = m_renderContext->GetCPUDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	DescriptorHeap* samplerHeap = m_renderContext->GetCPUDescriptorHeap(DescriptorHeapType::Sampler);
 	DescriptorHeap* GPUresourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	DescriptorHeap* GPUsamplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+
+	// The camera needs to be added to the camera descriptors
+	D3D12_CPU_DESCRIPTOR_HANDLE nextCameraHandle = m_renderContext->GetNextCPUDescriptor(PARAM_CAMERA_BUFFERS);
+	renderer->CreateConstantBufferView(nextCameraHandle.ptr, camera.GetCameraBuffer());
 
 	renderer->CopyDescriptorHeap(m_renderContext->GetDescriptorCountForCopy(), GPUresourcesHeap, resourcesHeap);
 	renderer->CopyDescriptorHeap((unsigned int)samplerHeap->GetDescriptorCount(), GPUsamplerHeap, samplerHeap);
@@ -832,7 +884,6 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 
 	m_renderContext->BeginCamera(camera);
 
-
 	Buffer* vertexBuffer = GetVertexBuffer();
 	Buffer* modelBuffer = GetModelBuffer();
 
@@ -840,8 +891,8 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 	// Transition vertex Buffer and model buffer
 	rscBarriers[0] = TransitionBarrier(vertexBuffer, ResourceStates::CopyDest, ResourceStates::VertexAndCBuffer);
 	rscBarriers[1] = TransitionBarrier(modelBuffer, ResourceStates::Common, ResourceStates::VertexAndCBuffer);
-	rscBarriers[2] = TransitionBarrier(renderTarget, ResourceStates::Common, ResourceStates::RenderTarget);
-	rscBarriers[3] = TransitionBarrier(depthTarget, ResourceStates::Common, ResourceStates::DepthWrite);
+	rscBarriers[2] = renderTarget->GetTransitionBarrier(ResourceStates::RenderTarget);
+	rscBarriers[3] = depthTarget->GetTransitionBarrier(ResourceStates::DepthWrite);
 
 	unsigned int cameraDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_CAMERA_BUFFERS);
 	unsigned int modelDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_MODEL_BUFFERS);
@@ -850,6 +901,10 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 	cmdList->ResourceBarrier(_countof(rscBarriers), rscBarriers);
 	cmdList->SetRenderTargets(1, &renderTarget, false, depthTarget);
 	cmdList->SetTopology(TopologyType::TRIANGLELIST);
+	cmdList->SetVertexBuffers(&vertexBuffer, 1);
+
+	unsigned int drawConstants[16] = {};
+
 
 	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
 		std::vector<DebugShape>& shapesContainer = m_debugShapes[debugMode];
@@ -866,12 +921,16 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 
 			if (!shape.IsShapeValid()) continue; // Shape is marked as deleted, so continue
 
+			drawConstants[0] = 0;	// Camera Index
+			drawConstants[1] = shape.m_modelMatrixOffset;	// Matrix Index
+			drawConstants[2] = 0;	// Texture Index
+	
+			cmdList->SetGraphicsRootConstants(16, drawConstants);
 			cmdList->DrawInstance(shape.GetVertexCount(), 1, shape.GetVertexStart(), 0);
 		}
 	}
 
 	m_renderContext->EndCamera(camera);
-	
 }
 
 

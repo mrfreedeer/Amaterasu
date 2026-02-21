@@ -4,6 +4,8 @@
 class Renderer;
 class CommandQueue;
 class Clock;
+class Fence;
+class Texture;
 class Camera;
 
 struct Vec3;
@@ -50,6 +52,8 @@ void DebugRenderBeginFrame();
 void DebugRenderWorld(const Camera& camera);
 void DebugRenderScreen(const Camera& camera);
 void DebugRenderEndFrame();
+Fence* DebugRenderGetFence();
+Texture* DebugRenderGetRenderTarget();
 
 // Geometry
 void DebugAddWorldPoint(const Vec3& pos, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode, int stacks = 16, int slices = 32);
@@ -63,3 +67,4 @@ void DebugAddWorldText(const std::string& text, const Mat44& transform, float te
 void DebugAddWorldBillboardText(const std::string& text, const Vec3& origin, float textHeight, const Vec2& alignment, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode);
 void DebugAddScreenText(const std::string& text, const Vec2& position, float duration, const Vec2& alignment, float size, const Rgba8& startColor, const Rgba8& endColor);
 void DebugAddMessage(const std::string& text, float duration, const Rgba8& startColor, const Rgba8& endColor);
+
