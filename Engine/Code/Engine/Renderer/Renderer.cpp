@@ -1749,6 +1749,10 @@ void RenderContext::ResetDescriptors()
 	DescriptorHeap* drtHeap = GetDescriptorHeap(DescriptorHeapType::DepthStencilView);
 	rtHeap->Reset();
 	drtHeap->Reset();
+
+	for (unsigned int paramIndex = 0; paramIndex < (unsigned int)::PARAM_ROOT_CBV_SRV_UAV_COUNT; paramIndex++) {
+		m_rscDescriptorCount[paramIndex] = 0;
+	}
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::GetNextCPUDescriptor(RootParameterIndex paramType)
