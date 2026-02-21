@@ -34,7 +34,7 @@ cbuffer PerDrawConstants : register(b2, space3)
     uint ModelBufferInd;
     uint TextureStart;
     uint Padding;
-    uint3x4 ExtraPadding;
+    uint4x3 ExtraPadding;
 };
 
 Texture2D textures[] : register(t0, space0);
