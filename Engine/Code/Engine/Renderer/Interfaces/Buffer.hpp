@@ -29,7 +29,8 @@ struct BufferView {
 };
 
 class Buffer : public Resource {
-	friend class Renderer;
+	friend class Renderer;	
+	friend class DebugRenderSystem;
 	friend class CommandList;
 public:
 	~Buffer();
@@ -46,7 +47,8 @@ public:
 	BufferType GetType() const { return m_desc.m_type; }
 private:
 	Buffer(BufferDesc const& bufferDesc);
-
+	Buffer() :Resource("unnamed") {};
+	void ReleaseResource();
 private:
 	BufferDesc m_desc = {};
 	size_t m_elemCount = 0;

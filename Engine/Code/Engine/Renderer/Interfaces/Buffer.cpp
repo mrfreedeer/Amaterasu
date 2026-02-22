@@ -47,3 +47,8 @@ Buffer::Buffer(BufferDesc const& bufferDesc) :
 {
 	m_elemCount = m_desc.m_size / m_desc.m_stride.m_strideBytes;
 }
+
+void Buffer::ReleaseResource()
+{
+	DX_SAFE_RELEASE(m_rawRsc);
+}
