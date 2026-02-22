@@ -556,6 +556,38 @@ void Renderer::BeginFrameImGui()
 #endif
 }
 
+void Renderer::InitializeBuffer(Buffer* newBuffer)
+{
+	BufferDesc& desc = newBuffer->m_desc;
+	size_t alignedSize = desc.m_size;
+
+	if (desc.m_type == BufferType::Constant) {
+		alignedSize = AlignToCBufferStride(desc.m_size);
+		newBuffer->m_desc.m_size = alignedSize;
+	}
+
+	D3D12_HEAP_PROPERTIES heapType = CD3DX12_HEAP_PROPERTIES(LocalToD3D12(desc.m_memoryUsage));
+	D3D12_RESOURCE_DESC1 rscDesc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, alignedSize, 1, 1, 1,
+		DXGI_FORMAT_UNKNOWN, 1, 0, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
+
+	D3D12_RESOURCE_STATES initialState = (desc.m_memoryUsage == MemoryUsage::Dynamic) ? D3D12_RESOURCE_STATE_COPY_SOURCE : D3D12_RESOURCE_STATE_COMMON;
+	HRESULT bufferCreationResult = m_device->CreateCommittedResource2(&heapType,
+		D3D12_HEAP_FLAG_NONE,
+		&rscDesc,
+		initialState,
+		NULL,
+		NULL,
+		IID_PPV_ARGS(&newBuffer->m_rawRsc));
+
+	ThrowIfFailed(bufferCreationResult, "FAILED CREATING BUFFER");
+
+	// If there is initial data and is upload buffer, then copy to it
+	if (desc.m_data && desc.m_memoryUsage == MemoryUsage::Dynamic) {
+		newBuffer->CopyToBuffer(desc.m_data, desc.m_size);
+	}
+	SetDebugName(newBuffer->m_rawRsc, desc.m_debugName);
+}
+
 Texture* Renderer::GetTextureForFileName(char const* imageFilePath)
 {
 	Texture* textureToGet = nullptr;
@@ -1370,35 +1402,15 @@ Sampler* Renderer::CreateSampler(size_t handle, SamplerMode samplerMode)
 Buffer* Renderer::CreateBuffer(BufferDesc const& desc)
 {
 	Buffer* newBuffer = new Buffer(desc);
-	size_t alignedSize = desc.m_size;
-
-	if (desc.m_type == BufferType::Constant) {
-		alignedSize = AlignToCBufferStride(desc.m_size);
-		newBuffer->m_desc.m_size = alignedSize;
-	}
-
-	D3D12_HEAP_PROPERTIES heapType = CD3DX12_HEAP_PROPERTIES(LocalToD3D12(desc.m_memoryUsage));
-	D3D12_RESOURCE_DESC1 rscDesc = { D3D12_RESOURCE_DIMENSION_BUFFER, 0, alignedSize, 1, 1, 1,
-		DXGI_FORMAT_UNKNOWN, 1, 0, D3D12_TEXTURE_LAYOUT_ROW_MAJOR, D3D12_RESOURCE_FLAG_NONE };
-
-	D3D12_RESOURCE_STATES initialState = (desc.m_memoryUsage == MemoryUsage::Dynamic) ? D3D12_RESOURCE_STATE_COPY_SOURCE : D3D12_RESOURCE_STATE_COMMON;
-	HRESULT bufferCreationResult = m_device->CreateCommittedResource2(&heapType,
-		D3D12_HEAP_FLAG_NONE,
-		&rscDesc,
-		initialState,
-		NULL,
-		NULL,
-		IID_PPV_ARGS(&newBuffer->m_rawRsc));
-
-	ThrowIfFailed(bufferCreationResult, "FAILED CREATING BUFFER");
-
-	// If there is initial data and is upload buffer, then copy to it
-	if (desc.m_data && desc.m_memoryUsage == MemoryUsage::Dynamic) {
-		newBuffer->CopyToBuffer(desc.m_data, desc.m_size);
-	}
-	SetDebugName(newBuffer->m_rawRsc, desc.m_debugName);
-
+	InitializeBuffer(newBuffer);
 	return newBuffer;
+}
+
+void Renderer::CreateBuffer(BufferDesc const& desc, Buffer** outBuffer)
+{
+	Buffer* newBuffer = new (*outBuffer) Buffer(desc);
+
+	InitializeBuffer(newBuffer);
 }
 
 Buffer* Renderer::CreateDefaultBuffer(BufferDesc const& desc, Buffer** out_intermediate)

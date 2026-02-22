@@ -108,6 +108,9 @@ public:
 	Sampler* CreateSampler(size_t handle, SamplerMode samplerMode);
 
 	//------------------------------ Buffers -----------------------------
+	// This function will use the provided pointer to create the buffer
+	// and it is assumed that the outBuffer != nullptr
+	void CreateBuffer(BufferDesc const& desc, Buffer** outBuffer);
 	Buffer* CreateBuffer(BufferDesc const& desc);
 	/// <summary>
 	/// Utility function to create intermediate and default buffer. 
@@ -160,6 +163,9 @@ private:
 	void InitializeImGui();
 	void ShutdownImGui();
 	void BeginFrameImGui();
+
+	// Buffers
+	void InitializeBuffer(Buffer* newBuffer);
 
 	// Textures
 	Texture* GetTextureForFileName(char const* imageFilePath);
