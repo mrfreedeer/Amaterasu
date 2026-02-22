@@ -410,7 +410,7 @@ void Basic3DMode::CreateGPUBuffers()
 bool Basic3DMode::DebugSpawnWorldWireSphere(EventArgs& eventArgs)
 {
 	UNUSED(eventArgs);
-	DebugAddWorldWireSphere(pointerToSelf->m_player->m_position, 1, 5, Rgba8::GREEN, Rgba8::RED, DebugRenderMode::USEDEPTH);
+	DebugAddWorldWireSphere(pointerToSelf->m_player->m_position, 1, 5, Rgba8::GREEN, Rgba8::RED);
 	return false;
 }
 

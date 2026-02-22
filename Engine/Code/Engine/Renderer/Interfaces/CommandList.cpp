@@ -154,7 +154,7 @@ CommandList& CommandList::CopyBuffer(Buffer* dst, Buffer* src)
 	resourceBarriers[1] = dst->GetTransitionBarrier(ResourceStates::CopyDest);
 	ResourceBarrier(2, resourceBarriers);
 
-	m_cmdList->CopyBufferRegion(dst->m_rawRsc, 0, src->m_rawRsc, 0, dst->GetSize());
+	m_cmdList->CopyBufferRegion(dst->m_rawRsc, 0, src->m_rawRsc, 0, src->GetSize());
 	return *this;
 }
 
