@@ -25,7 +25,7 @@ enum DebugShapeFlagsBit : unsigned int {
 
 enum DebugShapeType : unsigned int {
 	INVALID = -1,
-	DEBUG_RENDER_WORLD_POINT,
+	DEBUG_RENDER_WORLD_POINT = 0,
 	DEBUG_RENDER_WORLD_LINE,
 	DEBUG_RENDER_WORLD_ARROW,
 	DEBUG_RENDER_WORLD_BOX,
@@ -41,8 +41,8 @@ enum DebugShapeType : unsigned int {
 };
 
 struct DebugShapeInfo {
-	unsigned int m_startVertex = 0;
 	unsigned int m_vertexCount = 0;
+	unsigned int m_startVertex = 0;
 	unsigned int m_flags = 0;
 	unsigned char m_stacks = 16;		// 16 is the default of the systen for stacks and slices
 	unsigned char m_slices = 16;
@@ -65,10 +65,16 @@ struct DebugShape {
 public:
 	DebugShape(DebugShapeInfo const& info) : m_info(info) {}
 
-	bool CanShapeBeDeleted();
-	bool IsShapeValid() const { return m_info.m_flags & DebugShapeFlagsBit::DebugWorldShapeValid; }
+	// ----- Actions ------
 	void MarkForDeletion() { m_info.m_flags &= ~DebugShapeFlagsBit::DebugWorldShapeValid; }
 	void Render(Renderer* renderer) const;
+	void StartWatch(Clock const& clock);
+
+
+	// ----- Getters ------
+	bool IsShapeValid() const { return m_info.m_flags & DebugShapeFlagsBit::DebugWorldShapeValid; }
+	bool IsBillboarded() const { return m_info.m_shapeType == DEBUG_RENDER_WORLD_BILLBOARD_TEXT; }
+	bool CanShapeBeDeleted();
 	Mat44 const& GetModelMatrix() const { return m_info.m_modelMatrix; }
 	Mat44 const GetBillboardModelMatrix(Camera const& camera) const;
 	Rgba8 const GetModelColor() const;
@@ -81,9 +87,7 @@ public:
 	Vec3 GetStart() const { return m_info.m_start; }
 	Vec3 GetEnd() const { return m_info.m_end; }
 	unsigned int GetVertexStart() const { return m_info.m_startVertex; }
-	bool IsBillboarded() const { return m_info.m_shapeType == DEBUG_RENDER_WORLD_BILLBOARD_TEXT; }
 public:
 	DebugShapeInfo m_info = {};
 	unsigned int m_modelMatrixOffset = 0;
-	unsigned int m_debugVertOffset = 0;
 };

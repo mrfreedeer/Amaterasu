@@ -17,6 +17,11 @@ void DebugShape::Render(Renderer* renderer) const
 	//renderer->DrawVertexArray(m_verts);
 }
 
+void DebugShape::StartWatch(Clock const& clock)
+{
+	m_info.m_stopwach.Start(&clock, m_info.m_duration);
+}
+
 Mat44 const DebugShape::GetBillboardModelMatrix(Camera const& camera) const
 {
 	Vec3 position = m_info.m_modelMatrix.GetTranslation3D();
