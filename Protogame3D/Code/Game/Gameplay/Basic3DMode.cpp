@@ -462,7 +462,7 @@ bool Basic3DMode::DebugSpawnWorldWireCylinder(EventArgs& eventArgs)
 
 	Vec3 cylTop = cylbase;
 	cylTop.z += cylinderHeight;
-	DebugAddWorldWireCylinder(cylbase, cylTop, 0.5f, 10.0f, Rgba8::WHITE, Rgba8::RED, DebugRenderMode::USEDEPTH);
+	DebugAddWorldWireCylinder(cylbase, cylTop, 0.5f, 10.0f, Rgba8::WHITE, Rgba8::RED);
 	return false;
 }
 

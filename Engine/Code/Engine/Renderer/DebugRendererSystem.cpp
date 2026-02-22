@@ -44,7 +44,7 @@ public:
 	void ClearExpiredShapes();
 	void ClearDescriptors();
 	void ClearModelMatrices();
-	void AddShape(DebugShape const& newShape);
+	void AddShape(DebugShape& newShape);
 	void ResetCmdLists();
 
 private:
@@ -180,12 +180,15 @@ void DebugAddWorldPoint(const Vec3& pos, float radius, float duration, const Rgb
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int xRayStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::ALWAYS);
+		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
+		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
+		shapeInfo.m_startColor.a = 120;
+		shapeInfo.m_endColor.a = 120;
 
-		shapeInfo.m_renderMode = DebugRenderMode::ALWAYS;
-		shapeInfo.m_startVertex = xRayStart;
-		DebugShape xrayShape(shapeInfo);
-		s_debugRenderSystem->AddShape(xrayShape);
+		shapeInfo.m_startVertex = depthStart;
+		DebugShape depthShape(shapeInfo);
+
+		s_debugRenderSystem->AddShape(depthShape);
 	}
 
 }
@@ -212,27 +215,27 @@ void DebugAddWorldLine(const Vec3& start, const Vec3& end, float radius, float d
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int xrayStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::ALWAYS);
-		shapeInfo.m_renderMode = DebugRenderMode::ALWAYS;
+		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
+		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
 
-		shapeInfo.m_startVertex = xrayStart;
-		DebugShape xrayShape(shapeInfo);
+		shapeInfo.m_startVertex = depthStart;
+		DebugShape depthShape(shapeInfo);
 
-		s_debugRenderSystem->AddShape(xrayShape);
+		s_debugRenderSystem->AddShape(depthShape);
 	}
 
 }
 
-void DebugAddWorldWireCylinder(const Vec3& base, const Vec3& top, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
+void DebugAddWorldWireCylinder(const Vec3& base, const Vec3& top, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor)
 {
-	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(mode);
+	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::WIRE);
 	unsigned int vertexCount = CalcVertCountForCylinder();
 
 	DebugShapeInfo shapeInfo = {};
 	shapeInfo.m_startVertex = vertexStart;
 	shapeInfo.m_vertexCount = vertexCount;
 	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
-	shapeInfo.m_renderMode = mode;
+	shapeInfo.m_renderMode = DebugRenderMode::WIRE;
 	shapeInfo.m_duration = duration;
 	shapeInfo.m_radius = radius;
 	shapeInfo.m_startColor = startColor;
@@ -293,13 +296,15 @@ void DebugAddWorldArrow(const Vec3& start, const Vec3& end, float radius, float 
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int xrayStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::ALWAYS);
-		shapeInfo.m_renderMode = DebugRenderMode::ALWAYS;
+		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
+		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
+		shapeInfo.m_startColor.a = 120;
+		shapeInfo.m_endColor.a = 120;
 
-		shapeInfo.m_startVertex = xrayStart;
-		DebugShape xrayShape(shapeInfo);
+		shapeInfo.m_startVertex = depthStart;
+		DebugShape depthShape(shapeInfo);
 
-		s_debugRenderSystem->AddShape(xrayShape);
+		s_debugRenderSystem->AddShape(depthShape);
 	}
 }
 
@@ -324,13 +329,15 @@ void DebugAddWorldBox(const AABB3& bounds, float duration, const Rgba8& startCol
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int xrayStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::ALWAYS);
-		shapeInfo.m_renderMode = DebugRenderMode::ALWAYS;
+		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
+		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
+		shapeInfo.m_startColor.a = 120;
+		shapeInfo.m_endColor.a = 120;
 
-		shapeInfo.m_startVertex = xrayStart;
-		DebugShape xrayShape(shapeInfo);
+		shapeInfo.m_startVertex = depthStart;
+		DebugShape depthShape(shapeInfo);
 
-		s_debugRenderSystem->AddShape(xrayShape);
+		s_debugRenderSystem->AddShape(depthShape);
 	}
 }
 
@@ -359,13 +366,15 @@ void DebugAddWorldBasis(const Mat44& basis, float duration, const Rgba8& startCo
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int xrayStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::ALWAYS);
-		shapeInfo.m_renderMode = DebugRenderMode::ALWAYS;
+		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
+		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
+		shapeInfo.m_startColor.a = 120;
+		shapeInfo.m_endColor.a = 120;
 
-		shapeInfo.m_startVertex = xrayStart;
-		DebugShape xrayShape(shapeInfo);
+		shapeInfo.m_startVertex = depthStart;
+		DebugShape depthShape(shapeInfo);
 
-		s_debugRenderSystem->AddShape(xrayShape);
+		s_debugRenderSystem->AddShape(depthShape);
 	}
 }
 
@@ -585,9 +594,14 @@ void DebugRenderSystem::ClearModelMatrices()
 	m_modelConstants.clear();
 }
 
-void DebugRenderSystem::AddShape(DebugShape const& newShape)
+void DebugRenderSystem::AddShape(DebugShape& newShape)
 {
 	DebugRenderMode renderMode = newShape.GetRenderMode();
+	if (renderMode == DebugRenderMode::XRAY) {
+		newShape.m_info.m_startColor.a = 120;
+		newShape.m_info.m_endColor.a = 120;
+	}
+
 	DebugShape* pAddedShape = nullptr;
 	std::vector<DebugShape>& shapesContainer = m_debugShapes[(int)renderMode];
 	unsigned int& vertexCount = m_vertexCounts[(int)renderMode];
@@ -755,6 +769,7 @@ void DebugRenderSystem::CreatePSOs()
 
 	// Always
 	psoDesc.m_blendModes[0] = BlendMode::ALPHA;
+	psoDesc.m_fillMode = FillMode::SOLID;
 	psoDesc.m_cullMode = CullMode::NONE;
 	psoDesc.m_depthFunc = DepthFunc::ALWAYS;
 	psoDesc.m_depthEnable = false;
