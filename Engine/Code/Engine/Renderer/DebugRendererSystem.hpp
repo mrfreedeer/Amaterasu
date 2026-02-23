@@ -20,9 +20,10 @@ enum class DebugRenderMode
 	UNDEFINED  = -1,
 	ALWAYS = 0,
 	XRAY,
-	USEDEPTH,
+	USE_DEPTH,
+	USE_DEPTH_NO_CULL,
 	WIRE,
-	TEXT,
+	SCREENTEXT,
 	NUM_DEBUG_RENDER_MODES
 };
 
@@ -53,7 +54,6 @@ void DebugRenderWorld(const Camera& camera);
 void DebugRenderScreen(const Camera& camera);
 void DebugRenderEndFrame();
 Fence* DebugRenderGetFence();
-Texture* DebugRenderGetRenderTarget();
 
 // Geometry
 void DebugAddWorldPoint(const Vec3& pos, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode, int stacks = 16, int slices = 32);

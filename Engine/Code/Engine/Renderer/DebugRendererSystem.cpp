@@ -23,9 +23,10 @@ public:
 
 	// Getters
 	Clock const& GetClock() const { return m_clock; }
-	unsigned int GetVertexCount(DebugRenderMode renderMode) const { return m_vertexCounts[(int)renderMode]; }
-	unsigned int GetRenderModeVertexOffset(DebugRenderMode renderMode) const;
 	Fence* GetFence() const { return m_renderFence; }
+	BitmapFont* GetFont() const { return m_font; }
+	PipelineState* GetPSO(DebugRenderMode renderMode);
+
 	// Setters
 	void SetVisibility(bool isHidden) { m_hidden = isHidden; }
 	void SetParentClock(Clock& parentClock) { m_clock.SetParent(parentClock); }
@@ -56,6 +57,7 @@ private:
 	void CreateModelBuffers();
 	void IssueDrawCalls(Camera const& camera);
 	bool ContainsAnyWorldShapes() const;
+	bool ContainsAnyScreenShapes() const;
 
 	CommandList* GetCopyCmdList();
 	Buffer*& GetVertexBuffer();
@@ -66,7 +68,7 @@ private:
 	Clock m_clock = {};
 	bool m_hidden = false;
 	bool m_hasAnyWorldShape = false;
-	unsigned int m_vertexCounts[(int)DebugRenderMode::NUM_DEBUG_RENDER_MODES] = {};
+	bool m_hasAnyScreenShape = false;
 	unsigned int m_currentModelIndex = 0;
 	CommandList** m_copyCommandLists = nullptr;
 	RenderContext* m_renderContext = nullptr;
@@ -81,7 +83,7 @@ private:
 	std::vector<DebugShape> m_debugShapes[(int)DebugRenderMode::NUM_DEBUG_RENDER_MODES] = {};
 	std::vector<Vertex_PCU> m_debugVerts = {};
 	std::vector<ModelConstants> m_modelConstants = {};
-
+	BitmapFont* m_font = nullptr;
 };
 
 DebugRenderSystem* s_debugRenderSystem = nullptr;
@@ -160,18 +162,14 @@ void DebugAddWorldPoint(const Vec3& pos, float radius, float duration, const Rgb
 {
 	Mat44 modelMatrix;
 	modelMatrix.AppendTranslation3D(pos);
-	unsigned int vertexCount = CalcVertCountForSphere(stacks, slices);
-	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(mode);
 
 	DebugShapeInfo shapeInfo = {};
-	shapeInfo.m_startVertex = vertexStart;
-	shapeInfo.m_vertexCount = vertexCount;
 	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
 	shapeInfo.m_stacks = (unsigned char)stacks;
 	shapeInfo.m_slices = (unsigned char)slices;
 	shapeInfo.m_renderMode = mode;
 	shapeInfo.m_duration = duration;
-	shapeInfo.m_radius = radius;
+	shapeInfo.m_shapeSize = radius;
 	shapeInfo.m_startColor = startColor;
 	shapeInfo.m_endColor = endColor;
 	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_POINT;
@@ -180,12 +178,10 @@ void DebugAddWorldPoint(const Vec3& pos, float radius, float duration, const Rgb
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
-		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
+		shapeInfo.m_renderMode = DebugRenderMode::USE_DEPTH;
 		shapeInfo.m_startColor.a = 120;
 		shapeInfo.m_endColor.a = 120;
 
-		shapeInfo.m_startVertex = depthStart;
 		DebugShape depthShape(shapeInfo);
 
 		s_debugRenderSystem->AddShape(depthShape);
@@ -195,16 +191,12 @@ void DebugAddWorldPoint(const Vec3& pos, float radius, float duration, const Rgb
 
 void DebugAddWorldLine(const Vec3& start, const Vec3& end, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
 {
-	unsigned int vertexCount = CalcVertCountForCylinder();
-	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(mode);
 
 	DebugShapeInfo shapeInfo = {};
-	shapeInfo.m_startVertex = vertexStart;
-	shapeInfo.m_vertexCount = vertexCount;
 	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
 	shapeInfo.m_renderMode = mode;
 	shapeInfo.m_duration = duration;
-	shapeInfo.m_radius = radius;
+	shapeInfo.m_shapeSize = radius;
 	shapeInfo.m_startColor = startColor;
 	shapeInfo.m_start = start;
 	shapeInfo.m_end = end;
@@ -215,10 +207,8 @@ void DebugAddWorldLine(const Vec3& start, const Vec3& end, float radius, float d
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
-		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
+		shapeInfo.m_renderMode = DebugRenderMode::USE_DEPTH;
 
-		shapeInfo.m_startVertex = depthStart;
 		DebugShape depthShape(shapeInfo);
 
 		s_debugRenderSystem->AddShape(depthShape);
@@ -228,16 +218,12 @@ void DebugAddWorldLine(const Vec3& start, const Vec3& end, float radius, float d
 
 void DebugAddWorldWireCylinder(const Vec3& base, const Vec3& top, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor)
 {
-	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::WIRE);
-	unsigned int vertexCount = CalcVertCountForCylinder();
 
 	DebugShapeInfo shapeInfo = {};
-	shapeInfo.m_startVertex = vertexStart;
-	shapeInfo.m_vertexCount = vertexCount;
 	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
 	shapeInfo.m_renderMode = DebugRenderMode::WIRE;
 	shapeInfo.m_duration = duration;
-	shapeInfo.m_radius = radius;
+	shapeInfo.m_shapeSize = radius;
 	shapeInfo.m_startColor = startColor;
 	shapeInfo.m_start = base;
 	shapeInfo.m_end = top;
@@ -252,19 +238,15 @@ void DebugAddWorldWireSphere(const Vec3& center, float radius, float duration, c
 {
 	Mat44 modelMatrix;
 	modelMatrix.AppendTranslation3D(center);
-	unsigned int vertexCount = CalcVertCountForSphere(stacks, slices);
 
 
-	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::WIRE);
 	DebugShapeInfo shapeInfo = {};
-	shapeInfo.m_startVertex = vertexStart;
-	shapeInfo.m_vertexCount = vertexCount;
 	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
 	shapeInfo.m_stacks = (unsigned char)stacks;
 	shapeInfo.m_slices = (unsigned char)slices;
 	shapeInfo.m_renderMode = DebugRenderMode::WIRE;
 	shapeInfo.m_duration = duration;
-	shapeInfo.m_radius = radius;
+	shapeInfo.m_shapeSize = radius;
 	shapeInfo.m_startColor = startColor;
 	shapeInfo.m_endColor = endColor;
 	shapeInfo.m_modelMatrix = modelMatrix;
@@ -276,16 +258,12 @@ void DebugAddWorldWireSphere(const Vec3& center, float radius, float duration, c
 
 void DebugAddWorldArrow(const Vec3& start, const Vec3& end, float radius, float duration, const Rgba8& baseColor, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
 {
-	unsigned int vertexCount = CalcVertCountForArrow3D();
-	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(mode);
 
 	DebugShapeInfo shapeInfo = {};
-	shapeInfo.m_startVertex = vertexStart;
-	shapeInfo.m_vertexCount = vertexCount;
 	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
 	shapeInfo.m_renderMode = mode;
 	shapeInfo.m_duration = duration;
-	shapeInfo.m_radius = radius;
+	shapeInfo.m_shapeSize = radius;
 	shapeInfo.m_start = start;
 	shapeInfo.m_end = end;
 	shapeInfo.m_startColor = startColor;
@@ -296,12 +274,10 @@ void DebugAddWorldArrow(const Vec3& start, const Vec3& end, float radius, float 
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
-		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
+		shapeInfo.m_renderMode = DebugRenderMode::USE_DEPTH;
 		shapeInfo.m_startColor.a = 120;
 		shapeInfo.m_endColor.a = 120;
 
-		shapeInfo.m_startVertex = depthStart;
 		DebugShape depthShape(shapeInfo);
 
 		s_debugRenderSystem->AddShape(depthShape);
@@ -310,12 +286,8 @@ void DebugAddWorldArrow(const Vec3& start, const Vec3& end, float radius, float 
 
 void DebugAddWorldBox(const AABB3& bounds, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
 {
-	unsigned int vertexCount = CalcVertCountForAABB3D();
-	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(mode);
 
 	DebugShapeInfo shapeInfo = {};
-	shapeInfo.m_startVertex = vertexStart;
-	shapeInfo.m_vertexCount = vertexCount;
 	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
 	shapeInfo.m_renderMode = mode;
 	shapeInfo.m_duration = duration;
@@ -329,12 +301,10 @@ void DebugAddWorldBox(const AABB3& bounds, float duration, const Rgba8& startCol
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
-		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
+		shapeInfo.m_renderMode = DebugRenderMode::USE_DEPTH;
 		shapeInfo.m_startColor.a = 120;
 		shapeInfo.m_endColor.a = 120;
 
-		shapeInfo.m_startVertex = depthStart;
 		DebugShape depthShape(shapeInfo);
 
 		s_debugRenderSystem->AddShape(depthShape);
@@ -346,32 +316,26 @@ void DebugAddWorldBasis(const Mat44& basis, float duration, const Rgba8& startCo
 	Mat44 modelMatrix;
 	modelMatrix.AppendTranslation3D(basis.GetTranslation3D());
 
-	unsigned int vertexCount = CalcVertCountForArrow3D() * 3;
-	unsigned int vertexStart = s_debugRenderSystem->GetVertexCount(mode);
 	constexpr float basisRadius = 0.075f;
 
 	DebugShapeInfo shapeInfo = {};
-	shapeInfo.m_startVertex = vertexStart;
-	shapeInfo.m_vertexCount = vertexCount;
 	shapeInfo.m_flags = DebugShapeFlagsBit::DebugWorldShape | DebugShapeFlagsBit::DebugWorldShapeValid;
 	shapeInfo.m_renderMode = mode;
 	shapeInfo.m_duration = duration;
 	shapeInfo.m_startColor = startColor;
 	shapeInfo.m_modelMatrix = modelMatrix;
 	shapeInfo.m_endColor = endColor;
-	shapeInfo.m_radius = basisRadius;
+	shapeInfo.m_shapeSize = basisRadius;
 	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_BASIS;
 
 	DebugShape newShape(shapeInfo);
 	s_debugRenderSystem->AddShape(newShape);
 
 	if (mode == DebugRenderMode::XRAY) {
-		unsigned int depthStart = s_debugRenderSystem->GetVertexCount(DebugRenderMode::USEDEPTH);
-		shapeInfo.m_renderMode = DebugRenderMode::USEDEPTH;
+		shapeInfo.m_renderMode = DebugRenderMode::USE_DEPTH;
 		shapeInfo.m_startColor.a = 120;
 		shapeInfo.m_endColor.a = 120;
 
-		shapeInfo.m_startVertex = depthStart;
 		DebugShape depthShape(shapeInfo);
 
 		s_debugRenderSystem->AddShape(depthShape);
@@ -380,12 +344,76 @@ void DebugAddWorldBasis(const Mat44& basis, float duration, const Rgba8& startCo
 
 void DebugAddWorldText(const std::string& text, const Mat44& transform, float textHeight, const Vec2& alignment, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
 {
+	BitmapFont* font = s_debugRenderSystem->GetFont();
 
+	unsigned int flags = DebugShapeFlagsBit::DebugWorldShape;
+	flags |= DebugShapeFlagsBit::DebugWorldShapeValid;
+	flags |= DebugShapeFlagsBit::DebugWorldShapeText;
+
+	DebugShapeInfo shapeInfo = {};
+	shapeInfo.m_flags = flags;
+	shapeInfo.m_renderMode = mode;
+	shapeInfo.m_duration = duration;
+	shapeInfo.m_startColor = startColor;
+	shapeInfo.m_modelMatrix = transform;
+	shapeInfo.m_endColor = endColor;
+	shapeInfo.m_shapeSize = textHeight;
+	// Packaging the alignment in the start vec
+	shapeInfo.m_start = Vec3(alignment);
+	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_TEXT;
+	shapeInfo.m_text = text;
+
+	DebugShape newShape(shapeInfo);
+	s_debugRenderSystem->AddShape(newShape);
+
+	if (mode == DebugRenderMode::XRAY) {
+		shapeInfo.m_renderMode = DebugRenderMode::USE_DEPTH_NO_CULL;
+		shapeInfo.m_startColor.a = 120;
+		shapeInfo.m_endColor.a = 120;
+
+		DebugShape depthShape(shapeInfo);
+
+		s_debugRenderSystem->AddShape(depthShape);
+	}
 }
 
 void DebugAddWorldBillboardText(const std::string& text, const Vec3& origin, float textHeight, const Vec2& alignment, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
 {
+	BitmapFont* font = s_debugRenderSystem->GetFont();
 
+
+	Mat44 modelMatrix;
+	modelMatrix.SetTranslation3D(origin);
+
+	unsigned int flags = DebugShapeFlagsBit::DebugWorldShape;
+	flags |= DebugShapeFlagsBit::DebugWorldShapeValid;
+	flags |= DebugShapeFlagsBit::DebugWorldShapeText;
+
+	DebugShapeInfo shapeInfo = {};
+	shapeInfo.m_flags = flags;
+	shapeInfo.m_renderMode = mode;
+	shapeInfo.m_duration = duration;
+	shapeInfo.m_startColor = startColor;
+	shapeInfo.m_modelMatrix = modelMatrix;
+	shapeInfo.m_endColor = endColor;
+	shapeInfo.m_shapeSize = textHeight;
+	// Packaging the alignment in the start vec
+	shapeInfo.m_start = Vec3(alignment);
+	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_BILLBOARD_TEXT;
+	shapeInfo.m_text = text;
+
+	DebugShape newShape(shapeInfo);
+	s_debugRenderSystem->AddShape(newShape);
+
+	if (mode == DebugRenderMode::XRAY) {
+		shapeInfo.m_renderMode = DebugRenderMode::USE_DEPTH;
+		shapeInfo.m_startColor.a = 120;
+		shapeInfo.m_endColor.a = 120;
+
+		DebugShape depthShape(shapeInfo);
+
+		s_debugRenderSystem->AddShape(depthShape);
+	}
 }
 
 void DebugAddScreenText(const std::string& text, const Vec2& position, float duration, const Vec2& alignment, float size, const Rgba8& startColor, const Rgba8& endColor)
@@ -408,14 +436,10 @@ DebugRenderSystem::~DebugRenderSystem()
 {
 }
 
-unsigned int DebugRenderSystem::GetRenderModeVertexOffset(DebugRenderMode renderMode) const
+
+PipelineState* DebugRenderSystem::GetPSO(DebugRenderMode renderMode)
 {
-	unsigned int totalOffset = 0;
-	for (unsigned int previousMode = 0; previousMode < (unsigned int)renderMode; previousMode++) {
-		totalOffset += m_vertexCounts[previousMode];
-	}
-	
-	return totalOffset;
+	return m_debugPSOs[(unsigned int)renderMode];
 }
 
 void DebugRenderSystem::Startup()
@@ -431,19 +455,27 @@ void DebugRenderSystem::Startup()
 	CreatePSOs();
 	CreateRenderObjects();
 
+	m_font = m_config.m_renderer->CreateOrGetBitmapFont("Data/Images/SquirrelFixedFont");
+
 	unsigned int backBufferCount = m_config.m_renderer->GetBackBufferCount();
 	m_vertexBuffers = new Buffer * [backBufferCount];
 
-	// Each debub object requires a model buffer, so a fair estimate we're going for is 4096 rn.
+	// Each debug object requires a model buffer, so a fair estimate we're going for is 4096 rn.
 	m_modelCBO = new Buffer[MODEL_BUFFER_COUNT];
-
 	memset(m_vertexBuffers, 0, sizeof(Buffer*) * backBufferCount);
-	memset(m_modelCBO, 0, sizeof(Buffer*) * backBufferCount);
 	m_renderContext->CloseAll();
+
+
 }
 
 void DebugRenderSystem::Shutdown()
 {
+	m_copyFence->Signal();
+	m_copyFence->Wait();
+
+	m_renderFence->Signal();
+	m_renderFence->Wait();
+
 	Renderer* renderer = m_config.m_renderer;
 	for (unsigned int debugRenderTypeIndex = 0; debugRenderTypeIndex < (unsigned int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugRenderTypeIndex++) {
 		PipelineState*& pso = m_debugPSOs[debugRenderTypeIndex];
@@ -460,9 +492,6 @@ void DebugRenderSystem::Shutdown()
 	}
 
 
-	for (unsigned int modelIndex = 0; modelIndex < (unsigned int)m_modelConstants.size(); modelIndex++) {
-		m_modelCBO[modelIndex].ReleaseResource();
-	}
 	delete[] m_copyCommandLists;
 	delete[] m_vertexBuffers;
 	delete[] m_modelCBO;
@@ -478,7 +507,6 @@ void DebugRenderSystem::Shutdown()
 	m_intmVtxBuffer = nullptr;
 	m_intmModelBuffer = nullptr;
 	m_renderContext = nullptr;
-	m_modelCBO = nullptr;
 	m_copyFence = nullptr;
 	m_renderFence = nullptr;
 
@@ -486,10 +514,25 @@ void DebugRenderSystem::Shutdown()
 
 void DebugRenderSystem::BeginFrame()
 {
+	Renderer* renderer = m_config.m_renderer;
 	m_renderFence->Signal();
 	m_renderFence->Wait();
+	ResetCmdLists();
+
 	ClearVertices();
 	ClearDescriptors();
+
+	BitmapFont* font = GetFont();
+	Texture* defaultTexture = renderer->GetDefaultTexture();
+	Texture* fontTexture = &font->GetTexture();
+
+	// Descriptors are copied onto the GPU heap, so we have to place the texture descriptors there, every frame
+	D3D12_CPU_DESCRIPTOR_HANDLE nextTexDescriptor = m_renderContext->GetNextCPUDescriptor(PARAM_TEXTURES);
+	renderer->CreateShaderResourceView(nextTexDescriptor.ptr, defaultTexture);
+
+	nextTexDescriptor = m_renderContext->GetNextCPUDescriptor(PARAM_TEXTURES);
+	renderer->CreateShaderResourceView(nextTexDescriptor.ptr, fontTexture);
+
 }
 
 void DebugRenderSystem::Clear()
@@ -524,7 +567,6 @@ void DebugRenderSystem::PreRenderPass()
 
 void DebugRenderSystem::RenderWorld(Camera const& worldCamera)
 {
-	ResetCmdLists();
 	Renderer* renderer = m_config.m_renderer;
 	CommandList* cmdList = m_renderContext->GetCommandList();
 
@@ -555,7 +597,10 @@ void DebugRenderSystem::RenderWorld(Camera const& worldCamera)
 
 void DebugRenderSystem::RenderScreen(Camera const& screenCamera)
 {
+	Renderer* renderer = m_config.m_renderer;
+	CommandList* cmdList = m_renderContext->GetCommandList();
 
+	bool hasAnyShapes = ContainsAnyWorldShapes();
 }
 
 void DebugRenderSystem::ClearExpiredShapes()
@@ -563,13 +608,10 @@ void DebugRenderSystem::ClearExpiredShapes()
 	bool wasAnyShapeValid = false;
 	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
 		std::vector<DebugShape>& shapesContainer = m_debugShapes[debugMode];
-		unsigned int& currModeVtxCount = m_vertexCounts[debugMode];
-		currModeVtxCount = 0;
 
 		for (unsigned int shapeIndex = 0; shapeIndex < shapesContainer.size(); shapeIndex++) {
 			DebugShape& shape = shapesContainer[shapeIndex];
 			if (shape.IsShapeValid()) {
-				currModeVtxCount += shape.GetVertexCount();
 				if (shape.CanShapeBeDeleted()) {
 					shape.MarkForDeletion();
 				}
@@ -604,7 +646,6 @@ void DebugRenderSystem::AddShape(DebugShape& newShape)
 
 	DebugShape* pAddedShape = nullptr;
 	std::vector<DebugShape>& shapesContainer = m_debugShapes[(int)renderMode];
-	unsigned int& vertexCount = m_vertexCounts[(int)renderMode];
 
 	for (unsigned int shapeIndex = 0; shapeIndex < shapesContainer.size(); shapeIndex++) {
 		DebugShape& shape = shapesContainer[shapeIndex];
@@ -624,7 +665,6 @@ void DebugRenderSystem::AddShape(DebugShape& newShape)
 
 	pAddedShape->StartWatch(GetClock());
 
-	vertexCount += newShape.GetVertexCount();
 	m_hasAnyWorldShape = true;
 }
 
@@ -654,6 +694,7 @@ void DebugRenderSystem::EndFrame()
 
 void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
 {
+	unsigned int currentVertexCount = 0;
 	// Go through all the shapes, and build add the verts to the vertex buffer
 	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
 		std::vector<DebugShape>& shapesContainer = m_debugShapes[debugMode];
@@ -664,6 +705,11 @@ void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
 
 			// Set vertex offset for rendering
 			AddVertsForDebugShape(shape);
+			shape.m_info.m_vertexStart = currentVertexCount;
+
+			unsigned int shapeVertexCount = m_debugVerts.size() - currentVertexCount;
+			currentVertexCount = m_debugVerts.size();
+			shape.m_info.m_vertexCount = shapeVertexCount;
 
 			shape.m_modelMatrixOffset = (unsigned int)m_modelConstants.size();
 			ModelConstants newModelConstants = {};
@@ -671,7 +717,10 @@ void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
 			modelColor.GetAsFloats(newModelConstants.ModelColor);
 
 			if (shape.IsBillboarded()) {
+				Vec3 translation = shape.GetModelMatrix().GetTranslation3D();
 				newModelConstants.ModelMatrix = shape.GetBillboardModelMatrix(renderCam);
+				newModelConstants.ModelMatrix.SetTranslation3D(translation);
+
 			}
 			else {
 				newModelConstants.ModelMatrix = shape.GetModelMatrix();
@@ -684,6 +733,8 @@ void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
 
 void DebugRenderSystem::AddVertsForDebugShape(DebugShape const& shape)
 {
+	BitmapFont* font = GetFont();
+
 	switch (shape.GetType())
 	{
 	case DEBUG_RENDER_NUM_TYPES:
@@ -693,14 +744,14 @@ void DebugRenderSystem::AddVertsForDebugShape(DebugShape const& shape)
 		break;
 	case DEBUG_RENDER_WORLD_WIRE_SPHERE:
 	case DEBUG_RENDER_WORLD_POINT:
-		AddVertsForSphere(m_debugVerts, shape.GetRadius(), shape.GetStacks(), shape.GetSlices(), shape.GetModelColor());
+		AddVertsForSphere(m_debugVerts, shape.GetShapeSize(), shape.GetStacks(), shape.GetSlices(), shape.GetModelColor());
 		break;
 	case DEBUG_RENDER_WORLD_WIRE_CYLINDER:
 	case DEBUG_RENDER_WORLD_LINE:
-		AddVertsForCylinder(m_debugVerts, shape.GetStart(), shape.GetEnd(), shape.GetRadius(), shape.GetSlices(), shape.GetModelColor());
+		AddVertsForCylinder(m_debugVerts, shape.GetStart(), shape.GetEnd(), shape.GetShapeSize(), shape.GetSlices(), shape.GetModelColor());
 		break;
 	case DEBUG_RENDER_WORLD_ARROW:
-		AddVertsForArrow3D(m_debugVerts, shape.GetStart(), shape.GetEnd(), shape.GetRadius(), shape.GetSlices(), shape.GetModelColor());
+		AddVertsForArrow3D(m_debugVerts, shape.GetStart(), shape.GetEnd(), shape.GetShapeSize(), shape.GetSlices(), shape.GetModelColor());
 		break;
 	case DEBUG_RENDER_WORLD_BOX:
 	case DEBUG_RENDER_WORLD_WIRE_BOX:
@@ -716,7 +767,7 @@ void DebugRenderSystem::AddVertsForDebugShape(DebugShape const& shape)
 		Vec3 jBasis = modelMat.GetJBasis3D();
 		Vec3 kBasis = modelMat.GetKBasis3D();
 
-		float radius = shape.GetRadius();
+		float radius = shape.GetShapeSize();
 		int slices = (int)shape.GetSlices();
 
 		// Hardcoded colors for basis always
@@ -726,9 +777,15 @@ void DebugRenderSystem::AddVertsForDebugShape(DebugShape const& shape)
 		break;
 	}
 	case DEBUG_RENDER_WORLD_TEXT:
-		break;
 	case DEBUG_RENDER_WORLD_BILLBOARD_TEXT:
+	{
+		AABB2 textBox;
+		float textHeight = shape.GetShapeSize();
+		Vec2 alignment = Vec2(shape.GetStart());
+		textBox.SetDimensions(Vec2(font->GetTextWidth(textHeight, shape.m_info.m_text), textHeight));
+		font->AddVertsForTextInBox2D(m_debugVerts, textBox, textHeight, shape.m_info.m_text, Rgba8::WHITE, 1.0f, alignment);
 		break;
+	}
 	case DEBUG_RENDER_SCREEN_TEXT:
 		break;
 	case DEBUG_RENDER_MESSAGE:
@@ -742,7 +799,7 @@ void DebugRenderSystem::CreatePSOs()
 {
 	Renderer* renderer = m_config.m_renderer;
 	// Get Shader
-	ShaderPipeline debugShaderPipeline = renderer->GetEngineShader(EngineShaderPipelines::Debug);
+	ShaderPipeline legacyForward = renderer->GetEngineShader(EngineShaderPipelines::LegacyForward);
 
 	// Debug Depth
 	PipelineStateDesc psoDesc = {};
@@ -758,10 +815,14 @@ void DebugRenderSystem::CreatePSOs()
 	psoDesc.m_renderTargetCount = 1;
 	psoDesc.m_renderTargetFormats[0] = TextureFormat::R8G8B8A8_UNORM;
 	psoDesc.m_type = PipelineType::Graphics;
-	psoDesc.m_byteCodes[ShaderType::Vertex] = debugShaderPipeline.m_firstShader;
-	psoDesc.m_byteCodes[ShaderType::Pixel] = debugShaderPipeline.m_pixelShader;
+	psoDesc.m_byteCodes[ShaderType::Vertex] = legacyForward.m_firstShader;
+	psoDesc.m_byteCodes[ShaderType::Pixel] = legacyForward.m_pixelShader;
 
-	m_debugPSOs[(int)DebugRenderMode::USEDEPTH] = renderer->CreatePipelineState(psoDesc);
+	m_debugPSOs[(int)DebugRenderMode::USE_DEPTH] = renderer->CreatePipelineState(psoDesc);
+
+	// Depth no cull
+	psoDesc.m_cullMode = CullMode::NONE;
+	m_debugPSOs[(int)DebugRenderMode::USE_DEPTH_NO_CULL] = renderer->CreatePipelineState(psoDesc);
 
 	// WIRE is same as depth, but wire mode
 	psoDesc.m_fillMode = FillMode::WIREFRAME;
@@ -779,8 +840,9 @@ void DebugRenderSystem::CreatePSOs()
 	psoDesc.m_cullMode = CullMode::BACK;
 	m_debugPSOs[(int)DebugRenderMode::XRAY] = renderer->CreatePipelineState(psoDesc);
 
-	// TEXT!!
-	m_debugPSOs[(int)DebugRenderMode::TEXT] = renderer->CreatePipelineState(psoDesc);
+	// TEXT
+	m_debugPSOs[(int)DebugRenderMode::SCREENTEXT] = renderer->CreatePipelineState(psoDesc);
+
 }
 
 void DebugRenderSystem::CreateRenderObjects()
@@ -788,21 +850,21 @@ void DebugRenderSystem::CreateRenderObjects()
 	Renderer* renderer = m_config.m_renderer;
 	unsigned int backbufferCount = renderer->GetBackBufferCount();
 
-	unsigned int descriptorCounts[4] = { 17, 1, 1, 1 };
+	// We need a lot of model cbuffer descriptors
+	unsigned int descriptorCounts[4] = { 4096, 1, 1, 1 };
 	unsigned int rscDescriptorCounts = descriptorCounts[(int)DescriptorHeapType::CBV_SRV_UAV];
-	unsigned int equalDistribution = (rscDescriptorCounts - 2) / 5;
 
 	RenderContextDesc renderCtxDesc = {};
 	renderCtxDesc.m_cmdListDesc.m_type = CommandListType::DIRECT;
 	renderCtxDesc.m_cmdListDesc.m_debugName = "DebugCmdList";
 	renderCtxDesc.m_descriptorCounts = descriptorCounts;
 	renderCtxDesc.m_renderer = m_config.m_renderer;
-	renderCtxDesc.m_rscDescriptorDistribution[PARAM_CAMERA_BUFFERS] = 2;		// Just 2 needed for world and UI
-	renderCtxDesc.m_rscDescriptorDistribution[PARAM_MODEL_BUFFERS] = equalDistribution;
-	renderCtxDesc.m_rscDescriptorDistribution[PARAM_DRAW_INFO_BUFFERS] = equalDistribution;
-	renderCtxDesc.m_rscDescriptorDistribution[PARAM_GAME_BUFFERS] = equalDistribution;
-	renderCtxDesc.m_rscDescriptorDistribution[PARAM_TEXTURES] = equalDistribution;
-	renderCtxDesc.m_rscDescriptorDistribution[PARAM_GAME_UAVS] = equalDistribution;
+	renderCtxDesc.m_rscDescriptorDistribution[PARAM_CAMERA_BUFFERS] = 2;				// Just 2 needed for world and UI
+	renderCtxDesc.m_rscDescriptorDistribution[PARAM_MODEL_BUFFERS] = 4086;
+	renderCtxDesc.m_rscDescriptorDistribution[PARAM_DRAW_INFO_BUFFERS] = 0;
+	renderCtxDesc.m_rscDescriptorDistribution[PARAM_GAME_BUFFERS] = 0;
+	renderCtxDesc.m_rscDescriptorDistribution[PARAM_TEXTURES] = 8;				// At least 2 for default and font tex
+	renderCtxDesc.m_rscDescriptorDistribution[PARAM_GAME_UAVS] = 0;
 
 	m_renderContext = new RenderContext(renderCtxDesc);
 
@@ -821,6 +883,10 @@ void DebugRenderSystem::CreateRenderObjects()
 
 	m_copyFence = renderer->CreateFence(CommandListType::COPY);
 	m_renderFence = renderer->CreateFence(CommandListType::DIRECT);
+
+	DescriptorHeap* sampleHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
+	D3D12_CPU_DESCRIPTOR_HANDLE samplerHandle = sampleHeap->GetNextCPUHandle();
+	renderer->CreateSampler(samplerHandle.ptr, SamplerMode::BILINEARWRAP);
 
 }
 
@@ -884,14 +950,17 @@ void DebugRenderSystem::CreateModelBuffers()
 	for (unsigned int modelIndex = 0; modelIndex < (unsigned int)m_modelConstants.size(); modelIndex++) {
 		Buffer* currentModelCBO = GetModelBuffer();
 		// Release previously used model buffer
-		currentModelCBO->ReleaseResource();
+		if (currentModelCBO->m_rawRsc) {
+			currentModelCBO->ReleaseResource();
+		}
 
 		bufferDesc.m_data = &m_modelConstants[modelIndex];
 
 		renderer->CreateBuffer(bufferDesc, &currentModelCBO);
 		D3D12_CPU_DESCRIPTOR_HANDLE descriptor = m_renderContext->GetNextCPUDescriptor(PARAM_MODEL_BUFFERS);
 		renderer->CreateConstantBufferView(descriptor.ptr, currentModelCBO);
-		transitionBarriers[modelIndex] = currentModelCBO->GetTransitionBarrier(ResourceStates::VertexAndCBuffer);
+		TransitionBarrier modelBarrier = currentModelCBO->GetTransitionBarrier(ResourceStates::VertexAndCBuffer);
+		transitionBarriers[modelIndex] = modelBarrier;
 	}
 
 	cmdList->ResourceBarrier(m_modelConstants.size(), transitionBarriers);
@@ -908,7 +977,6 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 	Texture* renderTarget = camera.GetRenderTarget();
 
 	DescriptorHeap* resourcesHeap = m_renderContext->GetCPUDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
-	DescriptorHeap* samplerHeap = m_renderContext->GetCPUDescriptorHeap(DescriptorHeapType::Sampler);
 	DescriptorHeap* GPUresourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	DescriptorHeap* GPUsamplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 
@@ -917,7 +985,6 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 	renderer->CreateConstantBufferView(nextCameraHandle.ptr, camera.GetCameraBuffer());
 
 	renderer->CopyDescriptorHeap(m_renderContext->GetDescriptorCountForCopy(), GPUresourcesHeap, resourcesHeap);
-	renderer->CopyDescriptorHeap((unsigned int)samplerHeap->GetDescriptorCount(), GPUsamplerHeap, samplerHeap);
 
 	DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
 	D3D12_CPU_DESCRIPTOR_HANDLE rtHandle = rtHeap->GetNextCPUHandle();
@@ -927,7 +994,6 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 	m_renderContext->BeginCamera(camera);
 
 	Buffer* vertexBuffer = GetVertexBuffer();
-	Buffer* modelBuffer = GetModelBuffer();
 
 	TransitionBarrier rscBarriers[3] = {};
 	// Transition vertex Buffer and model buffer
@@ -948,19 +1014,14 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 
 	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
 		std::vector<DebugShape>& shapesContainer = m_debugShapes[debugMode];
+		PipelineState* pso = GetPSO((DebugRenderMode)debugMode);
 
-		cmdList->BindPipelineState(m_debugPSOs[debugMode]);
+		cmdList->BindPipelineState(pso);
 		cmdList->SetDescriptorSet(m_renderContext->GetDescriptorSet());
 		cmdList->SetDescriptorTable(PARAM_CAMERA_BUFFERS, GPUresourcesHeap->GetGPUHandleAtOffset(cameraDescriptorStart), PipelineType::Graphics);
 		cmdList->SetDescriptorTable(PARAM_MODEL_BUFFERS, GPUresourcesHeap->GetGPUHandleAtOffset(modelDescriptorStart), PipelineType::Graphics);
 		cmdList->SetDescriptorTable(PARAM_TEXTURES, GPUresourcesHeap->GetGPUHandleAtOffset(textureDescriptorStart), PipelineType::Graphics);
 		cmdList->SetDescriptorTable(PARAM_SAMPLERS, GPUsamplerHeap->GetGPUHandleHeapStart(), PipelineType::Graphics);
-
-		// Fetch previous mode vertex count, to have as an offset for rendering current mode
-		unsigned int renderModeVertexOffset = 0;
-		if (debugMode > 0) {
-			renderModeVertexOffset = GetRenderModeVertexOffset((DebugRenderMode)debugMode);
-		}
 
 		for (unsigned int shapeIndex = 0; shapeIndex < shapesContainer.size(); shapeIndex++) {
 			DebugShape& shape = shapesContainer[shapeIndex];
@@ -968,12 +1029,13 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 			if (!shape.IsShapeValid()) continue; // Shape is marked as deleted, so continue
 
 			drawConstants[0] = 0;	// Camera Index
-			drawConstants[1] = shape.m_modelMatrixOffset;	// Matrix Index
-			drawConstants[2] = 0;	// Texture Index
+			drawConstants[1] = shape.m_modelMatrixOffset;		// Matrix Index
+			drawConstants[2] = (shape.IsTextType()) ? 1 : 0;	// Texture Index 1 is font texture always
 
-			unsigned int totalVertexOffset = renderModeVertexOffset + shape.GetVertexStart();
+			unsigned int shapeVertexCount = shape.GetVertexCount();
+			unsigned int shapeVertexStart = shape.GetVertexStart();
 			cmdList->SetGraphicsRootConstants(16, drawConstants);
-			cmdList->DrawInstance(shape.GetVertexCount(), 1, totalVertexOffset, 0);
+			cmdList->DrawInstance(shapeVertexCount, 1, shapeVertexStart, 0);
 		}
 	}
 
@@ -985,6 +1047,12 @@ bool DebugRenderSystem::ContainsAnyWorldShapes() const
 {
 	return m_hasAnyWorldShape;
 }
+
+bool DebugRenderSystem::ContainsAnyScreenShapes() const
+{
+	return m_hasAnyScreenShape;
+}
+
 
 CommandList* DebugRenderSystem::GetCopyCmdList()
 {
