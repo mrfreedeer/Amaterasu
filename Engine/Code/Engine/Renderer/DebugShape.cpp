@@ -11,12 +11,6 @@ bool DebugShape::CanShapeBeDeleted()
 	return m_info.m_stopwach.HasDurationElapsed();
 }
 
-void DebugShape::Render(Renderer* renderer) const
-{
-	//renderer->BindTexture(m_texture);
-	//renderer->DrawVertexArray(m_verts);
-}
-
 void DebugShape::StartWatch(Clock const& clock)
 {
 	m_info.m_stopwach.Start(&clock, m_info.m_duration);
@@ -33,4 +27,11 @@ Rgba8 const DebugShape::GetModelColor() const
 {
 	if(m_info.m_stopwach.m_duration == 0.0) return m_info.m_startColor;
 	return Rgba8::InterpolateColors(m_info.m_startColor, m_info.m_endColor, m_info.m_stopwach.GetElapsedFraction());
+}
+
+bool DebugShape::IsTextType() const
+{
+	unsigned int mask = (DebugShapeFlagsBit::DebugScreenShapeText | DebugShapeFlagsBit::DebugWorldShapeText);
+
+	return m_info.m_flags & mask;
 }

@@ -20,7 +20,8 @@ struct Mat44;
 enum DebugShapeFlagsBit : unsigned int {
 	DebugWorldShape = (1 << 0),
 	DebugWorldShapeText = (1 << 1),
-	DebugWorldShapeValid = (1 << 2)
+	DebugScreenShapeText = (1 << 2),
+	DebugWorldShapeValid = (1 << 3)
 };
 
 enum DebugShapeType : unsigned int {
@@ -42,12 +43,12 @@ enum DebugShapeType : unsigned int {
 
 struct DebugShapeInfo {
 	unsigned int m_vertexCount = 0;
-	unsigned int m_startVertex = 0;
+	unsigned int m_vertexStart = 0;
 	unsigned int m_flags = 0;
 	unsigned char m_stacks = 16;		// 16 is the default of the systen for stacks and slices
 	unsigned char m_slices = 16;
 	float m_duration = 0.0f;
-	float m_radius = 0.0f;
+	float m_shapeSize = 0.0f;
 	Vec3 m_start = Vec3::ZERO;
 	Vec3 m_end = Vec3::ZERO;
 	Stopwatch m_stopwach;
@@ -67,7 +68,6 @@ public:
 
 	// ----- Actions ------
 	void MarkForDeletion() { m_info.m_flags &= ~DebugShapeFlagsBit::DebugWorldShapeValid; }
-	void Render(Renderer* renderer) const;
 	void StartWatch(Clock const& clock);
 
 
@@ -79,14 +79,15 @@ public:
 	Mat44 const GetBillboardModelMatrix(Camera const& camera) const;
 	Rgba8 const GetModelColor() const;
 	unsigned int GetVertexCount() const { return m_info.m_vertexCount; }
+	unsigned int GetVertexStart() const { return m_info.m_vertexStart; }
 	DebugRenderMode GetRenderMode() const { return m_info.m_renderMode; }
 	DebugShapeType GetType() const { return m_info.m_shapeType; }
-	float GetRadius() const { return m_info.m_radius; }
+	bool IsTextType() const;
+	float GetShapeSize() const { return m_info.m_shapeSize; }
 	unsigned char GetStacks() const { return m_info.m_stacks; }
 	unsigned char GetSlices() const { return m_info.m_slices; }
 	Vec3 GetStart() const { return m_info.m_start; }
 	Vec3 GetEnd() const { return m_info.m_end; }
-	unsigned int GetVertexStart() const { return m_info.m_startVertex; }
 public:
 	DebugShapeInfo m_info = {};
 	unsigned int m_modelMatrixOffset = 0;
