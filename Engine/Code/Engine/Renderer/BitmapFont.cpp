@@ -4,7 +4,7 @@
 #include "Engine/Core/VertexUtils.hpp"
 #include "Engine/Core/StringUtils.hpp"
 
-BitmapFont::BitmapFont(char const* fontFilePathNameWithNoExtension, Texture& fontTexture):
+BitmapFont::BitmapFont(char const* fontFilePathNameWithNoExtension, Texture& fontTexture) :
 	m_fontFilePathNameWithNoExtension(fontFilePathNameWithNoExtension),
 	m_fontGlyphsSpriteSheet(fontTexture, IntVec2(16, 16))
 {
@@ -110,4 +110,18 @@ float BitmapFont::GetBiggestTextWidth(Strings const& stringsVector, float cellHe
 	}
 
 	return biggestTextWidth;
+}
+
+unsigned int BitmapFont::GetVertCountForText(std::string const& text, int maxGlyphsToDraw /*= ARBITRARILY_LARGE_INT_VALUE*/)
+{
+	Strings textSplitByNewline = SplitStringOnDelimiter(text, '\n');
+	unsigned int totalCharCount = 0;
+	for (std::string const& substring : textSplitByNewline) {
+		unsigned int textLength = substring.size();
+		unsigned int charDrawnCount = (textLength < (unsigned int)maxGlyphsToDraw) ? textLength : (unsigned int)maxGlyphsToDraw;
+		totalCharCount += charDrawnCount;
+	}
+
+	// OBB will be rendered with 6 verts
+	return totalCharCount * 6;
 }

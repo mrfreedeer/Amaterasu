@@ -30,6 +30,7 @@ public:
 		int maxGlyphsToDraw = ARBITRARILY_LARGE_INT_VALUE);
 
 	float GetTextWidth(float cellHeight, std::string const& text, float cellAspect = CELL_ASPECT) const;
+	unsigned int GetVertCountForText(std::string const& text, int maxGlyphsToDraw = ARBITRARILY_LARGE_INT_VALUE);
 
 protected:
 	float GetGlyphAspect(int glyphUnicode) const;
