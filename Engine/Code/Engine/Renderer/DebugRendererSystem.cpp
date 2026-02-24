@@ -40,8 +40,7 @@ public:
 	void Clear();
 	void ClearVertices() { m_debugVerts.clear(); }
 	void PreRenderPass();
-	void RenderWorld(Camera const& worldCamera);
-	void RenderScreen(Camera const& screenCamera);
+	void Render(Camera const& worldCamera, Camera const& screenCamera);
 	void ClearExpiredShapes();
 	void ClearDescriptors();
 	void ClearModelMatrices();
@@ -49,25 +48,27 @@ public:
 	void ResetCmdLists();
 
 private:
-	void AddVertsForShapes(Camera const& renderCam);
+	void AddVertsForShapes(Camera const& worldCamera, Camera const& screenCamera);
 	void AddVertsForDebugShape(DebugShape const& shape);
 	void CreatePSOs();
 	void CreateRenderObjects();
 	void CreateOrUpdateVertexBuffer();
 	void CreateModelBuffers();
-	void IssueDrawCalls(Camera const& camera);
+	void IssueDrawCalls(Camera const& worldCamera, Camera const& screenCamera);
 	bool ContainsAnyWorldShapes() const;
 	bool ContainsAnyScreenShapes() const;
-
+	std::mutex* GetMutex(DebugRenderMode renderMode);
 	CommandList* GetCopyCmdList();
 	Buffer*& GetVertexBuffer();
 	Buffer* GetModelBuffer();
+	void LockAllMutexes();
+	void UnlockAllMutexes();
 
 private:
 	DebugRenderConfig m_config = {};
 	Clock m_clock = {};
 	bool m_hidden = false;
-	bool m_hasAnyWorldShape = false;
+	bool m_hasAnyShape = false;
 	bool m_hasAnyScreenShape = false;
 	unsigned int m_currentModelIndex = 0;
 	CommandList** m_copyCommandLists = nullptr;
@@ -81,9 +82,11 @@ private:
 	Fence* m_copyFence = nullptr;
 	Fence* m_renderFence = nullptr;
 	std::vector<DebugShape> m_debugShapes[(int)DebugRenderMode::NUM_DEBUG_RENDER_MODES] = {};
+	std::mutex m_mutexes[(int)DebugRenderMode::NUM_DEBUG_RENDER_MODES] = {};
 	std::vector<Vertex_PCU> m_debugVerts = {};
 	std::vector<ModelConstants> m_modelConstants = {};
 	BitmapFont* m_font = nullptr;
+
 };
 
 DebugRenderSystem* s_debugRenderSystem = nullptr;
@@ -136,14 +139,9 @@ void DebugRenderBeginFrame()
 	s_debugRenderSystem->BeginFrame();
 }
 
-void DebugRenderWorld(const Camera& camera)
+void DebugRenderShapes(Camera const& worldCamera, Camera const& screenCamera)
 {
-	s_debugRenderSystem->RenderWorld(camera);
-}
-
-void DebugRenderScreen(const Camera& camera)
-{
-	s_debugRenderSystem->RenderScreen(camera);
+	s_debugRenderSystem->Render(worldCamera, screenCamera);
 }
 
 void DebugRenderEndFrame()
@@ -256,7 +254,7 @@ void DebugAddWorldWireSphere(const Vec3& center, float radius, float duration, c
 	s_debugRenderSystem->AddShape(newShape);
 }
 
-void DebugAddWorldArrow(const Vec3& start, const Vec3& end, float radius, float duration, const Rgba8& baseColor, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
+void DebugAddWorldArrow(const Vec3& start, const Vec3& end, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
 {
 
 	DebugShapeInfo shapeInfo = {};
@@ -344,8 +342,6 @@ void DebugAddWorldBasis(const Mat44& basis, float duration, const Rgba8& startCo
 
 void DebugAddWorldText(const std::string& text, const Mat44& transform, float textHeight, const Vec2& alignment, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
 {
-	BitmapFont* font = s_debugRenderSystem->GetFont();
-
 	unsigned int flags = DebugShapeFlagsBit::DebugWorldShape;
 	flags |= DebugShapeFlagsBit::DebugWorldShapeValid;
 	flags |= DebugShapeFlagsBit::DebugWorldShapeText;
@@ -379,9 +375,6 @@ void DebugAddWorldText(const std::string& text, const Mat44& transform, float te
 
 void DebugAddWorldBillboardText(const std::string& text, const Vec3& origin, float textHeight, const Vec2& alignment, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode)
 {
-	BitmapFont* font = s_debugRenderSystem->GetFont();
-
-
 	Mat44 modelMatrix;
 	modelMatrix.SetTranslation3D(origin);
 
@@ -397,8 +390,8 @@ void DebugAddWorldBillboardText(const std::string& text, const Vec3& origin, flo
 	shapeInfo.m_modelMatrix = modelMatrix;
 	shapeInfo.m_endColor = endColor;
 	shapeInfo.m_shapeSize = textHeight;
-	// Packaging the alignment in the start vec
-	shapeInfo.m_start = Vec3(alignment);
+	// Packaging the alignment in the end vec
+	shapeInfo.m_end = Vec3(alignment);
 	shapeInfo.m_shapeType = DEBUG_RENDER_WORLD_BILLBOARD_TEXT;
 	shapeInfo.m_text = text;
 
@@ -418,12 +411,52 @@ void DebugAddWorldBillboardText(const std::string& text, const Vec3& origin, flo
 
 void DebugAddScreenText(const std::string& text, const Vec2& position, float duration, const Vec2& alignment, float size, const Rgba8& startColor, const Rgba8& endColor)
 {
+	Mat44 modelMatrix;
+	BitmapFont* font = s_debugRenderSystem->GetFont();
+	float textWidth = font->GetTextWidth(size, text);
+	AABB2 textBox = AABB2(position, position + Vec2(textWidth, size));
 
+	modelMatrix.SetTranslation2D(textBox.GetCenter());
+
+	unsigned int flags = DebugShapeFlagsBit::DebugWorldShape;
+	flags |= DebugShapeFlagsBit::DebugWorldShapeValid;
+	flags |= DebugShapeFlagsBit::DebugWorldShapeText;
+
+	DebugShapeInfo shapeInfo = {};
+	shapeInfo.m_flags = flags;
+	shapeInfo.m_renderMode = DebugRenderMode::SCREENTEXT;
+	shapeInfo.m_duration = duration;
+	shapeInfo.m_startColor = startColor;
+	shapeInfo.m_modelMatrix = modelMatrix;
+	shapeInfo.m_endColor = endColor;
+	shapeInfo.m_shapeSize = size;
+	// Packaging the alignment in the end vec
+	shapeInfo.m_end = Vec3(alignment);
+	shapeInfo.m_shapeType = DEBUG_RENDER_SCREEN_TEXT;
+	shapeInfo.m_text = text;
+
+	DebugShape newShape(shapeInfo);
+	s_debugRenderSystem->AddShape(newShape);
 }
 
 void DebugAddMessage(const std::string& text, float duration, const Rgba8& startColor, const Rgba8& endColor)
 {
+	unsigned int flags = DebugShapeFlagsBit::DebugWorldShape;
+	flags |= DebugShapeFlagsBit::DebugWorldShapeValid;
+	flags |= DebugShapeFlagsBit::DebugWorldShapeText;
 
+	DebugShapeInfo shapeInfo = {};
+	shapeInfo.m_flags = flags;
+	shapeInfo.m_renderMode = DebugRenderMode::SCREENTEXT;
+	shapeInfo.m_duration = duration;
+	shapeInfo.m_startColor = startColor;
+	shapeInfo.m_endColor = endColor;
+	// Packaging the alignment in the start vec
+	shapeInfo.m_shapeType = DEBUG_RENDER_MESSAGE;
+	shapeInfo.m_text = text;
+
+	DebugShape newShape(shapeInfo);
+	s_debugRenderSystem->AddShape(newShape);
 }
 
 DebugRenderSystem::DebugRenderSystem(DebugRenderConfig config) :
@@ -542,7 +575,7 @@ void DebugRenderSystem::Clear()
 	}
 
 	// All shapes were emptied, so there is no shape contained
-	m_hasAnyWorldShape = false;
+	m_hasAnyShape = false;
 }
 
 void DebugRenderSystem::PreRenderPass()
@@ -565,20 +598,26 @@ void DebugRenderSystem::PreRenderPass()
 	renderer->InsertWaitInQueue(CommandListType::DIRECT, m_copyFence);
 }
 
-void DebugRenderSystem::RenderWorld(Camera const& worldCamera)
+void DebugRenderSystem::Render(Camera const& worldCamera, Camera const& screenCamera)
 {
 	Renderer* renderer = m_config.m_renderer;
 	CommandList* cmdList = m_renderContext->GetCommandList();
 
+	
 	bool hasAnyShapes = ContainsAnyWorldShapes();
 	if (hasAnyShapes) {
+		// Unfortunately we must lock all mutexes to ensure we can properly draw without shape interference
+		LockAllMutexes();
+
 		// Construct all the shapes
-		AddVertsForShapes(worldCamera);
+		AddVertsForShapes(worldCamera, screenCamera);
 
 		PreRenderPass();
 
 		// issue render calls, normal draw calls first
-		IssueDrawCalls(worldCamera);
+		IssueDrawCalls(worldCamera, screenCamera);
+
+		UnlockAllMutexes();
 	}
 	else {
 		// Close copy command list, to make sure it's ready for next frame's use, even if no vtx buffer was created
@@ -593,14 +632,6 @@ void DebugRenderSystem::RenderWorld(Camera const& worldCamera)
 	m_renderFence->SignalGPU();
 	m_renderFence->Wait();
 
-}
-
-void DebugRenderSystem::RenderScreen(Camera const& screenCamera)
-{
-	Renderer* renderer = m_config.m_renderer;
-	CommandList* cmdList = m_renderContext->GetCommandList();
-
-	bool hasAnyShapes = ContainsAnyWorldShapes();
 }
 
 void DebugRenderSystem::ClearExpiredShapes()
@@ -622,7 +653,7 @@ void DebugRenderSystem::ClearExpiredShapes()
 			}
 		}
 	}
-	m_hasAnyWorldShape = wasAnyShapeValid;
+	m_hasAnyShape = wasAnyShapeValid;
 }
 
 void DebugRenderSystem::ClearDescriptors()
@@ -645,6 +676,10 @@ void DebugRenderSystem::AddShape(DebugShape& newShape)
 	}
 
 	DebugShape* pAddedShape = nullptr;
+
+	std::mutex* containerMutex = GetMutex(renderMode);
+
+	containerMutex->lock();
 	std::vector<DebugShape>& shapesContainer = m_debugShapes[(int)renderMode];
 
 	for (unsigned int shapeIndex = 0; shapeIndex < shapesContainer.size(); shapeIndex++) {
@@ -665,7 +700,8 @@ void DebugRenderSystem::AddShape(DebugShape& newShape)
 
 	pAddedShape->StartWatch(GetClock());
 
-	m_hasAnyWorldShape = true;
+	m_hasAnyShape = true;
+	containerMutex->unlock();
 }
 
 void DebugRenderSystem::ResetCmdLists()
@@ -692,9 +728,18 @@ void DebugRenderSystem::EndFrame()
 	}
 }
 
-void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
+void DebugRenderSystem::AddVertsForShapes(Camera const& worldCamera, Camera const& screenCamera)
 {
 	unsigned int currentVertexCount = 0;
+	int renderLineIndex = 1;
+	float maxLinesShown = 21.5f;
+	int roundedUpMaxLinesShown = RoundDownToInt(maxLinesShown) + 2;
+	AABB2 bounds(screenCamera.GetOrthoBottomLeft(), screenCamera.GetOrthoTopRight());
+	float cellHeight = screenCamera.GetOrthoTopRight().y * 0.02f;
+
+	float minGroupTextHeight = bounds.m_maxs.y;
+	BitmapFont* font = GetFont();
+
 	// Go through all the shapes, and build add the verts to the vertex buffer
 	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
 		std::vector<DebugShape>& shapesContainer = m_debugShapes[debugMode];
@@ -703,12 +748,36 @@ void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
 
 			if (!shape.IsShapeValid()) continue; // Shape is marked as deleted, so continue
 
+			// Control the amount of messages shown
+			if (shape.GetType() == DEBUG_RENDER_MESSAGE) {
+				float lineWidth = font->GetTextWidth(cellHeight, shape.m_info.m_text);
+
+				if (roundedUpMaxLinesShown >= 0) {
+
+					AABB2 lineAABB2(Vec2::ZERO, Vec2(lineWidth, cellHeight));
+					bounds.AlignABB2WithinBounds(lineAABB2, Vec2(0.0f, 1.0f));
+					lineAABB2.m_mins.y = minGroupTextHeight - ((renderLineIndex) * (cellHeight * 2.0f));
+
+					shape.m_info.m_modelMatrix.SetTranslation2D(lineAABB2.GetCenter());
+					shape.m_info.m_shapeSize = cellHeight;
+					shape.m_info.m_end = Vec3(0.5f, 0.5f, 0.0f);
+					shape.m_info.m_start = Vec3(lineAABB2.m_mins);
+
+					renderLineIndex++;
+					roundedUpMaxLinesShown--;
+				}
+				else {
+					// Not rendering any more messages
+					continue;
+				}
+			}
+
 			// Set vertex offset for rendering
 			AddVertsForDebugShape(shape);
 			shape.m_info.m_vertexStart = currentVertexCount;
 
-			unsigned int shapeVertexCount = m_debugVerts.size() - currentVertexCount;
-			currentVertexCount = m_debugVerts.size();
+			unsigned int shapeVertexCount = (unsigned int)m_debugVerts.size() - currentVertexCount;
+			currentVertexCount = (unsigned int)m_debugVerts.size();
 			shape.m_info.m_vertexCount = shapeVertexCount;
 
 			shape.m_modelMatrixOffset = (unsigned int)m_modelConstants.size();
@@ -718,7 +787,8 @@ void DebugRenderSystem::AddVertsForShapes(Camera const& renderCam)
 
 			if (shape.IsBillboarded()) {
 				Vec3 translation = shape.GetModelMatrix().GetTranslation3D();
-				newModelConstants.ModelMatrix = shape.GetBillboardModelMatrix(renderCam);
+				// Only things using world camera are billboarded
+				newModelConstants.ModelMatrix = shape.GetBillboardModelMatrix(worldCamera);
 				newModelConstants.ModelMatrix.SetTranslation3D(translation);
 
 			}
@@ -777,20 +847,22 @@ void DebugRenderSystem::AddVertsForDebugShape(DebugShape const& shape)
 		break;
 	}
 	case DEBUG_RENDER_WORLD_TEXT:
+	case DEBUG_RENDER_SCREEN_TEXT:
 	case DEBUG_RENDER_WORLD_BILLBOARD_TEXT:
+	case DEBUG_RENDER_MESSAGE:
 	{
-		AABB2 textBox;
 		float textHeight = shape.GetShapeSize();
-		Vec2 alignment = Vec2(shape.GetStart());
-		textBox.SetDimensions(Vec2(font->GetTextWidth(textHeight, shape.m_info.m_text), textHeight));
+		float lineWidth = font->GetTextWidth(textHeight, shape.m_info.m_text);
+		AABB2 textBox(Vec2::ZERO, Vec2(lineWidth, textHeight));
+		Vec2 halfDims = textBox.GetDimensions();
+		halfDims *= -0.5f;
+		textBox.Translate(halfDims);
+
+		Vec2 alignment = Vec2(shape.GetEnd());
+
 		font->AddVertsForTextInBox2D(m_debugVerts, textBox, textHeight, shape.m_info.m_text, Rgba8::WHITE, 1.0f, alignment);
 		break;
 	}
-	case DEBUG_RENDER_SCREEN_TEXT:
-		break;
-	case DEBUG_RENDER_MESSAGE:
-		break;
-		break;
 	}
 
 }
@@ -852,7 +924,6 @@ void DebugRenderSystem::CreateRenderObjects()
 
 	// We need a lot of model cbuffer descriptors
 	unsigned int descriptorCounts[4] = { 4096, 1, 1, 1 };
-	unsigned int rscDescriptorCounts = descriptorCounts[(int)DescriptorHeapType::CBV_SRV_UAV];
 
 	RenderContextDesc renderCtxDesc = {};
 	renderCtxDesc.m_cmdListDesc.m_type = CommandListType::DIRECT;
@@ -886,7 +957,7 @@ void DebugRenderSystem::CreateRenderObjects()
 
 	DescriptorHeap* sampleHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 	D3D12_CPU_DESCRIPTOR_HANDLE samplerHandle = sampleHeap->GetNextCPUHandle();
-	renderer->CreateSampler(samplerHandle.ptr, SamplerMode::BILINEARWRAP);
+	renderer->CreateSampler(samplerHandle.ptr, SamplerMode::POINTCLAMP);
 
 }
 
@@ -963,56 +1034,87 @@ void DebugRenderSystem::CreateModelBuffers()
 		transitionBarriers[modelIndex] = modelBarrier;
 	}
 
-	cmdList->ResourceBarrier(m_modelConstants.size(), transitionBarriers);
+	cmdList->ResourceBarrier((unsigned int)m_modelConstants.size(), transitionBarriers);
 	delete[] transitionBarriers;
 }
 
-void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
+void DebugRenderSystem::IssueDrawCalls(Camera const& worldCamera, Camera const& screenCamera)
 {
 
 	CommandList* cmdList = m_renderContext->GetCommandList();
 	Renderer* renderer = m_config.m_renderer;
 
-	Texture* depthTarget = camera.GetDepthTarget();
-	Texture* renderTarget = camera.GetRenderTarget();
+	Texture* worldDepthTarget = worldCamera.GetDepthTarget();
+	Texture* worldRenderTarget = worldCamera.GetRenderTarget();
+
+	Texture* screenDepthTarget = screenCamera.GetDepthTarget();
+	Texture* screenRenderTarget = screenCamera.GetRenderTarget();
 
 	DescriptorHeap* resourcesHeap = m_renderContext->GetCPUDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	DescriptorHeap* GPUresourcesHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	DescriptorHeap* GPUsamplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 
-	// The camera needs to be added to the camera descriptors
+	// The worldCamera and screenCamera needs to be added to the camera descriptors
 	D3D12_CPU_DESCRIPTOR_HANDLE nextCameraHandle = m_renderContext->GetNextCPUDescriptor(PARAM_CAMERA_BUFFERS);
-	renderer->CreateConstantBufferView(nextCameraHandle.ptr, camera.GetCameraBuffer());
+	renderer->CreateConstantBufferView(nextCameraHandle.ptr, worldCamera.GetCameraBuffer());
+
+	nextCameraHandle = m_renderContext->GetNextCPUDescriptor(PARAM_CAMERA_BUFFERS);
+	renderer->CreateConstantBufferView(nextCameraHandle.ptr, screenCamera.GetCameraBuffer());
 
 	renderer->CopyDescriptorHeap(m_renderContext->GetDescriptorCountForCopy(), GPUresourcesHeap, resourcesHeap);
 
 	DescriptorHeap* rtHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::RenderTargetView);
 	D3D12_CPU_DESCRIPTOR_HANDLE rtHandle = rtHeap->GetNextCPUHandle();
-	renderer->CreateRenderTargetView(rtHandle.ptr, renderTarget);
 
+	renderer->CreateRenderTargetView(rtHandle.ptr, worldRenderTarget);
 
-	m_renderContext->BeginCamera(camera);
+	if (screenRenderTarget != worldRenderTarget) {
+		rtHandle = rtHeap->GetNextCPUHandle();
+		renderer->CreateRenderTargetView(rtHandle.ptr, screenRenderTarget);
+	}
 
 	Buffer* vertexBuffer = GetVertexBuffer();
 
-	TransitionBarrier rscBarriers[3] = {};
+	unsigned int transitionBarrierCount = 3;
+	TransitionBarrier rscBarriers[5] = {};
 	// Transition vertex Buffer and model buffer
 	rscBarriers[0] = TransitionBarrier(vertexBuffer, ResourceStates::CopyDest, ResourceStates::VertexAndCBuffer);
-	rscBarriers[1] = renderTarget->GetTransitionBarrier(ResourceStates::RenderTarget);
-	rscBarriers[2] = depthTarget->GetTransitionBarrier(ResourceStates::DepthWrite);
+	rscBarriers[1] = worldRenderTarget->GetTransitionBarrier(ResourceStates::RenderTarget);
+	rscBarriers[2] = worldDepthTarget->GetTransitionBarrier(ResourceStates::DepthWrite);
+
+	if (screenRenderTarget != worldRenderTarget) {
+		rscBarriers[transitionBarrierCount] = screenRenderTarget->GetTransitionBarrier(ResourceStates::RenderTarget);
+		transitionBarrierCount++;
+	}
+
+	if (screenDepthTarget != worldDepthTarget) {
+		rscBarriers[transitionBarrierCount] = screenDepthTarget->GetTransitionBarrier(ResourceStates::DepthWrite);
+		transitionBarrierCount++;
+	}
 
 	unsigned int cameraDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_CAMERA_BUFFERS);
 	unsigned int modelDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_MODEL_BUFFERS);
 	unsigned int textureDescriptorStart = m_renderContext->GetDescriptorStart(PARAM_TEXTURES);
 
 	cmdList->ResourceBarrier(_countof(rscBarriers), rscBarriers);
-	cmdList->SetRenderTargets(1, &renderTarget, false, depthTarget);
+	cmdList->SetRenderTargets(1, &worldRenderTarget, false, worldDepthTarget);
 	cmdList->SetTopology(TopologyType::TRIANGLELIST);
 	cmdList->SetVertexBuffers(&vertexBuffer, 1);
 
 	unsigned int drawConstants[16] = {};
 
 	for (unsigned int debugMode = 0; debugMode < (int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; debugMode++) {
+		if (debugMode == 0) {
+			// Render modes all use world camera except DebugRenderMode::SCREENTEXT
+			m_renderContext->BeginCamera(worldCamera);
+		}
+		else if (debugMode == (int)DebugRenderMode::SCREENTEXT) {
+			m_renderContext->EndCamera(worldCamera);
+
+			// Text uses UI Camera
+			m_renderContext->BeginCamera(screenCamera);
+		}
+
 		std::vector<DebugShape>& shapesContainer = m_debugShapes[debugMode];
 		PipelineState* pso = GetPSO((DebugRenderMode)debugMode);
 
@@ -1028,7 +1130,7 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 
 			if (!shape.IsShapeValid()) continue; // Shape is marked as deleted, so continue
 
-			drawConstants[0] = 0;	// Camera Index
+			drawConstants[0] = (shape.GetRenderMode() == DebugRenderMode::SCREENTEXT) ? 1 : 0;	// Camera Index 0: WORLD | 1 : SCREEN
 			drawConstants[1] = shape.m_modelMatrixOffset;		// Matrix Index
 			drawConstants[2] = (shape.IsTextType()) ? 1 : 0;	// Texture Index 1 is font texture always
 
@@ -1039,13 +1141,13 @@ void DebugRenderSystem::IssueDrawCalls(Camera const& camera)
 		}
 	}
 
-	m_renderContext->EndCamera(camera);
+	m_renderContext->EndCamera(screenCamera);
 }
 
 
 bool DebugRenderSystem::ContainsAnyWorldShapes() const
 {
-	return m_hasAnyWorldShape;
+	return m_hasAnyShape;
 }
 
 bool DebugRenderSystem::ContainsAnyScreenShapes() const
@@ -1053,6 +1155,12 @@ bool DebugRenderSystem::ContainsAnyScreenShapes() const
 	return m_hasAnyScreenShape;
 }
 
+
+std::mutex* DebugRenderSystem::GetMutex(DebugRenderMode renderMode)
+{
+	std::mutex& modeMutex = m_mutexes[(unsigned int)renderMode];
+	return &modeMutex;
+}
 
 CommandList* DebugRenderSystem::GetCopyCmdList()
 {
@@ -1072,4 +1180,20 @@ Buffer* DebugRenderSystem::GetModelBuffer()
 	Buffer* newModelCBO = &m_modelCBO[m_currentModelIndex];
 	m_currentModelIndex++;
 	return newModelCBO;
+}
+
+void DebugRenderSystem::LockAllMutexes()
+{
+	for (unsigned int renderMode = 0; renderMode < (unsigned int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; renderMode++) {
+		std::mutex& modeMutex = m_mutexes[renderMode];
+		modeMutex.lock();
+	}
+}
+
+void DebugRenderSystem::UnlockAllMutexes()
+{
+	for (unsigned int renderMode = 0; renderMode < (unsigned int)DebugRenderMode::NUM_DEBUG_RENDER_MODES; renderMode++) {
+		std::mutex& modeMutex = m_mutexes[renderMode];
+		modeMutex.unlock();
+	}
 }

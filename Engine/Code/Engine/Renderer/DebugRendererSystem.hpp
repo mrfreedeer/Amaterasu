@@ -50,8 +50,7 @@ Clock const& DebugRenderGetClock();
 
 // Output
 void DebugRenderBeginFrame();
-void DebugRenderWorld(const Camera& camera);
-void DebugRenderScreen(const Camera& camera);
+void DebugRenderShapes(Camera const& worldCamera, Camera const& UICamera);
 void DebugRenderEndFrame();
 Fence* DebugRenderGetFence();
 
@@ -60,7 +59,7 @@ void DebugAddWorldPoint(const Vec3& pos, float radius, float duration, const Rgb
 void DebugAddWorldLine(const Vec3& start, const Vec3& end, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode);
 void DebugAddWorldWireCylinder(const Vec3& base, const Vec3& top, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor);
 void DebugAddWorldWireSphere(const Vec3& center, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor, int stacks = 16, int slices = 32);
-void DebugAddWorldArrow(const Vec3& start, const Vec3& end, float radius, float duration, const Rgba8& baseColor, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode);
+void DebugAddWorldArrow(const Vec3& start, const Vec3& end, float radius, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode);
 void DebugAddWorldBox(const AABB3& bounds, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode);
 void DebugAddWorldBasis(const Mat44& basis, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode);
 void DebugAddWorldText(const std::string& text, const Mat44& transform, float textHeight, const Vec2& alignment, float duration, const Rgba8& startColor, const Rgba8& endColor, DebugRenderMode mode);
