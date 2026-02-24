@@ -6,12 +6,6 @@
 #include "Engine/Renderer/DebugRendererSystem.hpp"
 
 #include <vector>
-enum class ScreenTextType {
-	ScreenMessage,
-	FreeText,
-	NUM_SCREEN_TEXT_TYPES
-};
-
 class Renderer;
 class Camera;
 class Texture;
@@ -25,7 +19,7 @@ enum DebugShapeFlagsBit : unsigned int {
 };
 
 enum DebugShapeType : unsigned int {
-	INVALID = -1,
+	INVALID = 0xFFFFFFFF,
 	DEBUG_RENDER_WORLD_POINT = 0,
 	DEBUG_RENDER_WORLD_LINE,
 	DEBUG_RENDER_WORLD_ARROW,
@@ -45,7 +39,7 @@ struct DebugShapeInfo {
 	unsigned int m_vertexCount = 0;
 	unsigned int m_vertexStart = 0;
 	unsigned int m_flags = 0;
-	unsigned char m_stacks = 16;		// 16 is the default of the systen for stacks and slices
+	unsigned char m_stacks = 16;		// 16 is the default of the system for stacks and slices
 	unsigned char m_slices = 16;
 	float m_duration = 0.0f;
 	float m_shapeSize = 0.0f;
@@ -55,7 +49,6 @@ struct DebugShapeInfo {
 	DebugShapeType m_shapeType = INVALID;
 	Mat44 m_modelMatrix = Mat44();
 	DebugRenderMode m_renderMode = DebugRenderMode::UNDEFINED;
-	ScreenTextType m_textType = ScreenTextType::FreeText;
 	Rgba8 m_startColor = Rgba8::WHITE;
 	Rgba8 m_endColor = Rgba8::WHITE;
 	std::string m_text = "";
