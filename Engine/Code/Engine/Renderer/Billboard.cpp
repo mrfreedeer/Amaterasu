@@ -16,22 +16,6 @@ Billboard::~Billboard()
 {
 }
 
-void Billboard::Render(Renderer* renderer, Camera const& camera, BillboardType billboardType) const
-{
-	//#TODO FIX DX12
-	/*renderer->SetSamplerMode(SamplerMode::POINTCLAMP);
-	renderer->SetRasterizerState(CullMode::NONE, FillMode::SOLID, WindingOrder::COUNTERCLOCKWISE);
-	renderer->SetDepthStencilState(DepthFunc::ALWAYS, false);
-	renderer->SetBlendMode(BlendMode::ALPHA);
-
-	Mat44 billboardMatrix = GetModelMatrixForBillboard(m_position, camera, billboardType);
-
-	renderer->SetModelMatrix(billboardMatrix);
-	renderer->BindTexture(m_texture);
-	renderer->DrawVertexArray(m_verts);*/
-
-}
-
 void Billboard::TransformVertsForBillboard(Vertex_PCU* verts, int vertsAmount, Vec3 const& position, Camera const& camera, BillboardType billboardType)
 {
 	switch (billboardType)

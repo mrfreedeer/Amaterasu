@@ -143,13 +143,13 @@ void CreateInputLayoutFromVS(Shader* vs, std::vector<D3D12_SIGNATURE_PARAMETER_D
 		paramDesc.SystemValueType,		// A predefined system value, or D3D_NAME_UNDEFINED if not applicable
 		paramDesc.ComponentType,		// Scalar type (e.g. uint, float, etc.)
 		paramDesc.Mask,					// Mask to indicate which components of the register
-										// are used (combination of D3D10_COMPONENT_MASK values)
-		paramDesc.ReadWriteMask,		// Mask to indicate whether a given component is 
-										// never written (if this is an output signature) or
-										// always read (if this is an input signature).
-										// (combination of D3D_MASK_* values)
-		paramDesc.Stream,			// Stream index
-		paramDesc.MinPrecision			// Minimum desired interpolation precision
+		// are used (combination of D3D10_COMPONENT_MASK values)
+paramDesc.ReadWriteMask,		// Mask to indicate whether a given component is 
+// never written (if this is an output signature) or
+// always read (if this is an input signature).
+// (combination of D3D_MASK_* values)
+paramDesc.Stream,			// Stream index
+paramDesc.MinPrecision			// Minimum desired interpolation precision
 			});
 	}
 	DX_SAFE_RELEASE(pShaderReflection);
@@ -174,7 +174,7 @@ void GetHardwareAdapter(
 				adapterIndex,
 				requestHighPerformanceAdapter == true ? DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE : DXGI_GPU_PREFERENCE_UNSPECIFIED,
 				IID_PPV_ARGS(&adapter)));
-			++adapterIndex)
+				++adapterIndex)
 		{
 			DXGI_ADAPTER_DESC1 desc;
 			adapter->GetDesc1(&desc);
@@ -224,6 +224,22 @@ void GetHardwareAdapter(
 Renderer::Renderer(RendererConfig const& config) : m_config(config)
 {
 
+}
+
+Renderer::~Renderer()
+{
+#if defined(_DEBUG) 
+
+	IDXGIDebug1* debugController = nullptr;
+
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debugController)))) {
+		debugController->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+		debugController->Release();
+	}
+	else {
+		ERROR_AND_DIE("COULD NOT ENABLE DX12 LIVE REPORTING");
+	}
+#endif
 }
 
 Renderer& Renderer::Startup()
@@ -309,7 +325,7 @@ Renderer& Renderer::Shutdown()
 
 	delete m_ImGuiSrvDescHeap;
 	m_ImGuiSrvDescHeap = nullptr;
-	
+
 	m_currentBackBuffer = 0;
 
 	delete m_internalFence;
@@ -351,6 +367,7 @@ Renderer& Renderer::Shutdown()
 
 	DX_SAFE_RELEASE(m_DXGIFactory);
 	DX_SAFE_RELEASE(m_device);
+
 	return *this;
 }
 
@@ -600,7 +617,7 @@ Texture* Renderer::GetTextureForFileName(char const* imageFilePath)
 	return textureToGet;
 }
 
-Texture* Renderer::CreateTextureFromImage(Image const& image, CommandList* cmdList/* = nullptr */ )
+Texture* Renderer::CreateTextureFromImage(Image const& image, CommandList* cmdList/* = nullptr */)
 {
 	TextureDesc ci{};
 	ci.m_owner = this;
@@ -617,7 +634,7 @@ Texture* Renderer::CreateTextureFromImage(Image const& image, CommandList* cmdLi
 	return newTexture;
 }
 
-Texture* Renderer::CreateTextureFromFile(char const* imageFilePath , CommandList* cmdList /* = nullptr */)
+Texture* Renderer::CreateTextureFromFile(char const* imageFilePath, CommandList* cmdList /* = nullptr */)
 {
 	Image loadedImage(imageFilePath);
 	Texture* newTexture = CreateTextureFromImage(loadedImage, cmdList);
@@ -1208,7 +1225,7 @@ ResourceView* Renderer::CreateConstantBufferView(size_t handle, Buffer* cBuffer)
 	return cBuffer->GetConstantBufferView();
 }
 
-Texture* Renderer::CreateOrGetTextureFromFile(char const* imageFilePath, CommandList* cmdList /* = nullptr */ )
+Texture* Renderer::CreateOrGetTextureFromFile(char const* imageFilePath, CommandList* cmdList /* = nullptr */)
 {
 	Texture* existingTexture = GetTextureForFileName(imageFilePath);
 	if (existingTexture)
@@ -1297,7 +1314,7 @@ Texture* Renderer::CreateTexture(TextureDesc& creationInfo)
 			imageData.RowPitch = creationInfo.m_stride * creationInfo.m_dimensions.x;
 			imageData.SlicePitch = creationInfo.m_stride * creationInfo.m_dimensions.y * creationInfo.m_dimensions.x;
 
-			CommandList* cmdList = (creationInfo.m_cmdList)? creationInfo.m_cmdList : m_rscCmdList;
+			CommandList* cmdList = (creationInfo.m_cmdList) ? creationInfo.m_cmdList : m_rscCmdList;
 
 			UpdateSubresources(cmdList->m_cmdList, handle->m_rawRsc, textureUploadHeap, 0, 0, 1, &imageData);
 		}
@@ -1500,7 +1517,7 @@ Fence* Renderer::CreateFence(CommandListType managerType, unsigned int initialVa
 	Fence* outFence = new Fence(fenceManager, initialValue, 2);
 
 	ThrowIfFailed(m_device->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&outFence->m_fence)), "FAILED CREATING FENCE");
-	
+
 	outFence->m_fenceValues[0] = initialValue + 1;
 
 	// Create an event handle to use for frame synchronization.
@@ -1525,7 +1542,7 @@ Renderer& Renderer::CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHe
 Renderer& Renderer::CopyDescriptor(DescriptorHeap* dest, size_t src, unsigned int offsetEnd /*= 0*/)
 {
 	D3D12_DESCRIPTOR_HEAP_TYPE heapType = LocalToD3D12(dest->GetType());
-	D3D12_CPU_DESCRIPTOR_HANDLE startHandle = {src};
+	D3D12_CPU_DESCRIPTOR_HANDLE startHandle = { src };
 	m_device->CopyDescriptorsSimple(1, dest->GetCPUHandleAtOffset(offsetEnd), startHandle, heapType);
 
 	return *this;
@@ -1610,26 +1627,6 @@ Renderer& Renderer::InsertWaitInQueue(CommandListType waitingType, Fence* fence)
 	return *this;
 }
 
-LiveObjectReporter::~LiveObjectReporter()
-{
-#if defined(_DEBUG) 
-	ID3D12Debug3* debugController = nullptr;
-
-	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
-
-		IDXGIDebug1* debug;
-		DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug));
-		debugController->Release();
-		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
-		debug->Release();
-	}
-	else {
-		ERROR_AND_DIE("COULD NOT ENABLE DX12 LIVE REPORTING");
-	}
-
-#endif
-}
-
 RenderContext::RenderContext(RenderContextDesc const& config) :
 	m_config(config)
 {
@@ -1638,6 +1635,7 @@ RenderContext::RenderContext(RenderContextDesc const& config) :
 	m_cmdList = new CommandList * [m_backBufferCount];
 
 	for (unsigned int listInd = 0; listInd < m_backBufferCount; listInd++) {
+		m_config.m_cmdListDesc.m_debugName = "RenderCtxCmdList";
 		m_cmdList[listInd] = renderer->CreateCommandList(m_config.m_cmdListDesc);
 	}
 
@@ -1655,7 +1653,7 @@ RenderContext::RenderContext(RenderContextDesc const& config) :
 		if (currentStart > rscDescriptorCount) {
 			ERROR_AND_DIE("INVALID DESCRIPTOR DISTRIBUTION. THIS COULD LEAD TO CRASH");
 		}
-		
+
 	}
 }
 
@@ -1720,7 +1718,7 @@ RenderContext& RenderContext::BeginCamera(Camera const& camera)
 RenderContext& RenderContext::EndCamera(Camera const& camera)
 {
 	GUARANTEE_OR_DIE(m_currentCamera == &camera, "THE CAMERA WAS SWITCHED MID RENDER PASS")
-	return *this;
+		return *this;
 }
 
 RenderContext& RenderContext::EndFrame()

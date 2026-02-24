@@ -38,19 +38,13 @@ struct RendererConfig {
 	Window* m_window = nullptr;
 };
 
-/// <summary>
-/// Object that reports all live objects
-/// NEEDS TO BE THE LAST DESTROYED THING, OTHERWISE IT REPORTS FALSE POSITIVES
-/// </summary>
-struct LiveObjectReporter {
-	~LiveObjectReporter();
-};
+
 class Renderer {
 public:
 	// All public methods to return instance to Renderer for chaining purposes
 	// Creation methods, which require the device, are all here 
 	Renderer(RendererConfig const& config);
-	~Renderer() {};
+	~Renderer();
 	/// <summary>+
 	/// Handles initialization of all the rendering system, including creation and 
 	/// initialization of all API's objects
@@ -189,8 +183,6 @@ private:
 	size_t AlignToCBufferStride(size_t size) const;
 
 private:
-	// LiveObjectReporter must be first ALWAYS!!!!!
-	LiveObjectReporter m_liveObjectReporter;
 	RendererConfig m_config = {};
 	ID3D12Device8* m_device = nullptr;
 	IDXGIFactory4* m_DXGIFactory = nullptr;

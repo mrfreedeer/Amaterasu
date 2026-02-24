@@ -117,7 +117,7 @@ unsigned int BitmapFont::GetVertCountForText(std::string const& text, int maxGly
 	Strings textSplitByNewline = SplitStringOnDelimiter(text, '\n');
 	unsigned int totalCharCount = 0;
 	for (std::string const& substring : textSplitByNewline) {
-		unsigned int textLength = substring.size();
+		unsigned int textLength = (unsigned int)substring.size();
 		unsigned int charDrawnCount = (textLength < (unsigned int)maxGlyphsToDraw) ? textLength : (unsigned int)maxGlyphsToDraw;
 		totalCharCount += charDrawnCount;
 	}

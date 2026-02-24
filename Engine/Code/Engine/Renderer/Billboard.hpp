@@ -22,8 +22,6 @@ class Billboard {
 public:
 	Billboard(Vec3 const& billBoardWorldPos, Texture* texture = nullptr);
 	~Billboard();
-	void Render(Renderer* renderer, Camera const& camera, BillboardType billboardType) const;
-
 	static void TransformVertsForBillboard(Vertex_PCU* verts, int vertsAmount, Vec3 const& position, Camera const& camera, BillboardType billboardType);
 	static Mat44 const GetModelMatrixForBillboard(Vec3 const& position, Camera const& camera, BillboardType billboardType);
 	static Mat44 const GetModelMatrixForBillboardCameraOpposingXYZ(Camera const& camera);
