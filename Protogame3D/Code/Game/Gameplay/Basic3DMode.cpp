@@ -126,13 +126,17 @@ void Basic3DMode::Update(float deltaSeconds)
 void Basic3DMode::Render()
 {
 	m_renderContext->Reset();
+	m_worldCamera.SetColorTarget(m_renderTarget);
+	m_worldCamera.SetDepthTarget(m_depthTarget);
+
+	m_UICamera.SetColorTarget(m_renderTarget);
+	m_UICamera.SetDepthTarget(m_depthTarget);
+
 
 	CommandList* cmdList = m_renderContext->GetCommandList();
 	TransitionBarrier rscBarriers[2] = {};
 	rscBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::RenderTarget);
 	rscBarriers[1] = m_depthTarget->GetTransitionBarrier(ResourceStates::DepthWrite);
-	m_worldCamera.SetColorTarget(m_renderTarget);
-	m_worldCamera.SetDepthTarget(m_depthTarget);
 	DescriptorHeap* cbvSRVUAVHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::CBV_SRV_UAV);
 	DescriptorHeap* samplerHeap = m_renderContext->GetDescriptorHeap(DescriptorHeapType::Sampler);
 
@@ -171,7 +175,7 @@ void Basic3DMode::Render()
 	m_frameFence->SignalGPU();
 	m_frameFence->Wait();
 
-	RenderPostProcess();
+	GameMode::RenderPostProcess();
 
 	g_theRenderer->Present(1);
 
@@ -182,36 +186,7 @@ void Basic3DMode::Render()
 	m_renderContext->EndFrame();
 }
 
-void Basic3DMode::RenderPostProcess()
-{
-	Texture* backBuffer = g_theRenderer->GetActiveBackBuffer();
-	m_postRenderContext->Reset();
 
-	CommandList* cmdList = m_postRenderContext->GetCommandList();
-	
-	TransitionBarrier copyBarriers[2] = {};
-	copyBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::CopySrc);
-	copyBarriers[1] = backBuffer->GetTransitionBarrier(ResourceStates::CopyDest);
-	cmdList->ResourceBarrier(_countof(copyBarriers), copyBarriers);
-	cmdList->CopyTexture(backBuffer, m_renderTarget);
-
-	TransitionBarrier presentBarrier = backBuffer->GetTransitionBarrier(ResourceStates::Present);
-	cmdList->ResourceBarrier(1, &presentBarrier);
-	cmdList->Close();
-
-	m_frameFence->SignalGPU();
-	m_frameFence->Wait();
-
-	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
-
-	for (int effectInd = 0; effectInd < (int)MaterialEffect::NUM_EFFECTS; effectInd++) {
-		if (m_applyEffects[effectInd]) {
-			//g_theRenderer->ApplyEffect(m_effectsMaterials[effectInd], &m_worldCamera);
-		}
-	}
-
-	m_postRenderContext->EndFrame();
-}
 
 void Basic3DMode::Shutdown()
 {
@@ -291,13 +266,13 @@ void Basic3DMode::UpdateInput(float deltaSeconds)
 	}
 
 
-	for (int effectIndex = 0; effectIndex < (int)MaterialEffect::NUM_EFFECTS; effectIndex++) {
-		int keyCode = 97 + effectIndex; // 97 is 1 numpad
-		if (g_theInput->WasKeyJustPressed((unsigned short)keyCode)) {
-			m_applyEffects[effectIndex] = !m_applyEffects[effectIndex];
-		}
-	}
-	if (g_theInput->WasKeyJustPressed('F')) {
+	//for (int effectIndex = 0; effectIndex < (int)MaterialEffect::NUM_EFFECTS; effectIndex++) {
+	//	int keyCode = 97 + effectIndex; // 97 is 1 numpad
+	//	if (g_theInput->WasKeyJustPressed((unsigned short)keyCode)) {
+	//		m_applyEffects[effectIndex] = !m_applyEffects[effectIndex];
+	//	}
+	//}
+	/*if (g_theInput->WasKeyJustPressed('F')) {
 		m_applyEffects[0] = !m_applyEffects[0];
 	}
 	if (g_theInput->WasKeyJustPressed('G')) {
@@ -311,7 +286,7 @@ void Basic3DMode::UpdateInput(float deltaSeconds)
 	}
 	if (g_theInput->WasKeyJustPressed('L')) {
 		m_applyEffects[4] = !m_applyEffects[4];
-	}
+	}*/
 }
 
 void Basic3DMode::CreateResourceDescriptors()

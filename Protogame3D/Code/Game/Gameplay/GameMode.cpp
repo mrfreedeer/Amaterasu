@@ -62,6 +62,37 @@ void GameMode::Render()
 	RenderUI();
 }
 
+void GameMode::RenderPostProcess()
+{
+	Texture* backBuffer = g_theRenderer->GetActiveBackBuffer();
+	m_postRenderContext->Reset();
+
+	CommandList* cmdList = m_postRenderContext->GetCommandList();
+
+	TransitionBarrier copyBarriers[2] = {};
+	copyBarriers[0] = m_renderTarget->GetTransitionBarrier(ResourceStates::CopySrc);
+	copyBarriers[1] = backBuffer->GetTransitionBarrier(ResourceStates::CopyDest);
+	cmdList->ResourceBarrier(_countof(copyBarriers), copyBarriers);
+	cmdList->CopyTexture(backBuffer, m_renderTarget);
+
+	TransitionBarrier presentBarrier = backBuffer->GetTransitionBarrier(ResourceStates::Present);
+	cmdList->ResourceBarrier(1, &presentBarrier);
+	cmdList->Close();
+
+	m_frameFence->SignalGPU();
+	m_frameFence->Wait();
+
+	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
+
+	//for (int effectInd = 0; effectInd < (int)MaterialEffect::NUM_EFFECTS; effectInd++) {
+	//	if (m_applyEffects[effectInd]) {
+	//		//g_theRenderer->ApplyEffect(m_effectsMaterials[effectInd], &m_worldCamera);
+	//	}
+	//}
+
+	m_postRenderContext->EndFrame();
+}
+
 void GameMode::Shutdown()
 {
 	Fence* debugRenderFence = DebugRenderGetFence();
@@ -271,8 +302,7 @@ void GameMode::RenderUI()
 
 void GameMode::RenderDebug()
 {
-	DebugRenderWorld(m_worldCamera);
-	DebugRenderScreen(m_UICamera);
+	DebugRenderShapes(m_worldCamera, m_UICamera);
 
 	Fence* debugRenderFence = DebugRenderGetFence();
 	g_theRenderer->InsertWaitInQueue(CommandListType::DIRECT, debugRenderFence);

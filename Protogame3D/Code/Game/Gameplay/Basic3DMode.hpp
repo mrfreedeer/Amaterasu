@@ -13,15 +13,12 @@ enum class MaterialEffect {
 	NUM_EFFECTS
 };
 
-class Material;
-
 class Basic3DMode : public GameMode {
 public:
 	Basic3DMode(Game* game, Vec2 const& UISize);
 	virtual void Startup() override;
 	virtual void Update(float deltaSeconds);
 	virtual void Render() override;
-	virtual void RenderPostProcess() override;
 	virtual void Shutdown() override;
 
 	static bool DebugSpawnWorldWireSphere(EventArgs& eventArgs);
@@ -44,7 +41,4 @@ private:
 
 private:
 	float m_fps = 0.0f;
-	Material* m_effectsMaterials[(int)MaterialEffect::NUM_EFFECTS];
-	bool m_applyEffects[(int)MaterialEffect::NUM_EFFECTS];
-
 };

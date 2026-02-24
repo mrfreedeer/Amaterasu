@@ -22,7 +22,7 @@ public:
 	virtual void Startup();
 	virtual void Update(float deltaSeconds);
 	virtual void Render();
-	virtual void RenderPostProcess() = 0;
+	virtual void RenderPostProcess();
 	virtual void Shutdown();
 
 protected:
@@ -49,6 +49,7 @@ protected:
 	Texture* m_depthTarget = nullptr;
 	Sampler* m_defaultSampler = nullptr;
 	Sampler* m_defaultTextSampler = nullptr;
+
 	std::vector<Resource*> m_resources;
 	PipelineState* m_opaqueDefault2D = nullptr;
 	PipelineState* m_alphaDefault2D = nullptr;

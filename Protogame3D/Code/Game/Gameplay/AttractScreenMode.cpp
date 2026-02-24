@@ -134,9 +134,9 @@ void AttractScreenMode::Update(float deltaSeconds)
 
 void AttractScreenMode::Render()
 {
-	/// <summary>
-	/// ADDD RESOURCE BARRIERS!!!!! AND COPY RT TO BACKBUFFER
-	/// </summary>
+	m_worldCamera.SetColorTarget(m_renderTarget);
+	m_worldCamera.SetDepthTarget(m_depthTarget);
+
 	m_UICamera.SetColorTarget(m_renderTarget);
 	m_UICamera.SetDepthTarget(m_depthTarget);
 
@@ -177,20 +177,20 @@ void AttractScreenMode::Render()
 	}
 	m_renderContext->EndCamera(m_UICamera);
 
-	DebugRenderWorld(m_worldCamera);
-	RenderUI();
-	DebugRenderScreen(m_UICamera);
-
-
-	Texture* backBuffer = g_theRenderer->GetActiveBackBuffer();
-	cmdList->CopyTexture(backBuffer, m_renderTarget);
-
-	resourceBarriers[0]  = backBuffer->GetTransitionBarrier(ResourceStates::Present);
-	cmdList->ResourceBarrier(1, resourceBarriers);
-
+	GameMode::Render();
+	TransitionBarrier renderTargetTransition = m_renderTarget->GetTransitionBarrier(ResourceStates::Common);
+	cmdList->ResourceBarrier(1, &renderTargetTransition);
 	cmdList->Close();
 
 	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT, 1, &cmdList);
+
+	GameMode::RenderDebug();
+
+	// All the rendering in the frame should complete before any post render passes
+	m_frameFence->SignalGPU();
+	m_frameFence->Wait();
+
+	GameMode::RenderPostProcess();
 
 	g_theRenderer->Present(1);
 
@@ -198,8 +198,9 @@ void AttractScreenMode::Render()
 	m_frameFence->SignalGPU();
 	m_frameFence->Wait();
 
-	g_theRenderer->HandleStateDecay(m_resources);
 	m_renderContext->EndFrame();
+
+	g_theRenderer->HandleStateDecay(m_resources);
 }
 
 
