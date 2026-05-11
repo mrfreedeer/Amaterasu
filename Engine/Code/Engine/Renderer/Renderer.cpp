@@ -24,6 +24,7 @@
 #include <Engine/Renderer/D3D12/lib/dxcapi.h>
 #include <Engine/Renderer/D3D12/lib/d3dx12_root_signature.h>
 #include "DebugRendererSystem.hpp"
+#include <lib/d3dx12_state_object.h>
 
 
 #pragma comment (lib, "Engine/Renderer/D3D12/lib/dxcompiler.lib")
@@ -188,7 +189,7 @@ void GetHardwareAdapter(
 
 			// Check to see whether the adapter supports Direct3D 12, but don't create the
 			// actual device yet.
-			if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+			if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_2, _uuidof(ID3D12Device), nullptr)))
 			{
 				break;
 			}
@@ -211,7 +212,7 @@ void GetHardwareAdapter(
 
 			// Check to see whether the adapter supports Direct3D 12, but don't create the
 			// actual device yet.
-			if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+			if (SUCCEEDED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_2, _uuidof(ID3D12Device), nullptr)))
 			{
 				break;
 			}
@@ -258,7 +259,7 @@ Renderer& Renderer::Startup()
 	m_copyQueue = CreateCommandQueue(queueDesc);
 
 	CreateSwapChain();
-	CreateDefaultRootSignature();
+	CreateDefaultRootSignatures();
 
 	CommandListDesc rscCmdDesc = {};
 	rscCmdDesc.m_initialState = nullptr;
@@ -357,6 +358,7 @@ Renderer& Renderer::Shutdown()
 	m_rscCmdList = nullptr;
 
 	DX_SAFE_RELEASE(m_defaultRootSig);
+	DX_SAFE_RELEASE(m_defaultRTRootSig);
 	DX_SAFE_RELEASE(m_swapChain);
 
 	delete m_copyQueue;
@@ -400,6 +402,15 @@ void Renderer::CreateDevice()
 
 	SetDebugName(m_DXGIFactory, "DXGI FACTORY");
 	SetDebugName(m_device, "DEVICE");
+
+	D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSupportData = {};
+
+	m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupportData, sizeof(featureSupportData));
+
+	if (featureSupportData.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED) {
+		m_isRTSupported = true;
+	}
+
 
 #if defined(_DEBUG)
 	ID3D12InfoQueue* d3dInfoQueue;
@@ -454,7 +465,13 @@ void Renderer::CreateSwapChain()
 	m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 }
 
-void Renderer::CreateDefaultRootSignature()
+void Renderer::CreateDefaultRootSignatures()
+{
+	CreateDefaultGraphicsRootSignature();
+	CreateDefaultRayTracingRootSignature();
+}
+
+void Renderer::CreateDefaultGraphicsRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE1 descRange[7] = {};
 	descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded model buffers
@@ -492,6 +509,51 @@ void Renderer::CreateDefaultRootSignature()
 	SetDebugName(m_defaultRootSig, "DefaultRootSig");
 
 	ThrowIfFailed(rootSigCreateRes, "FAILED TO CREATE DEFAULT ROOT SIGNATURE");
+}
+
+void Renderer::CreateDefaultRayTracingRootSignature()
+{
+	// Shared root signature by all rt shaders
+	// It's the same as the default graphics for now, but we do keep open the possibility
+	// for shaders to have local differences
+	CD3DX12_DESCRIPTOR_RANGE1 descRange[8] = {};
+	descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded model buffers
+	descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, (UINT)-1, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded camera buffers
+	descRange[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 2, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);				// Draw constants
+	descRange[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 128, 1, 2);																// Game CBuffers
+	descRange[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, (UINT)-1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);		// Unbounded textures
+	descRange[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 128, 0, 0);																// Game UAVs
+	descRange[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 8, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE);			// There might be max a sampler per RT (I've only used 1 ever)
+
+	CD3DX12_ROOT_PARAMETER1 rootParams[9] = {};
+	rootParams[0].InitAsDescriptorTable(1, &descRange[0]);
+	rootParams[1].InitAsDescriptorTable(1, &descRange[1]);
+	rootParams[2].InitAsDescriptorTable(1, &descRange[2]);
+	rootParams[3].InitAsDescriptorTable(1, &descRange[3]);
+	rootParams[4].InitAsDescriptorTable(1, &descRange[4]);
+	rootParams[5].InitAsDescriptorTable(1, &descRange[5]);
+	rootParams[6].InitAsDescriptorTable(1, &descRange[6]);
+
+	// Legacy will used root parameter constants for draw constants
+	rootParams[7].InitAsConstants(16, 2, 3);
+	rootParams[8].InitAsShaderResourceView(0, 1);
+
+	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignDesc(_countof(rootParams), rootParams);
+	rootSignDesc.Desc_1_2.Flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	ID3DBlob* pSerializedRootSig = nullptr;
+	ID3DBlob* pErrorBlob = nullptr;
+	HRESULT serializeRes = D3D12SerializeVersionedRootSignature(&rootSignDesc, &pSerializedRootSig, &pErrorBlob);
+
+	if (pErrorBlob) {
+		DebuggerPrintf((char const*)pErrorBlob->GetBufferPointer());
+	}
+
+	ThrowIfFailed(serializeRes, "FAILED TO SERIALIZE DEFAULT ROOT SIGNATURE");
+	HRESULT rootSigCreateRes = m_device->CreateRootSignature(0, pSerializedRootSig->GetBufferPointer(), pSerializedRootSig->GetBufferSize(), IID_PPV_ARGS(&m_defaultRTRootSig));
+	ThrowIfFailed(rootSigCreateRes, "FAILED TO CREATE DEFAULT RT ROOT SIGNATURE");
+
+	SetDebugName(m_defaultRootSig, "DefaultRTRootSig");
+
 }
 
 void Renderer::SetDebugName(IDXGIObject* object, char const* name)
@@ -796,17 +858,90 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 
 PipelineState* Renderer::CreateMeshPSO(PipelineStateDesc const& desc)
 {
+	ERROR_AND_DIE("NOT IMPLEMENTED YET")
 	UNUSED(desc);
 	return nullptr;
 }
 
 PipelineState* Renderer::CreateComputePSO(PipelineStateDesc const& desc)
 {
+	ERROR_AND_DIE("NOT IMPLEMENTED YET")
 	UNUSED(desc);
 	return nullptr;
 }
 
 
+
+PipelineState* Renderer::CreateRayTracingPSO(PipelineStateDesc const& desc)
+{
+	CD3DX12_STATE_OBJECT_DESC raytracingPipeline{ D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE };
+	CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib =  raytracingPipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
+
+	Shader* libByteCodeSrc = desc.m_byteCodes[ShaderType::RayTracing];
+	CD3DX12_SHADER_BYTECODE libByteCode(libByteCodeSrc->m_byteCode.data(), libByteCodeSrc->m_byteCode.size());
+	lib->SetDXILLibrary(&libByteCode);
+
+	std::wstring convertedRTShaderTypes[NUM_RT_SHADER_SUB_TYPES] = {};
+	wchar_t* w_charconvertedRTShaderTypes[NUM_RT_SHADER_SUB_TYPES] = {};
+	wchar_t* exportedSubTypes[NUM_RT_SHADER_SUB_TYPES] = {};
+
+	unsigned int exportedShaderCount = 0;
+	// Loop through all possible subtypes and check if we're expecting it. If we are, then we export it
+	for (unsigned int subTypeIndex = 0; subTypeIndex < NUM_RT_SHADER_SUB_TYPES; subTypeIndex++) {
+		std::string const& subTypeShaderName = desc.m_RTShaderSubTypes[subTypeIndex];
+
+		convertedRTShaderTypes[subTypeIndex] =std::wstring(subTypeShaderName.begin(), subTypeShaderName.end());
+		w_charconvertedRTShaderTypes[subTypeIndex] = const_cast<wchar_t*>(convertedRTShaderTypes[subTypeIndex].c_str());
+		// Not empty, so we export whatever we're expecting
+		if (!subTypeShaderName.empty()) {
+			exportedSubTypes[exportedShaderCount] = w_charconvertedRTShaderTypes[subTypeIndex];
+			exportedShaderCount++;
+		}
+	}
+
+	lib->DefineExports(exportedSubTypes, exportedShaderCount);
+
+	// Set hit group
+
+ 	auto hitGroup = raytracingPipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+	hitGroup->SetClosestHitShaderImport(w_charconvertedRTShaderTypes[RTShaderSubType::ClosestHit]);
+	hitGroup->SetHitGroupExport(L"DefaultHitGroup");
+	hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE_TRIANGLES);
+
+
+	// Set Anyhit and intersection if they exist, otherwise the hit group will just use the closest hit shader as fallback for those stages
+	if (!convertedRTShaderTypes[RTShaderSubType::AnyHit].empty()) {
+		hitGroup->SetAnyHitShaderImport(w_charconvertedRTShaderTypes[RTShaderSubType::AnyHit]);
+	}
+
+	if (!convertedRTShaderTypes[RTShaderSubType::Intersection].empty()) {
+		hitGroup->SetIntersectionShaderImport(w_charconvertedRTShaderTypes[RTShaderSubType::Intersection]);
+	}
+
+	// #TODO FIGURE OUT WHAT THE ACTUALG GENERIC PAYLOAD WILL LOOK LIKE
+	CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* shaderConfig = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
+	UINT payloadSize = 4 * sizeof(float) + sizeof(UINT);   // float4 color + uint iterations
+	UINT attributeSize = 2 * sizeof(float); // float2 barycentrics
+	shaderConfig->Config(payloadSize, attributeSize);
+
+	CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT* globalRootSignature = raytracingPipeline.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
+	globalRootSignature->SetRootSignature(m_defaultRTRootSig);
+
+	CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT* pipelineConfig = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_PIPELINE_CONFIG_SUBOBJECT>();
+
+	UINT maxRecursionDepth = 1; // ~ primary rays only. 
+	pipelineConfig->Config(maxRecursionDepth);
+
+	// Create the state object.
+	ID3D12StateObject* stateObject = nullptr;
+	HRESULT stateObjectCreation = m_device->CreateStateObject(raytracingPipeline, IID_PPV_ARGS(&stateObject));
+
+	PipelineState* newPso = new PipelineState(stateObject);
+	newPso->m_desc = desc;
+	newPso->m_rootSignature = m_defaultRTRootSig;
+
+	return newPso;
+}
 
 CommandQueue* Renderer::GetCommandQueue(CommandListType listType)
 {
@@ -875,16 +1010,25 @@ void Renderer::CompileShader(Shader* shader)
 	mbstowcs_s(&outEntryPointLength, wEntryPoint, entryPointLength, entryPoint, entryPointLength - 1);
 	mbstowcs_s(&outSrcLength, wSrc, srcLength, shader->m_path, srcLength - 1);
 
+
 	LPCWSTR compileArgs[] =
 	{
-		L"-E", wEntryPoint,              // Entry point.
 		L"-T", wTarget,            // Target.
 		#if defined(_DEBUG)
 		DXC_ARG_DEBUG,
 		DXC_ARG_SKIP_OPTIMIZATIONS,
-		L"-Qembed_debug"
+		L"-Qembed_debug",
 		#endif
+		L"-E", wEntryPoint         // Entry point.
 	};
+
+
+	// Raytracing shaders are libs, and therefore do not use entry points. 
+	// We can just skip this by decreasing count of compileArgs
+	size_t compilerArgCount = _countof(compileArgs);
+	if (shader->m_type == RayTracing) {
+		compilerArgCount -= 1;
+	}
 
 	IDxcBlobEncoding* pSource = nullptr;
 	pUtils->LoadFile(wSrc, nullptr, &pSource);
@@ -895,7 +1039,7 @@ void Renderer::CompileShader(Shader* shader)
 
 	// Compile
 	IDxcResult* pResults = nullptr;
-	pCompiler->Compile(&source, compileArgs, _countof(compileArgs), pIncludeHandler, IID_PPV_ARGS(&pResults));
+	pCompiler->Compile(&source, compileArgs, compilerArgCount, pIncludeHandler, IID_PPV_ARGS(&pResults));
 
 	// Get errors
 	// If UTF16 is used, pErrors is always null with current settings
@@ -991,6 +1135,22 @@ Renderer& Renderer::Present(unsigned int syncInterval, unsigned int flags)
 {
 	m_swapChain->Present(syncInterval, flags);
 	return *this;
+}
+
+
+
+AccelStructs::PrebuildInfo* Renderer::GetAccelStructPrebuildInfo(AccelStructs::BuildDesc const& buildDesc, AccelStructs::PrebuildInfo* pBuildInfo)
+{
+	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuildInfo = {};
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS buildInputs = {};
+
+	buildInputs.Type = LocalToD3D12(buildDesc.m_type);
+	buildInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	buildInputs.NumDescs = 1;
+	 
+	 // CONTINUE HERE
+
+	prebuildInfo.
 }
 
 void Renderer::EnableDebugLayer()
@@ -1459,25 +1619,44 @@ ShaderPipeline Renderer::CreateOrGetShaderPipeline(ShaderPipelineDesc const& des
 
 	ShaderDesc firstShaderDsc = {};
 	std::string firstShaderName = desc.m_name;
-	std::string secShaderName = desc.m_name;
 	firstShaderName += "| " + std::string(EnumToString(desc.m_firstShaderType));
-	secShaderName += "| PS";
 
 	firstShaderDsc.m_path = desc.m_path;
 	firstShaderDsc.m_type = desc.m_firstShaderType;
 	firstShaderDsc.m_entryPoint = desc.m_firstEntryPoint;
 	firstShaderDsc.m_name = firstShaderName.c_str();
 
-	ShaderDesc secShaderDesc = {};
-	secShaderDesc.m_path = desc.m_path;
-	secShaderDesc.m_type = ShaderType::Pixel;
-	secShaderDesc.m_name = secShaderName.c_str();
-	secShaderDesc.m_entryPoint = desc.m_secEntryPoint;
-
-
 	ShaderPipeline newPipeline = {};
 	newPipeline.m_firstShader = CreateOrGetShader(firstShaderDsc);
-	newPipeline.m_pixelShader = CreateOrGetShader(secShaderDesc);
+
+	if (desc.m_secShaderType != InvalidShader) {
+		ShaderDesc secShaderDesc = {};
+		secShaderDesc.m_path = desc.m_path;
+		secShaderDesc.m_type = desc.m_secShaderType;
+		std::string secShaderName = desc.m_name;
+
+		secShaderName += "| PS";
+
+		secShaderDesc.m_name = secShaderName.c_str();
+		secShaderDesc.m_entryPoint = desc.m_secEntryPoint;
+
+		newPipeline.m_pixelShader = CreateOrGetShader(secShaderDesc);
+	}
+
+	return newPipeline;
+}
+
+RTShaderPipeline Renderer::CreateOrGetShaderPipeline(RTShaderPipelineDesc const& desc)
+{
+	ShaderDesc RTShaderLibDesc = {};
+	std::string RTShaderLibName = desc.m_name;
+
+	RTShaderLibDesc.m_path = desc.m_path;
+	RTShaderLibDesc.m_type = ShaderType::RayTracing;
+	RTShaderLibDesc.m_name = RTShaderLibName.c_str();
+
+	RTShaderPipeline newPipeline = {};
+	newPipeline.m_rtLibShader = CreateOrGetShader(RTShaderLibDesc);
 
 	return newPipeline;
 }
@@ -1489,6 +1668,7 @@ PipelineState* Renderer::CreatePipelineState(PipelineStateDesc const& desc)
 	case PipelineType::Graphics:	return CreateGraphicsPSO(desc);
 	case PipelineType::Mesh:		return CreateMeshPSO(desc);
 	case PipelineType::Compute:		return CreateComputePSO(desc);
+	case PipelineType::RayTracing:  return CreateRayTracingPSO(desc);
 	default:						return nullptr;
 	}
 }

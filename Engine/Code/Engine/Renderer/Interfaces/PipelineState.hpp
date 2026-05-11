@@ -3,6 +3,7 @@
 
 struct ID3D12PipelineState;
 struct ID3D12RootSignature;
+struct ID3D12StateObject;
 struct Shader;
 
 struct PipelineStateDesc {
@@ -21,13 +22,16 @@ struct PipelineStateDesc {
 	TextureFormat m_renderTargetFormats[8] = { TextureFormat::R8G8B8A8_UNORM };
 	TextureFormat m_depthStencilFormat = TextureFormat::D24_UNORM_S8_UINT;
 	Shader* m_byteCodes[ShaderType::NUM_SHADER_TYPES] = { nullptr };
+	std::string m_RTShaderSubTypes[RTShaderSubType::NUM_RT_SHADER_SUB_TYPES] = {};
 };
 
 struct PipelineState {
 	PipelineState(ID3D12PipelineState* pso) : m_pso(pso) {}
+	PipelineState(ID3D12StateObject* rtPSO) : m_rtPSO(rtPSO) {}
 	~PipelineState();
 
 	PipelineStateDesc m_desc = {};
 	ID3D12PipelineState* m_pso = nullptr;
+	ID3D12StateObject* m_rtPSO = nullptr; // Only used for ray tracing pipelines, otherwise null
 	ID3D12RootSignature* m_rootSignature = nullptr;
 };

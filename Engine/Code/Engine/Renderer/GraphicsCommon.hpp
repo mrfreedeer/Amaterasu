@@ -40,9 +40,46 @@ enum ShaderType : unsigned int {
 	Hull,
 	Domain,
 	Compute,
+	RayTracing,
 	NUM_SHADER_TYPES
 };
-static const char* ShaderTypeStrings[] = { "VS", "PS", "GS", "MS", "HS", "DS", "CS"};
+
+enum RTShaderSubType : unsigned int {
+	RayGeneration = 0,
+	Miss,
+	ClosestHit,
+	AnyHit,
+	Intersection,
+	Callable,
+	NUM_RT_SHADER_SUB_TYPES
+};
+
+enum class RtGeomFlags {
+	None = 0,
+	Opaque,
+	NoDuplicateAnyHitInvocations,
+	NUM_GEOM_FLAGS
+};
+
+enum class RtAccelStructType {
+	TopLevel,
+	BottomLevel
+};
+
+enum class RtBuildFlags {
+	None = 0,
+	AllowUpdate = 1 << 0,
+	AllowCompaction = 1 << 1,
+	PreferFastTrace = 1 << 2,
+	PreferFastBuild = 1 << 3,
+	MinimizeMemory = 1 << 4,
+	PerformUpdate = 1 << 5,
+	AllowOMMUpdate = 1 << 6,
+	AllowDisableOmms = 1 << 7,
+	NUM_BUILD_FLAGS
+};
+
+static const char* ShaderTypeStrings[] = { "VS", "PS", "GS", "MS", "HS", "DS", "CS", "RT"};
 
 enum class BufferType {
 	Vertex,
@@ -50,10 +87,17 @@ enum class BufferType {
 	Unordered
 };
 
+enum class IndexBufferType {
+	UNKNOWN = -1,
+	R32_UINT,
+	R16_UINT
+};
+
 enum class PipelineType {
 	Graphics,
 	Mesh,
-	Compute
+	Compute,
+	RayTracing
 };
 
 
@@ -240,6 +284,8 @@ enum ResourceStates
 // Unbounded textures
 // Game UAVs
 // There might be max a sampler per RT (I've only used 1 ever)
+// Root constants
+// Acceleration Struct
 enum RootParameterIndex : unsigned int {
 	PARAM_CAMERA_BUFFERS = 0,
 	PARAM_MODEL_BUFFERS,
@@ -249,6 +295,7 @@ enum RootParameterIndex : unsigned int {
 	PARAM_GAME_UAVS,
 	PARAM_SAMPLERS,
 	PARAM_ROOT_CONSTANTS,
+	PARAM_ACCEL_STRUCT,
 	PARAM_ROOT_CBV_SRV_UAV_COUNT = PARAM_GAME_UAVS + 1
 };
 

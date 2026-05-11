@@ -19,8 +19,13 @@ struct ShaderPipelineDesc : public ShaderLoadInfo {
 	char const* m_firstEntryPoint = nullptr;
 	char const* m_secEntryPoint = nullptr;
 	ShaderType m_firstShaderType = InvalidShader;
-	// Second is always assumed to be a pixel shader
+	// Second is always assumed to be a pixel shader in Graphics Mode
+	ShaderType m_secShaderType = Pixel;
 	
+};
+
+struct RTShaderPipelineDesc : public ShaderLoadInfo {
+	std::string m_rtShaderName[NUM_RT_SHADER_SUB_TYPES] = {};
 };
 
 struct Shader {
@@ -39,4 +44,9 @@ struct Shader {
 struct ShaderPipeline {
 	Shader* m_firstShader = nullptr;
 	Shader* m_pixelShader = nullptr;
+};
+
+struct RTShaderPipeline {
+	Shader* m_rtLibShader = nullptr;
+	std::string m_rtShaderName[NUM_RT_SHADER_SUB_TYPES] = {};
 };

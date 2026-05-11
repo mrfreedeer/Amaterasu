@@ -5,6 +5,7 @@
 #include "Engine/Renderer/Shader.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
 #include <vector>
+#include "../RayTracingCommon.hpp"
 
 struct DescriptorHeapDesc;
 struct CommandListDesc;
@@ -74,6 +75,7 @@ public:
 	Renderer& CopyDescriptorHeap(unsigned int numDescriptors, DescriptorHeap* dst, DescriptorHeap* src, unsigned int offsetStart = 0, unsigned int offsetEnd = 0);
 	Renderer& CopyDescriptor(DescriptorHeap* dest, size_t src, unsigned int offsetEnd = 0);
 	Renderer& ExecuteCmdLists(CommandListType type, unsigned int count, CommandList** cmdLists);
+	bool IsRayTracingSupported() const { return m_isRTSupported; }
 
 	//-------------------------- Resource views --------------------------
 	ResourceView* CreateRenderTargetView(size_t handle, Texture* renderTarget);
@@ -120,6 +122,7 @@ public:
 	//--------------------------- Shaders/PSO ----------------------------
 	Shader* CreateOrGetShader(ShaderDesc const& desc);
 	ShaderPipeline CreateOrGetShaderPipeline(ShaderPipelineDesc const& desc);
+	RTShaderPipeline CreateOrGetShaderPipeline(RTShaderPipelineDesc const& desc);
 	PipelineState* CreatePipelineState(PipelineStateDesc const& desc);
 	ShaderPipeline GetEngineShader(EngineShaderPipelines shader);
 
@@ -143,6 +146,10 @@ public:
 
 	Renderer& Present(unsigned int syncInterval = 0, unsigned int flags = 0);
 
+
+	//--------------------------- Raytracing ----------------------------
+	AccelStructs::PrebuildInfo* GetAccelStructPrebuildInfo(AccelStructs::BuildDesc const& buildDesc, AccelStructs::PrebuildInfo* pBuildInfo);
+	
 private:
 	void EnableDebugLayer();
 	void CreateDevice();
@@ -150,7 +157,9 @@ private:
 	/// <summary>
 	/// Create default root signature, designed for bindless usage by default
 	/// </summary>
-	void CreateDefaultRootSignature();
+	void CreateDefaultRootSignatures();
+	void CreateDefaultGraphicsRootSignature();
+	void CreateDefaultRayTracingRootSignature();
 	void SetDebugName(ID3D12Object* object, char const* name);
 	void SetDebugName(IDXGIObject* object, char const* name);
 	// ImGui
@@ -173,6 +182,7 @@ private:
 	PipelineState* CreateGraphicsPSO(PipelineStateDesc const& desc);
 	PipelineState* CreateMeshPSO(PipelineStateDesc const& desc);
 	PipelineState* CreateComputePSO(PipelineStateDesc const& desc);
+	PipelineState* CreateRayTracingPSO(PipelineStateDesc const& desc);
 
 	// CommandQueue
 	CommandQueue* GetCommandQueue(CommandListType listType);
@@ -188,12 +198,14 @@ private:
 	IDXGIFactory4* m_DXGIFactory = nullptr;
 	IDXGISwapChain4* m_swapChain = nullptr;
 	ID3D12RootSignature* m_defaultRootSig = nullptr;
+	ID3D12RootSignature* m_defaultRTRootSig = nullptr;
 	DescriptorHeap* m_ImGuiSrvDescHeap = nullptr;
 	CommandQueue* m_graphicsQueue = nullptr;
 	CommandQueue* m_copyQueue = nullptr;
 	Fence* m_internalFence = nullptr;
 
 	unsigned int m_currentBackBuffer = 0;
+	bool m_isRTSupported = false;
 
 	Texture* m_defaultTexture = nullptr;
 	Texture** m_backBuffers = nullptr;
@@ -224,7 +236,7 @@ public:
 	RenderContext(RenderContextDesc const& config);
 	~RenderContext();
 
-	RenderContext& BeginFrame() { };
+	RenderContext& BeginFrame() {};
 	RenderContext& BeginCamera(Camera const& camera);
 	RenderContext& EndCamera(Camera const& camera);
 	RenderContext& EndFrame();
@@ -237,7 +249,7 @@ public:
 	unsigned int GetDescriptorCount(RootParameterIndex paramType) const { return m_rscDescriptorCount[paramType]; }
 	unsigned int GetDescriptorStart(RootParameterIndex paramType) const { return m_rscDescriptorStart[paramType]; }
 	unsigned int GetCurrentDescriptorIndex(RootParameterIndex paramType) const;
-	unsigned int GetDescriptorCountForCopy() const; 
+	unsigned int GetDescriptorCountForCopy() const;
 	void ResetDescriptors();
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetNextCPUDescriptor(RootParameterIndex paramType);
