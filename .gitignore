@@ -398,3 +398,7 @@ FodyWeavers.xsd
 
 #VS Temporary folder
 Temporary/
+
+# Track DLL and LIB files
+!**/*.dll
+!**/*.lib
