@@ -322,6 +322,9 @@
     <ClCompile Include="Renderer\D3D12\D3D12TypeConversions.cpp">
       <Filter>Renderer\D3D12</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\RayTracingCommon.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math\Vec2.hpp">
@@ -673,6 +676,9 @@
       <Filter>Renderer\D3D12</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\ConstantBuffers.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RayTracingCommon.hpp">
       <Filter>Renderer</Filter>
     </ClInclude>
   </ItemGroup>

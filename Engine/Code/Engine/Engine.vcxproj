@@ -518,6 +518,7 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClCompile Include="Renderer\Interfaces\PipelineState.cpp" />
     <ClCompile Include="Renderer\Interfaces\Resource.cpp" />
     <ClCompile Include="Renderer\PixEventReporter.cpp" />
+    <ClCompile Include="Renderer\RayTracingCommon.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Renderer\Shader.cpp" />
     <ClCompile Include="Renderer\SimpleTriangleFont.cpp" />
@@ -637,6 +638,7 @@ copy /Y "$(ProjectDir)..\ThirdParty\WinPixEventRuntime\bin\WinPixEventRuntime.dl
     <ClInclude Include="Renderer\Interfaces\PipelineState.hpp" />
     <ClInclude Include="Renderer\Interfaces\Resource.hpp" />
     <ClInclude Include="Renderer\PixEventReporter.hpp" />
+    <ClInclude Include="Renderer\RayTracingCommon.hpp" />
     <ClInclude Include="Renderer\Renderer.hpp" />
     <ClInclude Include="Renderer\Shader.hpp" />
     <ClInclude Include="Renderer\SimpleTriangleFont.hpp" />
