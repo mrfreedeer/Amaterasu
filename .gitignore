@@ -6,7 +6,6 @@
 # User-specific files
 *.rsuser
 *.suo
-*.user
 *.userosscache
 *.sln.docstates
 
@@ -402,3 +401,7 @@ Temporary/
 # Track DLL and LIB files
 !**/*.dll
 !**/*.lib
+# Always track Visual Studio solution and project files
+!*.sln
+!*.vcxproj
+!*.vcxproj.filters
