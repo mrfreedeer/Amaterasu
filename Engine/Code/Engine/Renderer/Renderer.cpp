@@ -1149,8 +1149,7 @@ AccelStructs::PrebuildInfo* Renderer::GetAccelStructPrebuildInfo(AccelStructs::B
 	buildInputs.NumDescs = 1;
 	 
 	 // CONTINUE HERE
-
-	prebuildInfo.
+	return nullptr;
 }
 
 void Renderer::EnableDebugLayer()

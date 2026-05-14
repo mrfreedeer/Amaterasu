@@ -5,7 +5,7 @@
 #include "Engine/Renderer/Shader.hpp"
 #include "Engine/Renderer/GraphicsCommon.hpp"
 #include <vector>
-#include "../RayTracingCommon.hpp"
+#include "Engine/Renderer/RayTracingCommon.hpp"
 
 struct DescriptorHeapDesc;
 struct CommandListDesc;

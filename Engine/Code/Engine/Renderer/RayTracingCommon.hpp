@@ -1,6 +1,7 @@
+
 #pragma once
-#include "Math/Mat44.hpp"
-#include "Renderer/GraphicsCommon.hpp"
+#include "Engine/Math/Mat44.hpp"
+#include "Engine/Renderer/GraphicsCommon.hpp"
 
 class Buffer;
 struct AABB3;
@@ -33,14 +34,14 @@ namespace AccelStructs {
 		GeometryLinkageDesc* m_pLinkageDesc = nullptr;
 	};
 
-	struct AccelStructPrebuildResult {
+	struct PrebuildInfo {
 		unsigned int m_resultDataMaxSizeBytes = 0;
 		unsigned int m_scratchDataSizeBytes = 0;
 		unsigned int m_updateScratchDataSizeBytes = 0;
 	};
 
 
-	struct AccelStructBuildDesc {
+	struct BuildDesc {
 		GeometryTriDesc m_triDesc;
 		GeeometryAABBDesc m_aabbDesc;
 		GeometryOMMTriDesc m_ommTriDesc;
