@@ -1162,6 +1162,8 @@ AccelStructs::PrebuildInfo Renderer::GetAccelStructPrebuildInfo(AccelStructs::Bu
 	prebuildInfoToReturn.m_scratchDataSizeBytes = prebuildInfo.ScratchDataSizeInBytes;
 	prebuildInfoToReturn.m_updateScratchDataSizeBytes = prebuildInfo.UpdateScratchDataSizeInBytes;
 
+	delete[] apiGeomDescArray;
+
 	return prebuildInfoToReturn;
 }
 
