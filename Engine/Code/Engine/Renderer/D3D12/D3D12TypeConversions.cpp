@@ -2,6 +2,7 @@
 #include "Engine/Core/ErrorWarningAssert.hpp"
 #include "Engine/Core/StringUtils.hpp"
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
+#include "Engine/Renderer/RayTracingCommon.hpp"
 
 DXGI_FORMAT LocalToD3D12(TextureFormat textureFormat)
 {
@@ -207,6 +208,46 @@ D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE LocalToD3D12(RtAccelStructType asTy
 		break;
 	}
 }
+
+D3D12_RAYTRACING_GEOMETRY_DESC LocalToD3D12(AccelStructs::GeometryTriDesc const& triDesc)
+{
+	D3D12_RAYTRACING_GEOMETRY_DESC convertedDesc = {};
+	convertedDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+	convertedDesc.Triangles.IndexBuffer = triDesc.m_pIndexBuffer->GetGPUAddress();
+	convertedDesc.Triangles.IndexCount = triDesc.m_indexCount;
+	convertedDesc.Triangles.IndexFormat = LocalToD3D12(triDesc.m_indexType);
+	convertedDesc.Triangles.Transform3x4 = 0;
+	convertedDesc.Triangles.VertexFormat = LocalToD3D12(triDesc.m_vertexFormat);
+	convertedDesc.Triangles.VertexCount = triDesc.m_vertexCount;
+	convertedDesc.Triangles.VertexBuffer.StartAddress = triDesc.m_pVertexBuffer->GetGPUAddress();
+	convertedDesc.Triangles.VertexBuffer.StrideInBytes = triDesc.m_pVertexBuffer->GetSize() / triDesc.m_pVertexBuffer->GetElementCount();
+
+	convertedDesc.Flags = LocalToD3D12(triDesc.m_flags);
+
+	return convertedDesc;
+}
+
+DXGI_FORMAT LocalToD3D12(IndexBufferType indexType)
+{
+	switch (indexType)
+	{
+	case IndexBufferType::R16_UINT: return DXGI_FORMAT_R16_UINT;
+	case IndexBufferType::R32_UINT: return DXGI_FORMAT_R32_UINT;
+	default: ERROR_AND_DIE("UNKNOWN INDEX BUFFER TYPE"); return DXGI_FORMAT_UNKNOWN;
+	}
+}
+
+D3D12_RAYTRACING_GEOMETRY_FLAGS LocalToD3D12(RtGeomFlags flags)
+{
+	switch (flags)
+	{
+	case RtGeomFlags::None: return D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
+	case RtGeomFlags::Opaque: return D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+	case RtGeomFlags::NoDuplicateAnyHitInvocations:return D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION;
+	default:
+		ERROR_AND_DIE("UNKNOWN RT GEOM FLAG");
+		break;
+	}
 
 DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat)
 {

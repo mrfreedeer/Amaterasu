@@ -921,7 +921,7 @@ PipelineState* Renderer::CreateRayTracingPSO(PipelineStateDesc const& desc)
 	// #TODO FIGURE OUT WHAT THE ACTUALG GENERIC PAYLOAD WILL LOOK LIKE
 	CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT* shaderConfig = raytracingPipeline.CreateSubobject<CD3DX12_RAYTRACING_SHADER_CONFIG_SUBOBJECT>();
 	UINT payloadSize = 4 * sizeof(float) + sizeof(UINT);   // float4 color + uint iterations
-	UINT attributeSize = 2 * sizeof(float); // float2 barycentrics
+	UINT attributeSize = 2 * sizeof(float); // float2 barycentric
 	shaderConfig->Config(payloadSize, attributeSize);
 
 	CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT* globalRootSignature = raytracingPipeline.CreateSubobject<CD3DX12_GLOBAL_ROOT_SIGNATURE_SUBOBJECT>();
@@ -1137,19 +1137,32 @@ Renderer& Renderer::Present(unsigned int syncInterval, unsigned int flags)
 	return *this;
 }
 
-
-
-AccelStructs::PrebuildInfo* Renderer::GetAccelStructPrebuildInfo(AccelStructs::BuildDesc const& buildDesc, AccelStructs::PrebuildInfo* pBuildInfo)
+AccelStructs::PrebuildInfo Renderer::GetAccelStructPrebuildInfo(AccelStructs::BuildDesc const& buildDesc)
 {
 	D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuildInfo = {};
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS buildInputs = {};
 
 	buildInputs.Type = LocalToD3D12(buildDesc.m_type);
 	buildInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-	buildInputs.NumDescs = 1;
-	 
-	 // CONTINUE HERE
-	return nullptr;
+	buildInputs.NumDescs = buildDesc.m_structCount;
+
+	D3D12_RAYTRACING_GEOMETRY_DESC* apiGeomDescArray = new D3D12_RAYTRACING_GEOMETRY_DESC[buildDesc.m_structCount];
+
+	for (unsigned int geomDescIndex = 0; geomDescIndex < buildDesc.m_structCount; ++geomDescIndex) {
+		apiGeomDescArray[geomDescIndex] = LocalToD3D12(buildDesc.m_triDesc[geomDescIndex]);
+	}
+
+	buildInputs.pGeometryDescs = apiGeomDescArray;
+
+	m_device->GetRaytracingAccelerationStructurePrebuildInfo(&buildInputs, &prebuildInfo);
+
+	AccelStructs::PrebuildInfo prebuildInfoToReturn = {};
+
+	prebuildInfoToReturn.m_resultDataMaxSizeBytes = prebuildInfo.ResultDataMaxSizeInBytes;
+	prebuildInfoToReturn.m_scratchDataSizeBytes = prebuildInfo.ScratchDataSizeInBytes;
+	prebuildInfoToReturn.m_updateScratchDataSizeBytes = prebuildInfo.UpdateScratchDataSizeInBytes;
+
+	return prebuildInfoToReturn;
 }
 
 void Renderer::EnableDebugLayer()

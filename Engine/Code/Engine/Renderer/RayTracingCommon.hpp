@@ -17,6 +17,7 @@ namespace AccelStructs {
 		unsigned int m_vertexCount = 0; 
 		Buffer* m_pIndexBuffer = nullptr;
 		Buffer* m_pVertexBuffer = nullptr;
+		RtGeomFlags m_flags = RtGeomFlags::None;
 	};
 
 	struct GeeometryAABBDesc {
@@ -40,13 +41,13 @@ namespace AccelStructs {
 		unsigned int m_updateScratchDataSizeBytes = 0;
 	};
 
-
 	struct BuildDesc {
-		GeometryTriDesc m_triDesc;
-		GeeometryAABBDesc m_aabbDesc;
-		GeometryOMMTriDesc m_ommTriDesc;
+		GeometryTriDesc* m_triDesc;
+		GeeometryAABBDesc* m_aabbDesc;
+		GeometryOMMTriDesc* m_ommTriDesc;
 
-		RtGeomFlags m_flags = RtGeomFlags::None;
+		unsigned int m_structCount = 0;
+
 		RtBuildFlags m_buildFlags = RtBuildFlags::None;
 		RtAccelStructType m_type = RtAccelStructType::BottomLevel;
 	};

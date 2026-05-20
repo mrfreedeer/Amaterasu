@@ -148,7 +148,8 @@ public:
 
 
 	//--------------------------- Raytracing ----------------------------
-	AccelStructs::PrebuildInfo* GetAccelStructPrebuildInfo(AccelStructs::BuildDesc const& buildDesc, AccelStructs::PrebuildInfo* pBuildInfo);
+	// Get prebuild info for ray tracing acceleration structure
+	AccelStructs::PrebuildInfo GetAccelStructPrebuildInfo(AccelStructs::BuildDesc const& buildDesc);
 	
 private:
 	void EnableDebugLayer();
