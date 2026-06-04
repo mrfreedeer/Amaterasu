@@ -40,6 +40,7 @@ public:
 	/// Get size in bytes
 	/// </summary>
 	size_t GetSize() const { return m_desc.m_size; }
+	size_t GetStride() const { return m_desc.m_stride.m_strideBytes; }
 	size_t GetElementCount() const { return m_elemCount; }
 	MemoryUsage GetMemoryUsage() const { return m_desc.m_memoryUsage; }
 	BufferView GetBufferView() const;

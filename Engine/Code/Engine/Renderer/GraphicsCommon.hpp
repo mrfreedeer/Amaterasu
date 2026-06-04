@@ -84,7 +84,8 @@ static const char* ShaderTypeStrings[] = { "VS", "PS", "GS", "MS", "HS", "DS", "
 enum class BufferType {
 	Vertex,
 	Constant,
-	Unordered
+	Unordered,
+	ShaderTable
 };
 
 enum class IndexBufferType {

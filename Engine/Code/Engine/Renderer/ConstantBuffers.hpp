@@ -24,3 +24,9 @@ struct DrawInfoConstants
 	unsigned int ModelBufferInd;
 	unsigned int TextureStart;
 };
+
+struct RayGenConstants 
+{
+	Vec2 ViewPortMins;
+	Vec2 ViewPortMaxs;
+};
