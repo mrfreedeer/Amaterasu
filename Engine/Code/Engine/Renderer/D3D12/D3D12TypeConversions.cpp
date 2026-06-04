@@ -3,6 +3,7 @@
 #include "Engine/Core/StringUtils.hpp"
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
 #include "Engine/Renderer/RayTracingCommon.hpp"
+#include "Engine/Renderer/GraphicsCommon.hpp"
 
 DXGI_FORMAT LocalToD3D12(TextureFormat textureFormat)
 {
@@ -233,7 +234,7 @@ DXGI_FORMAT LocalToD3D12(IndexBufferType indexType)
 	{
 	case IndexBufferType::R16_UINT: return DXGI_FORMAT_R16_UINT;
 	case IndexBufferType::R32_UINT: return DXGI_FORMAT_R32_UINT;
-	default: ERROR_AND_DIE("UNKNOWN INDEX BUFFER TYPE"); return DXGI_FORMAT_UNKNOWN;
+	default: ERROR_AND_DIE("UNKNOWN INDEX BUFFER TYPE");
 	}
 }
 
@@ -248,6 +249,41 @@ D3D12_RAYTRACING_GEOMETRY_FLAGS LocalToD3D12(RtGeomFlags flags)
 		ERROR_AND_DIE("UNKNOWN RT GEOM FLAG");
 		break;
 	}
+}
+
+D3D12_DISPATCH_RAYS_DESC LocalToD3D12(AccelStructs::DispatchRaysDesc const& dispatchDesc)
+{
+	D3D12_DISPATCH_RAYS_DESC convertedDesc = {};
+
+	convertedDesc.Width = dispatchDesc.m_width;
+	convertedDesc.Height = dispatchDesc.m_height;
+	convertedDesc.Depth = dispatchDesc.m_depth;
+
+	if (dispatchDesc.m_callableShaderTable) {
+		convertedDesc.CallableShaderTable.StartAddress = dispatchDesc.m_callableShaderTable->GetGPUAddress();
+		convertedDesc.CallableShaderTable.SizeInBytes = dispatchDesc.m_callableShaderTable->GetSize();
+		convertedDesc.CallableShaderTable.StrideInBytes = dispatchDesc.m_callableShaderTable->GetStride();
+	}
+
+	if (dispatchDesc.m_hitGroupTable) {
+		convertedDesc.HitGroupTable.StartAddress = dispatchDesc.m_hitGroupTable->GetGPUAddress();
+		convertedDesc.HitGroupTable.SizeInBytes = dispatchDesc.m_hitGroupTable->GetSize();
+		convertedDesc.HitGroupTable.StrideInBytes = dispatchDesc.m_hitGroupTable->GetStride();
+	}
+
+	if (dispatchDesc.m_missShaderTable) {
+		convertedDesc.MissShaderTable.StartAddress = dispatchDesc.m_missShaderTable->GetGPUAddress();
+		convertedDesc.MissShaderTable.SizeInBytes = dispatchDesc.m_missShaderTable->GetSize();
+		convertedDesc.MissShaderTable.StrideInBytes = dispatchDesc.m_missShaderTable->GetStride();
+	}
+
+	if (dispatchDesc.m_rayGenShaderRecord) {
+		convertedDesc.RayGenerationShaderRecord.StartAddress = dispatchDesc.m_rayGenShaderRecord->GetGPUAddress();
+		convertedDesc.RayGenerationShaderRecord.SizeInBytes = dispatchDesc.m_rayGenShaderRecord->GetSize();
+	}
+
+	return convertedDesc;
+}
 
 DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat)
 {

@@ -31,4 +31,5 @@ D3D12_PRIMITIVE_TOPOLOGY_TYPE LocalToD3D12(TopologyType topology);
 D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE LocalToD3D12(RtAccelStructType asType);
 D3D12_RAYTRACING_GEOMETRY_DESC LocalToD3D12(AccelStructs::GeometryTriDesc const& triDesc);
 DXGI_FORMAT LocalToD3D12(IndexBufferType indexType);
-D3D12_RAYTRACING_GEOMETRY_FLAGS LocalToD3D12(RtBuildFlags flags);
+D3D12_RAYTRACING_GEOMETRY_FLAGS LocalToD3D12(RtGeomFlags flags);
+D3D12_DISPATCH_RAYS_DESC LocalToD3D12(AccelStructs::DispatchRaysDesc const& dispatchDesc);
