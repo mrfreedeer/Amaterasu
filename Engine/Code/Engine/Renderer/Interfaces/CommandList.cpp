@@ -3,12 +3,14 @@
 #include "Engine/Renderer/Interfaces/Resource.hpp"
 #include "Engine/Renderer/Interfaces/Buffer.hpp"
 #include "Engine/Renderer/Interfaces/DescriptorHeap.hpp"
+#include "Engine/Renderer/D3D12/D3D12TypeConversions.hpp"
 #include "Engine/Renderer/Texture.hpp"
-#include "Engine/Renderer/Camera.hpp"
+#include "Engine/Renderer/Raytracingcommon.hpp"
+
 #include "Engine/Core/Rgba8.hpp"
+
 #include "Engine/Math/IntVec3.hpp"
 #include "Engine/Math/AABB2.hpp"
-#include "Engine/Renderer/D3D12/D3D12TypeConversions.hpp"
 
 CommandList::CommandList(CommandListDesc const& desc) :
 	m_desc(desc)
@@ -289,6 +291,50 @@ CommandList& CommandList::SetScissorRect(Vec2 const& rectMin, Vec2 const& rectMa
 CommandList& CommandList::SetBlendFactor(float* blendFactors)
 {
 	m_cmdList->OMSetBlendFactor(blendFactors);
+	return *this;
+}
+
+CommandList& CommandList::DispatchRays(AccelStructs::DispatchRaysDesc const& desc)
+{
+	D3D12_DISPATCH_RAYS_DESC apiDispatchDesc = {};
+	
+	apiDispatchDesc = LocalToD3D12(desc);
+
+	m_cmdList->DispatchRays(&apiDispatchDesc);
+
+	return *this;
+}
+
+CommandList& CommandList::BuildRtAccelStruct(AccelStructs::BuildDesc const& buildDesc, Buffer* scratchBuffer, Buffer* resultBuffer)
+{
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC apiBuildDesc = {};
+	apiBuildDesc.DestAccelerationStructureData = resultBuffer->GetGPUAddress();
+
+
+	// Populate build inputs
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& buildInputs = apiBuildDesc.Inputs;
+	buildInputs.Type = LocalToD3D12(buildDesc.m_type);
+	buildInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+	buildInputs.NumDescs = buildDesc.m_structCount;
+
+	D3D12_RAYTRACING_GEOMETRY_DESC* apiGeomDescArray = new D3D12_RAYTRACING_GEOMETRY_DESC[buildDesc.m_structCount];
+
+	for (unsigned int geomDescIndex = 0; geomDescIndex < buildDesc.m_structCount; ++geomDescIndex) {
+		apiGeomDescArray[geomDescIndex] = LocalToD3D12(buildDesc.m_triDesc[geomDescIndex]);
+	}
+
+	buildInputs.pGeometryDescs = apiGeomDescArray;
+
+	apiBuildDesc.Inputs = buildInputs;
+
+	apiBuildDesc.ScratchAccelerationStructureData = scratchBuffer->GetGPUAddress();
+	apiBuildDesc.SourceAccelerationStructureData = 0; // No source AS, as this is not an update
+
+	m_cmdList->BuildRaytracingAccelerationStructure(&apiBuildDesc, 0, nullptr);
+
+	// Delete arrays used for API conversion
+	delete[] apiGeomDescArray;
+
 	return *this;
 }
 

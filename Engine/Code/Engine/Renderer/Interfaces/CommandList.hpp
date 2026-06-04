@@ -2,12 +2,18 @@
 #include <stdint.h>
 #include "Engine/Renderer/GraphicsCommon.hpp"
 
+namespace AccelStructs {
+	struct DispatchRaysDesc;
+	struct BuildDesc;
+}
 
 struct PipelineState;
 struct IntVec3;
 struct Rgba8;
 struct AABB2;
 struct TransitionBarrier;
+
+class DescriptorHeap;
 class Camera;
 class Resource;
 class Texture;
@@ -15,7 +21,6 @@ class Buffer;
 
 struct ID3D12CommandAllocator;
 struct ID3D12GraphicsCommandList6;
-class DescriptorHeap;
 struct DescriptorSet;
 
 struct D3D12_CPU_DESCRIPTOR_HANDLE;
@@ -73,6 +78,11 @@ public:
 	/// <param name="blendFactors"> array of 4 floats</param>
 	/// <returns></returns>
 	CommandList& SetBlendFactor(float* blendFactors);
+
+	// Raytracing
+	CommandList& DispatchRays(AccelStructs::DispatchRaysDesc const& desc);
+	CommandList& BuildRtAccelStruct(AccelStructs::BuildDesc const& buildDesc, Buffer* scratchBuffer, Buffer* resultBuffer);
+
 private:
 
 private:
