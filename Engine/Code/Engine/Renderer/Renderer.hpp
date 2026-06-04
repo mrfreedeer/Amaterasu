@@ -154,6 +154,7 @@ public:
 private:
 	void EnableDebugLayer();
 	void CreateDevice();
+	AccelStructs::ShaderTableSet CreateShaderTableSetFromPSO(PipelineState* pRTPSO);
 	void CreateSwapChain();
 	/// <summary>
 	/// Create default root signature, designed for bindless usage by default
@@ -192,6 +193,7 @@ private:
 	void CompileShader(Shader* shader);
 
 	size_t AlignToCBufferStride(size_t size) const;
+	unsigned int GetRtShaderTypeRootArgsSize(RTShaderSubType shaderType) const;
 
 private:
 	RendererConfig m_config = {};
@@ -258,6 +260,7 @@ public:
 	RenderContext& Close();
 	RenderContext& CloseAll();
 	RenderContext& Reset();
+
 private:
 	RenderContextDesc m_config = {};
 	D3D12_VIEWPORT m_viewport = {};

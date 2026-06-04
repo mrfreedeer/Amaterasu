@@ -859,14 +859,14 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 PipelineState* Renderer::CreateMeshPSO(PipelineStateDesc const& desc)
 {
 	ERROR_AND_DIE("NOT IMPLEMENTED YET")
-	UNUSED(desc);
+		UNUSED(desc);
 	return nullptr;
 }
 
 PipelineState* Renderer::CreateComputePSO(PipelineStateDesc const& desc)
 {
 	ERROR_AND_DIE("NOT IMPLEMENTED YET")
-	UNUSED(desc);
+		UNUSED(desc);
 	return nullptr;
 }
 
@@ -875,7 +875,7 @@ PipelineState* Renderer::CreateComputePSO(PipelineStateDesc const& desc)
 PipelineState* Renderer::CreateRayTracingPSO(PipelineStateDesc const& desc)
 {
 	CD3DX12_STATE_OBJECT_DESC raytracingPipeline{ D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE };
-	CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib =  raytracingPipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
+	CD3DX12_DXIL_LIBRARY_SUBOBJECT* lib = raytracingPipeline.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
 
 	Shader* libByteCodeSrc = desc.m_byteCodes[ShaderType::RayTracing];
 	CD3DX12_SHADER_BYTECODE libByteCode(libByteCodeSrc->m_byteCode.data(), libByteCodeSrc->m_byteCode.size());
@@ -890,7 +890,7 @@ PipelineState* Renderer::CreateRayTracingPSO(PipelineStateDesc const& desc)
 	for (unsigned int subTypeIndex = 0; subTypeIndex < NUM_RT_SHADER_SUB_TYPES; subTypeIndex++) {
 		std::string const& subTypeShaderName = desc.m_RTShaderSubTypes[subTypeIndex];
 
-		convertedRTShaderTypes[subTypeIndex] =std::wstring(subTypeShaderName.begin(), subTypeShaderName.end());
+		convertedRTShaderTypes[subTypeIndex] = std::wstring(subTypeShaderName.begin(), subTypeShaderName.end());
 		w_charconvertedRTShaderTypes[subTypeIndex] = const_cast<wchar_t*>(convertedRTShaderTypes[subTypeIndex].c_str());
 		// Not empty, so we export whatever we're expecting
 		if (!subTypeShaderName.empty()) {
@@ -903,7 +903,7 @@ PipelineState* Renderer::CreateRayTracingPSO(PipelineStateDesc const& desc)
 
 	// Set hit group
 
- 	auto hitGroup = raytracingPipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
+	auto hitGroup = raytracingPipeline.CreateSubobject<CD3DX12_HIT_GROUP_SUBOBJECT>();
 	hitGroup->SetClosestHitShaderImport(w_charconvertedRTShaderTypes[RTShaderSubType::ClosestHit]);
 	hitGroup->SetHitGroupExport(L"DefaultHitGroup");
 	hitGroup->SetHitGroupType(D3D12_HIT_GROUP_TYPE_TRIANGLES);
@@ -935,6 +935,8 @@ PipelineState* Renderer::CreateRayTracingPSO(PipelineStateDesc const& desc)
 	// Create the state object.
 	ID3D12StateObject* stateObject = nullptr;
 	HRESULT stateObjectCreation = m_device->CreateStateObject(raytracingPipeline, IID_PPV_ARGS(&stateObject));
+
+	ThrowIfFailed(stateObjectCreation, "Failed to create Ray Tracing State Object");
 
 	PipelineState* newPso = new PipelineState(stateObject);
 	newPso->m_desc = desc;
@@ -1158,13 +1160,67 @@ AccelStructs::PrebuildInfo Renderer::GetAccelStructPrebuildInfo(AccelStructs::Bu
 
 	AccelStructs::PrebuildInfo prebuildInfoToReturn = {};
 
-	prebuildInfoToReturn.m_resultDataMaxSizeBytes = prebuildInfo.ResultDataMaxSizeInBytes;
-	prebuildInfoToReturn.m_scratchDataSizeBytes = prebuildInfo.ScratchDataSizeInBytes;
-	prebuildInfoToReturn.m_updateScratchDataSizeBytes = prebuildInfo.UpdateScratchDataSizeInBytes;
+	prebuildInfoToReturn.m_resultDataMaxSizeBytes = (UINT64)prebuildInfo.ResultDataMaxSizeInBytes;
+	prebuildInfoToReturn.m_scratchDataSizeBytes = (UINT64)prebuildInfo.ScratchDataSizeInBytes;
+	prebuildInfoToReturn.m_updateScratchDataSizeBytes = (UINT64)prebuildInfo.UpdateScratchDataSizeInBytes;
 
 	delete[] apiGeomDescArray;
 
 	return prebuildInfoToReturn;
+}
+
+AccelStructs::ShaderTableSet Renderer::CreateShaderTableSetFromPSO(PipelineState* pRTPSO)
+{
+	std::string* rtShaderSubTypes = pRTPSO->m_desc.m_RTShaderSubTypes;
+
+	ID3D12StateObjectProperties* stateObjectProps = nullptr;
+	ID3D12StateObject* rawPSO = pRTPSO->m_rtPSO;
+
+	HRESULT hr = rawPSO->QueryInterface(
+		__uuidof(ID3D12StateObjectProperties),
+		reinterpret_cast<void**>(&stateObjectProps)
+	);
+
+	AccelStructs::ShaderTableSet shaderTableSet = {};
+
+	ThrowIfFailed(hr, "FAILED TO GET STATE OBJECT PROPERTIES INTERFACE FOR SHADER TABLE CREATION");
+	UINT shaderIdentifierSize = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+	shaderTableSet.m_shaderIdentifierSizeBytes = shaderIdentifierSize;
+	shaderTableSet.m_debugName = Stringf("%s_shader_table_set", pRTPSO->m_desc.m_debugName);
+
+	// Loop through all possible subtypes and check if we're expecting it. If we are, then we export it
+	for (unsigned int subTypeIndex = 0; subTypeIndex < NUM_RT_SHADER_SUB_TYPES; subTypeIndex++) {
+		UINT numRecords = 1;
+
+		std::string const& subTypeShaderName = rtShaderSubTypes[subTypeIndex];
+
+		void* currentShaderIdentifier = nullptr;
+		std::wstring convertedShaderName = std::wstring(subTypeShaderName.begin(), subTypeShaderName.end());
+		// Not empty, so we export whatever we're expecting
+		if (!subTypeShaderName.empty()) {
+			currentShaderIdentifier = stateObjectProps->GetShaderIdentifier(convertedShaderName.c_str());
+			shaderTableSet.m_shaderIdentifiers[subTypeIndex] = currentShaderIdentifier;
+		}
+
+		if (currentShaderIdentifier != nullptr) {
+			BufferDesc shaderTableBufferDesc = {};
+			unsigned int rootArgSize = GetRtShaderTypeRootArgsSize((RTShaderSubType)subTypeIndex);
+			unsigned int shaderRecordSize = shaderIdentifierSize + rootArgSize;
+
+			shaderTableBufferDesc.m_size = shaderRecordSize * numRecords;
+			shaderTableBufferDesc.m_debugName = "ShaderTableBuffer";
+			shaderTableBufferDesc.m_memoryUsage = MemoryUsage::Dynamic;
+			shaderTableBufferDesc.m_type = BufferType::ShaderTable;
+			shaderTableBufferDesc.m_stride.m_strideBytes = shaderRecordSize;
+			shaderTableBufferDesc.m_data = currentShaderIdentifier;
+
+			shaderTableSet.m_shaderTables[subTypeIndex] =  CreateBuffer(shaderTableBufferDesc);
+			shaderTableSet.m_shaderRecordCount[subTypeIndex] = numRecords;
+			shaderTableSet.m_shaderRecordStrideBytes[subTypeIndex] = shaderRecordSize;
+		}
+	}
+
+	return shaderTableSet;
 }
 
 void Renderer::EnableDebugLayer()
@@ -1850,6 +1906,28 @@ RenderContext::RenderContext(RenderContextDesc const& config) :
 
 	}
 }
+
+unsigned int Renderer::GetRtShaderTypeRootArgsSize(RTShaderSubType shaderType) const
+{
+	switch (shaderType)
+	{
+	case RayGeneration:
+		return sizeof(RayGenConstants);
+		// Intentional fall through, as these shader types don't have root arguments
+	case Miss:
+	case ClosestHit:
+	case AnyHit:
+	case Intersection:
+	case Callable:
+		return 0;
+	case NUM_RT_SHADER_SUB_TYPES:
+	default:
+		ERROR_AND_DIE("UNRECOGNIZED RAY TRACING SHADER SUBTYPE");
+		break;
+	}
+}
+
+
 
 RenderContext::~RenderContext()
 {

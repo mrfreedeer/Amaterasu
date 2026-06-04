@@ -14,7 +14,7 @@ namespace AccelStructs {
 		IndexBufferType m_indexType = IndexBufferType::UNKNOWN;
 		TextureFormat m_vertexFormat = TextureFormat::INVALID;
 		unsigned int m_indexCount = 0;
-		unsigned int m_vertexCount = 0; 
+		unsigned int m_vertexCount = 0;
 		Buffer* m_pIndexBuffer = nullptr;
 		Buffer* m_pVertexBuffer = nullptr;
 		RtGeomFlags m_flags = RtGeomFlags::None;
@@ -51,5 +51,29 @@ namespace AccelStructs {
 		RtBuildFlags m_buildFlags = RtBuildFlags::None;
 		RtAccelStructType m_type = RtAccelStructType::BottomLevel;
 	};
+
+	struct DispatchRaysDesc {
+		unsigned int m_width = 0;
+		unsigned int m_height = 0;
+		unsigned int m_depth = 0;
+
+		Buffer* m_rayGenShaderRecord = nullptr;
+		Buffer* m_missShaderTable = nullptr;
+		Buffer* m_hitGroupTable = nullptr;
+		Buffer* m_callableShaderTable = nullptr;
+	};
+
+	struct ShaderTableSet {
+		void* m_shaderIdentifiers[RTShaderSubType::NUM_RT_SHADER_SUB_TYPES] = { nullptr };
+		Buffer* m_shaderTables[RTShaderSubType::NUM_RT_SHADER_SUB_TYPES] = { nullptr };
+		unsigned int m_shaderRecordCount[RTShaderSubType::NUM_RT_SHADER_SUB_TYPES] = {0};
+		unsigned int m_shaderRecordStrideBytes[RTShaderSubType::NUM_RT_SHADER_SUB_TYPES] = {0};
+		unsigned int m_shaderIdentifierSizeBytes = 0;
+		std::string m_debugName = "";
+
+	};
+
+
+
 
 }
