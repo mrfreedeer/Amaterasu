@@ -859,18 +859,14 @@ PipelineState* Renderer::CreateGraphicsPSO(PipelineStateDesc const& desc)
 PipelineState* Renderer::CreateMeshPSO(PipelineStateDesc const& desc)
 {
 	ERROR_AND_DIE("NOT IMPLEMENTED YET")
-		UNUSED(desc);
-	return nullptr;
+	UNUSED(desc);
 }
 
 PipelineState* Renderer::CreateComputePSO(PipelineStateDesc const& desc)
 {
 	ERROR_AND_DIE("NOT IMPLEMENTED YET")
-		UNUSED(desc);
-	return nullptr;
+	UNUSED(desc);
 }
-
-
 
 PipelineState* Renderer::CreateRayTracingPSO(PipelineStateDesc const& desc)
 {
@@ -1041,7 +1037,7 @@ void Renderer::CompileShader(Shader* shader)
 
 	// Compile
 	IDxcResult* pResults = nullptr;
-	pCompiler->Compile(&source, compileArgs, compilerArgCount, pIncludeHandler, IID_PPV_ARGS(&pResults));
+	pCompiler->Compile(&source, compileArgs, (UINT32)compilerArgCount, pIncludeHandler, IID_PPV_ARGS(&pResults));
 
 	// Get errors
 	// If UTF16 is used, pErrors is always null with current settings
@@ -1160,9 +1156,9 @@ AccelStructs::PrebuildInfo Renderer::GetAccelStructPrebuildInfo(AccelStructs::Bu
 
 	AccelStructs::PrebuildInfo prebuildInfoToReturn = {};
 
-	prebuildInfoToReturn.m_resultDataMaxSizeBytes = (UINT64)prebuildInfo.ResultDataMaxSizeInBytes;
-	prebuildInfoToReturn.m_scratchDataSizeBytes = (UINT64)prebuildInfo.ScratchDataSizeInBytes;
-	prebuildInfoToReturn.m_updateScratchDataSizeBytes = (UINT64)prebuildInfo.UpdateScratchDataSizeInBytes;
+	prebuildInfoToReturn.m_resultDataMaxSizeBytes = (unsigned int)prebuildInfo.ResultDataMaxSizeInBytes;
+	prebuildInfoToReturn.m_scratchDataSizeBytes = (unsigned int)prebuildInfo.ScratchDataSizeInBytes;
+	prebuildInfoToReturn.m_updateScratchDataSizeBytes = (unsigned int)prebuildInfo.UpdateScratchDataSizeInBytes;
 
 	delete[] apiGeomDescArray;
 
