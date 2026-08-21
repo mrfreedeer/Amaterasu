@@ -35,10 +35,22 @@ namespace AccelStructs {
 		GeometryLinkageDesc* m_pLinkageDesc = nullptr;
 	};
 
+	struct AccelStructInputs {
+		RtAccelStructType m_type = RtAccelStructType::BottomLevel;
+		RtBuildFlags m_buildFlags = RtBuildFlags::None;
+		unsigned int m_structCount = 0;
+		RtElementsLayout m_layout = RtElementsLayout::Array;
+		union {
+			unsigned int m_instanceDescAddress = 0;
+			void* m_instanceDescPointer;
+		};
+	};
+
 	struct PrebuildInfo {
 		unsigned int m_resultDataMaxSizeBytes = 0;
 		unsigned int m_scratchDataSizeBytes = 0;
 		unsigned int m_updateScratchDataSizeBytes = 0;
+		AccelStructInputs m_inputs = {};
 	};
 
 	struct BuildDesc {
@@ -50,6 +62,7 @@ namespace AccelStructs {
 
 		RtBuildFlags m_buildFlags = RtBuildFlags::None;
 		RtAccelStructType m_type = RtAccelStructType::BottomLevel;
+		AccelStructInputs m_inputs = {};
 	};
 
 	struct DispatchRaysDesc {
@@ -73,7 +86,13 @@ namespace AccelStructs {
 
 	};
 
-
-
+	struct InstanceDesc {
+		Mat44 m_transform = Mat44();
+		unsigned int m_instanceID = 0;
+		unsigned int m_instanceMask = 0xFF;
+		unsigned int m_instanceContributionToHitGroupIndex = 0;
+		RtGeomFlags m_flags = RtGeomFlags::None;
+		Buffer* m_pBLASBuffer = nullptr;
+	};
 
 }

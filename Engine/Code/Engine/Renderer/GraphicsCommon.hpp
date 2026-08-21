@@ -79,13 +79,18 @@ enum class RtBuildFlags {
 	NUM_BUILD_FLAGS
 };
 
+enum class RtElementsLayout {
+	Array,
+	ArrayOfPointers
+};
 static const char* ShaderTypeStrings[] = { "VS", "PS", "GS", "MS", "HS", "DS", "CS", "RT"};
 
 enum class BufferType {
 	Vertex,
 	Constant,
 	Unordered,
-	ShaderTable
+	ShaderTable,
+	RaytracingInstance
 };
 
 enum class IndexBufferType {

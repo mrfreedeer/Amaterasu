@@ -11,6 +11,9 @@ typedef unsigned int        UINT;
 
 namespace AccelStructs {
 	struct GeometryTriDesc;
+	struct InstanceDesc;
+	struct DispatchRaysDesc;
+	struct AccelStructInputs;
 }
 
 DXGI_FORMAT LocalToD3D12(TextureFormat textureFormat);
@@ -28,8 +31,12 @@ D3D12_HEAP_TYPE LocalToD3D12(MemoryUsage memoryUsage);
 D3D12_PRIMITIVE_TOPOLOGY_TYPE LocalToD3D12(TopologyType topology);
 
 // Raytracing specific conversions
-D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE LocalToD3D12(RtAccelStructType asType);
 D3D12_RAYTRACING_GEOMETRY_DESC LocalToD3D12(AccelStructs::GeometryTriDesc const& triDesc);
 DXGI_FORMAT LocalToD3D12(IndexBufferType indexType);
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE LocalToD3D12(RtAccelStructType asType);
 D3D12_RAYTRACING_GEOMETRY_FLAGS LocalToD3D12(RtGeomFlags flags);
+D3D12_ELEMENTS_LAYOUT LocalToD3D12(RtElementsLayout layout);
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS LocalToD3D12(RtBuildFlags buildFlags);
 D3D12_DISPATCH_RAYS_DESC LocalToD3D12(AccelStructs::DispatchRaysDesc const& dispatchDesc);
+D3D12_RAYTRACING_INSTANCE_DESC LocalToD3D12(AccelStructs::InstanceDesc const& instanceDesc);
+D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS LocalToD3D12(AccelStructs::AccelStructInputs const& buildInputs);

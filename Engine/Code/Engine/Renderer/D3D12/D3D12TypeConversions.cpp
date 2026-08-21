@@ -285,6 +285,62 @@ D3D12_DISPATCH_RAYS_DESC LocalToD3D12(AccelStructs::DispatchRaysDesc const& disp
 	return convertedDesc;
 }
 
+D3D12_RAYTRACING_INSTANCE_DESC LocalToD3D12(AccelStructs::InstanceDesc const& instanceDesc)
+{
+	D3D12_RAYTRACING_INSTANCE_DESC apiInstanceDesc = {};
+
+	// Only 12 of the 16 values are used, no w is used.
+	instanceDesc.m_transform.GetAsFloatArrayNonHomogeneous3D(apiInstanceDesc.Transform);
+	apiInstanceDesc.Flags = LocalToD3D12(instanceDesc.m_flags);
+	apiInstanceDesc.AccelerationStructure = instanceDesc.m_pBLASBuffer->GetGPUAddress();
+	apiInstanceDesc.InstanceID = instanceDesc.m_instanceID;
+	apiInstanceDesc.InstanceMask = instanceDesc.m_instanceMask;
+	return apiInstanceDesc;
+}
+
+D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS LocalToD3D12(AccelStructs::AccelStructInputs const& buildInputs)
+{
+	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS inputs = {};
+
+	inputs.Type = LocalToD3D12(buildInputs.m_type);
+	inputs.DescsLayout = LocalToD3D12(buildInputs.m_layout);
+	inputs.Flags = LocalToD3D12(buildInputs.m_buildFlags);
+	inputs.InstanceDescs = buildInputs.m_instanceDescAddress;
+	inputs.NumDescs = buildInputs.m_structCount;
+
+	return inputs;
+}
+
+D3D12_ELEMENTS_LAYOUT LocalToD3D12(RtElementsLayout layout)
+{
+	switch (layout)
+	{
+	case RtElementsLayout::Array: return D3D12_ELEMENTS_LAYOUT_ARRAY;
+	case RtElementsLayout::ArrayOfPointers: return D3D12_ELEMENTS_LAYOUT_ARRAY_OF_POINTERS;
+	default: ERROR_AND_DIE("UNKNOWN RT ELEMENTS LAYOUT");
+	}
+}
+
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS LocalToD3D12(RtBuildFlags buildFlags)
+{
+	switch (buildFlags)
+	{
+	case RtBuildFlags::None:		     return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	case RtBuildFlags::AllowUpdate:		 return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_UPDATE;
+	case RtBuildFlags::AllowCompaction:  return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_COMPACTION;
+	case RtBuildFlags::PreferFastTrace:  return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+	case RtBuildFlags::PreferFastBuild:  return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_BUILD;
+	case RtBuildFlags::MinimizeMemory:	 return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
+	case RtBuildFlags::PerformUpdate:	 return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PERFORM_UPDATE;
+	case RtBuildFlags::AllowOMMUpdate:	 return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_OMM_UPDATE;
+	case RtBuildFlags::AllowDisableOmms: return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_DISABLE_OMMS;
+	case RtBuildFlags::NUM_BUILD_FLAGS:	 return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+	default:
+		ERROR_AND_DIE("UNKNOWN RT BUILD FLAG");
+		break;
+	}
+}
+
 DXGI_FORMAT LocalToColourD3D12(TextureFormat textureFormat)
 {
 	switch (textureFormat) {
