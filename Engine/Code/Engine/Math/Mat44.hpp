@@ -36,6 +36,8 @@ struct Mat44 {
 
 	float* GetAsFloatArray();
 	float const* GetAsFloatArray() const;
+	void GetAsFloatArrayNonHomogeneous3D(float* out_3x4Array) const;
+	void GetAsFloatArrayNonHomogeneous3D(float out_3x4Array[3][4]) const;
 	Vec2 const GetIBasis2D() const;
 	Vec2 const GetJBasis2D() const;
 	Vec2 const GetTranslation2D() const;

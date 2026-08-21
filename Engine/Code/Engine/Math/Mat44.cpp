@@ -311,6 +311,38 @@ float const* Mat44::GetAsFloatArray() const
 	return m_values;
 }
 
+void Mat44::GetAsFloatArrayNonHomogeneous3D(float* out_3x4Array) const
+{
+	out_3x4Array[0] = m_values[Ix];
+	out_3x4Array[1] = m_values[Iy];
+	out_3x4Array[2] = m_values[Iz];
+	out_3x4Array[3] = m_values[Jx];
+	out_3x4Array[4] = m_values[Jy];
+	out_3x4Array[5] = m_values[Jz];
+	out_3x4Array[6] = m_values[Kx];
+	out_3x4Array[7] = m_values[Ky];
+	out_3x4Array[8] = m_values[Kz];
+	out_3x4Array[9] = m_values[Tx];
+	out_3x4Array[10] = m_values[Ty];
+	out_3x4Array[11] = m_values[Tz];
+
+}
+
+void Mat44::GetAsFloatArrayNonHomogeneous3D(float out_3x4Array[3][4]) const
+{
+	out_3x4Array[0][0] = m_values[Ix];
+	out_3x4Array[0][1] = m_values[Iy];
+	out_3x4Array[0][2] = m_values[Iz];
+
+	out_3x4Array[1][0] = m_values[Jx];
+	out_3x4Array[1][1] = m_values[Jy];
+	out_3x4Array[1][2] = m_values[Jz];
+
+	out_3x4Array[2][0] = m_values[Kx];	
+	out_3x4Array[2][1] = m_values[Ky];	
+	out_3x4Array[2][2] = m_values[Kz];
+}
+
 Vec2 const Mat44::GetIBasis2D() const
 {
 	return Vec2(m_values[Ix], m_values[Iy]);
@@ -697,7 +729,6 @@ void Mat44::AppendScaleNonUniform3D(Vec3 const& nonUniformScaleXYZ)
 
 void Mat44::Add(Mat44 const& otherMatrix)
 {
-
 	for (int index = 0; index < 16; index++) {
 		m_values[index] += otherMatrix.m_values[index];
 	}
