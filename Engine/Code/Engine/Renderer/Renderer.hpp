@@ -108,6 +108,8 @@ public:
 	// and it is assumed that the outBuffer != nullptr
 	void CreateBuffer(BufferDesc const& desc, Buffer** outBuffer);
 	Buffer* CreateBuffer(BufferDesc const& desc);
+	// This function will create a buffer with instance desc, this is for usage of RayTracing BLAS instances
+	Buffer* CreateBuffer(AccelStructs::InstanceDesc const& instanceDesc);
 	/// <summary>
 	/// Utility function to create intermediate and default buffer. 
 	/// There should be data, to copy into intermediate buffer

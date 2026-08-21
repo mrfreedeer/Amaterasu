@@ -313,9 +313,7 @@ CommandList& CommandList::BuildRtAccelStruct(AccelStructs::BuildDesc const& buil
 
 	// Populate build inputs
 	D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS& buildInputs = apiBuildDesc.Inputs;
-	buildInputs.Type = LocalToD3D12(buildDesc.m_type);
-	buildInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
-	buildInputs.NumDescs = buildDesc.m_structCount;
+	buildInputs = LocalToD3D12(buildDesc.m_inputs);
 
 	D3D12_RAYTRACING_GEOMETRY_DESC* apiGeomDescArray = new D3D12_RAYTRACING_GEOMETRY_DESC[buildDesc.m_structCount];
 

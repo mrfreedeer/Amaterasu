@@ -1160,6 +1160,12 @@ AccelStructs::PrebuildInfo Renderer::GetAccelStructPrebuildInfo(AccelStructs::Bu
 	prebuildInfoToReturn.m_scratchDataSizeBytes = (unsigned int)prebuildInfo.ScratchDataSizeInBytes;
 	prebuildInfoToReturn.m_updateScratchDataSizeBytes = (unsigned int)prebuildInfo.UpdateScratchDataSizeInBytes;
 
+	prebuildInfoToReturn.m_inputs.m_buildFlags = buildDesc.m_buildFlags;
+	prebuildInfoToReturn.m_inputs.m_type = buildDesc.m_type;
+	prebuildInfoToReturn.m_inputs.m_layout = (RtElementsLayout)buildInputs.DescsLayout;
+	prebuildInfoToReturn.m_inputs.m_structCount = buildDesc.m_structCount;
+	prebuildInfoToReturn.m_inputs.m_instanceDescAddress = (unsigned int)buildInputs.InstanceDescs;
+
 	delete[] apiGeomDescArray;
 
 	return prebuildInfoToReturn;
@@ -1654,6 +1660,21 @@ void Renderer::CreateBuffer(BufferDesc const& desc, Buffer** outBuffer)
 	Buffer* newBuffer = new (*outBuffer) Buffer(desc);
 
 	InitializeBuffer(newBuffer);
+}
+
+Buffer* Renderer::CreateBuffer(AccelStructs::InstanceDesc const& instanceDesc)
+{
+	D3D12_RAYTRACING_INSTANCE_DESC apiInstanceDesc = LocalToD3D12(instanceDesc);
+	BufferDesc bufDesc = {};
+
+	bufDesc.m_type = BufferType::RaytracingInstance;
+	bufDesc.m_size = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+	bufDesc.m_data = &apiInstanceDesc;
+	bufDesc.m_memoryUsage = MemoryUsage::Dynamic;
+	bufDesc.m_stride.m_strideBytes = sizeof(D3D12_RAYTRACING_INSTANCE_DESC);
+	bufDesc.m_debugName = "RTInstBuffer";
+
+	return CreateBuffer(bufDesc);
 }
 
 Buffer* Renderer::CreateDefaultBuffer(BufferDesc const& desc, Buffer** out_intermediate)
