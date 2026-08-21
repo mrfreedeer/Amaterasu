@@ -20,6 +20,19 @@ void Basic3DMode::Startup()
 {
 	GameMode::Startup();
 
+	CommandListDesc rtCommandListDesc = {};
+	rtCommandListDesc.m_debugName = "RtCmdList";
+	rtCommandListDesc.m_initialState = nullptr;
+	rtCommandListDesc.m_type = CommandListType::DIRECT;
+
+	unsigned int backbufferCount = g_theRenderer->GetBackBufferCount();
+	m_rtCommandLists = new CommandList*[backbufferCount];
+
+	for (unsigned int rtCmdListIndex = 0; rtCmdListIndex < backbufferCount; rtCmdListIndex++) {
+		m_rtCommandLists[rtCmdListIndex] = g_theRenderer->CreateCommandList(rtCommandListDesc);
+		m_rtCommandLists[rtCmdListIndex]->Close();
+	}
+
 	unsigned int descriptorCounts[] = { 128, 2, 1, 8 };
 	CreateRendererObjects("Basic3DMode", descriptorCounts);
 
@@ -61,6 +74,8 @@ void Basic3DMode::Startup()
 
 	g_theInput->ResetMouseClientDelta();
 
+	StartUpRayTracing();
+
 	//#TODO fix this
 	DebugAddWorldBasis(Mat44(), -1.0f, Rgba8::WHITE, Rgba8::WHITE, DebugRenderMode::USE_DEPTH);
 
@@ -86,6 +101,7 @@ void Basic3DMode::Startup()
 
 	m_renderContext->CloseAll();
 	m_postRenderContext->CloseAll();
+
 
 	//TextureCreateInfo colorInfo;
 	//colorInfo.m_dimensions = g_theWindow->GetClientDimensions();
@@ -205,6 +221,13 @@ void Basic3DMode::Shutdown()
 	UnsubscribeEventCallbackFunction("DebugAddWorldWireCylinder", DebugSpawnWorldWireCylinder);
 	UnsubscribeEventCallbackFunction("DebugAddBillboardText", DebugSpawnBillboardText);
 	UnsubscribeEventCallbackFunction("Controls", GetControls);
+
+	unsigned int backbufferCount = g_theRenderer->GetBackBufferCount();
+
+	for (unsigned int rtCmdListIndex = 0; rtCmdListIndex < backbufferCount; rtCmdListIndex++) {
+		delete m_rtCommandLists[rtCmdListIndex];
+	}
+	delete[] m_rtCommandLists;
 
 }
 
@@ -367,6 +390,28 @@ void Basic3DMode::CreateGPUBuffers()
 		intermediateBuffers.push_back(intermeadiateBuffer);
 	}
 
+	float triSize = 0.75f;
+	// Raytracing geometry buffers
+	Vertex_PCU firstRtTriangle[] = {
+		Vertex_PCU(Vec3(-1.0f * triSize, -1.0f * triSize, 0.0f), Rgba8::RED, Vec2(0.0f, 0.0f)),
+		Vertex_PCU(Vec3(1.0f * triSize, -1.0f * triSize, 0.0f), Rgba8::GREEN, Vec2(1.0f, 0.0f)),
+		Vertex_PCU(Vec3(0.0f, 1.0f * triSize, 0.0f), Rgba8::BLUE, Vec2(0.5f, 1.0f))
+	};
+
+	BufferDesc rtBuffDesc = {};
+	rtBuffDesc.m_data = firstRtTriangle;
+	rtBuffDesc.m_debugName = "RtUplVBuffer";
+	rtBuffDesc.m_memoryUsage = MemoryUsage::Default;
+	rtBuffDesc.m_size = sizeof(Vertex_PCU) * 3;
+	rtBuffDesc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
+	rtBuffDesc.m_type = BufferType::Vertex;
+
+	Buffer* intermRtBuffert = nullptr;
+	m_rtGeomBuffer = g_theRenderer->CreateDefaultBuffer(rtBuffDesc, &intermRtBuffert);
+
+	copyCmdList->CopyResource(m_rtGeomBuffer, intermRtBuffert);
+
+
 	copyCmdList->Close();
 	g_theRenderer->ExecuteCmdLists(CommandListType::COPY, 1, &copyCmdList);
 
@@ -380,6 +425,89 @@ void Basic3DMode::CreateGPUBuffers()
 		delete intermediateBuffers[bufIndex];
 	}
 
+}
+
+void Basic3DMode::StartUpRayTracing()
+{
+	CommandList* rtCmdList = m_rtCommandLists[m_renderContext->GetBufferIndex()];
+	rtCmdList->Reset();
+
+	// Create Raytracing render target, which needs to have UAV and RTV bind flags, and be in R8G8B8A8_UNORM format
+	TextureDesc raytracingTexDesc = {};
+	raytracingTexDesc.m_bindFlags = ResourceBindFlagBit::RESOURCE_BIND_UNORDERED_ACCESS_VIEW_BIT | ResourceBindFlagBit::RESOURCE_BIND_RENDER_TARGET_BIT;
+	raytracingTexDesc.m_clearFormat = TextureFormat::R8G8B8A8_UNORM;
+	raytracingTexDesc.m_format = TextureFormat::R8G8B8A8_UNORM;
+	raytracingTexDesc.m_name = "RayTracingDefaultRT";
+	raytracingTexDesc.m_dimensions = Window::GetWindowContext()->GetClientDimensions();
+	raytracingTexDesc.m_stride = sizeof(Rgba8);
+
+	m_rtRenderTarget = g_theRenderer->CreateTexture(raytracingTexDesc);
+
+	// Build the acceleration structures 
+	AccelStructs::GeometryTriDesc triDesc = {};;
+	triDesc.m_flags = RtGeomFlags::Opaque;
+	triDesc.m_indexCount = 0;
+	triDesc.m_indexType = IndexBufferType::UNKNOWN;
+	triDesc.m_transform = Mat44();
+	triDesc.m_vertexCount = 3;
+	triDesc.m_vertexFormat = TextureFormat::R32G32B32A32_FLOAT;
+	triDesc.m_pVertexBuffer = m_rtGeomBuffer;
+
+	AccelStructs::BuildDesc accelStructDesc = {};
+	accelStructDesc.m_type = RtAccelStructType::TopLevel;
+	accelStructDesc.m_buildFlags = RtBuildFlags::PreferFastTrace;
+	accelStructDesc.m_structCount = 1;
+
+	// Getting size of buffers
+	AccelStructs::PrebuildInfo topLevelbuildInfo = g_theRenderer->GetAccelStructPrebuildInfo(accelStructDesc);
+	GUARANTEE_OR_DIE(topLevelbuildInfo.m_resultDataMaxSizeBytes > 0, "Failed to get prebuild info for TLAS");
+
+	accelStructDesc.m_type = RtAccelStructType::BottomLevel;
+	accelStructDesc.m_triDesc = &triDesc;
+	AccelStructs::PrebuildInfo bottomLevelBuildInfo = g_theRenderer->GetAccelStructPrebuildInfo(accelStructDesc);
+	GUARANTEE_OR_DIE(bottomLevelBuildInfo.m_resultDataMaxSizeBytes > 0, "Failed to get prebuild info for BLAS");
+
+	// Build scratch size with max memory size needed for both TLAS and BLAS
+	BufferDesc uavBufferDesc = {};
+	uavBufferDesc.m_size = (topLevelbuildInfo.m_resultDataMaxSizeBytes > bottomLevelBuildInfo.m_resultDataMaxSizeBytes) ? topLevelbuildInfo.m_resultDataMaxSizeBytes : bottomLevelBuildInfo.m_resultDataMaxSizeBytes;
+	uavBufferDesc.m_debugName = "ScratchBuffer";
+	uavBufferDesc.m_memoryUsage = MemoryUsage::Default;
+	uavBufferDesc.m_stride.m_format = TextureFormat::UNKNOWN;
+	uavBufferDesc.m_type = BufferType::Unordered;
+	
+	m_scratchBuffer = g_theRenderer->CreateBuffer(uavBufferDesc);
+
+	uavBufferDesc.m_size = topLevelbuildInfo.m_resultDataMaxSizeBytes;
+	uavBufferDesc.m_debugName = "TLASBuffer";
+
+	m_TLASbuffer = g_theRenderer->CreateBuffer(uavBufferDesc);
+
+	uavBufferDesc.m_size = bottomLevelBuildInfo.m_resultDataMaxSizeBytes;
+	uavBufferDesc.m_debugName = "BLASBuffer";
+	m_BLASbuffer = g_theRenderer->CreateBuffer(uavBufferDesc);
+
+	AccelStructs::InstanceDesc instanceDesc = {};
+	instanceDesc.m_flags = RtGeomFlags::None;
+	instanceDesc.m_instanceContributionToHitGroupIndex = 0;
+	instanceDesc.m_transform = Mat44();
+	instanceDesc.m_pBLASBuffer = m_BLASbuffer;
+
+	// Create instance buffer for BLAS
+	m_instanceBuffer = g_theRenderer->CreateBuffer(instanceDesc);
+
+	accelStructDesc.m_inputs = bottomLevelBuildInfo.m_inputs;
+
+	rtCmdList->BuildRtAccelStruct(accelStructDesc, m_scratchBuffer, m_BLASbuffer);
+	
+	topLevelbuildInfo.m_inputs.m_instanceDescAddress = (unsigned int) m_instanceBuffer->GetGPUAddress();
+	accelStructDesc.m_inputs = topLevelbuildInfo.m_inputs;
+
+	rtCmdList->BuildRtAccelStruct(accelStructDesc, m_scratchBuffer, m_TLASbuffer);
+
+	rtCmdList->Close();
+
+	g_theRenderer->ExecuteCmdLists(CommandListType::DIRECT,1, &rtCmdList);
+	/// NEED TO GET A FENCE AND WAIT FOR THE GPU TO FINISH BUILDING THE ACCELERATION STRUCTURES BEFORE CONTINUING
 }
 
 bool Basic3DMode::DebugSpawnWorldWireSphere(EventArgs& eventArgs)

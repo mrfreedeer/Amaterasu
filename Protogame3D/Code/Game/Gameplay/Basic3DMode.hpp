@@ -35,10 +35,18 @@ protected:
 	virtual void UpdateInput(float deltaSeconds) override;
 	virtual void CreateResourceDescriptors();
 	void CreateGPUBuffers();
+	void StartUpRayTracing();
 
 private:
 	void DisplayClocksInfo() const;
 
 private:
 	float m_fps = 0.0f;
+	Texture* m_rtRenderTarget = nullptr;
+	Buffer* m_rtGeomBuffer = nullptr;
+	Buffer* m_scratchBuffer = nullptr;
+	Buffer* m_BLASbuffer = nullptr;
+	Buffer* m_TLASbuffer = nullptr;
+	Buffer* m_instanceBuffer = nullptr;
+	CommandList** m_rtCommandLists = nullptr;
 };
