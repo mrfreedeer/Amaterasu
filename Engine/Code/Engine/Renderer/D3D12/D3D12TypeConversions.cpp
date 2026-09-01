@@ -214,9 +214,18 @@ D3D12_RAYTRACING_GEOMETRY_DESC LocalToD3D12(AccelStructs::GeometryTriDesc const&
 {
 	D3D12_RAYTRACING_GEOMETRY_DESC convertedDesc = {};
 	convertedDesc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
-	convertedDesc.Triangles.IndexBuffer = triDesc.m_pIndexBuffer->GetGPUAddress();
-	convertedDesc.Triangles.IndexCount = triDesc.m_indexCount;
-	convertedDesc.Triangles.IndexFormat = LocalToD3D12(triDesc.m_indexType);
+
+	// Index buffer is optional for some structs
+	if (triDesc.m_pIndexBuffer)
+	{
+		convertedDesc.Triangles.IndexBuffer = (triDesc.m_pIndexBuffer) ? triDesc.m_pIndexBuffer->GetGPUAddress() : 0;
+		convertedDesc.Triangles.IndexCount = triDesc.m_indexCount;
+		convertedDesc.Triangles.IndexFormat = LocalToD3D12(triDesc.m_indexType);
+	}
+
+	bool isSupportedVertexFormat = IsSupportedRaytracingFormat(triDesc.m_vertexFormat);
+	GUARANTEE_OR_DIE(isSupportedVertexFormat == true, "Unsupported vertex format for raytracing");
+
 	convertedDesc.Triangles.Transform3x4 = 0;
 	convertedDesc.Triangles.VertexFormat = LocalToD3D12(triDesc.m_vertexFormat);
 	convertedDesc.Triangles.VertexCount = triDesc.m_vertexCount;
@@ -338,6 +347,16 @@ D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS LocalToD3D12(RtBuildFlags bu
 	default:
 		ERROR_AND_DIE("UNKNOWN RT BUILD FLAG");
 		break;
+	}
+}
+
+bool IsSupportedRaytracingFormat(TextureFormat textureFormat)
+{
+	switch (textureFormat)
+	{
+	case TextureFormat::R32G32B32A32_FLOAT: return true;
+	case TextureFormat::R32G32B32_FLOAT: return true;
+	default: return false;
 	}
 }
 
