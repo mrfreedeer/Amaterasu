@@ -206,6 +206,21 @@ void Basic3DMode::Render()
 
 void Basic3DMode::Shutdown()
 {
+	delete m_rtGeomBuffer;
+	m_rtGeomBuffer = nullptr;
+
+	delete m_scratchBuffer;
+	m_scratchBuffer = nullptr;
+
+	delete m_BLASbuffer;
+	m_BLASbuffer = nullptr;
+
+	delete m_TLASbuffer;
+	m_TLASbuffer = nullptr;
+
+	delete m_instanceBuffer;
+	m_instanceBuffer = nullptr;
+
 	pointerToSelf = nullptr;
 	m_frameFence->Signal();
 	m_frameFence->Wait();
@@ -391,19 +406,19 @@ void Basic3DMode::CreateGPUBuffers()
 	}
 
 	float triSize = 0.75f;
-	// Raytracing geometry buffers
-	Vertex_PCU firstRtTriangle[] = {
-		Vertex_PCU(Vec3(-1.0f * triSize, -1.0f * triSize, 0.0f), Rgba8::RED, Vec2(0.0f, 0.0f)),
-		Vertex_PCU(Vec3(1.0f * triSize, -1.0f * triSize, 0.0f), Rgba8::GREEN, Vec2(1.0f, 0.0f)),
-		Vertex_PCU(Vec3(0.0f, 1.0f * triSize, 0.0f), Rgba8::BLUE, Vec2(0.5f, 1.0f))
+	// Raytracing geometry buffers, but they can only take Vec3 for float32, so any extra information must be passed in some other way
+	Vec3 firstRtTriangle[] = {
+		Vec3(-1.0f * triSize, -1.0f * triSize, 0.0f),
+		Vec3(1.0f * triSize, -1.0f * triSize, 0.0f),
+		Vec3(0.0f, 1.0f * triSize, 0.0f)
 	};
 
 	BufferDesc rtBuffDesc = {};
 	rtBuffDesc.m_data = firstRtTriangle;
 	rtBuffDesc.m_debugName = "RtUplVBuffer";
 	rtBuffDesc.m_memoryUsage = MemoryUsage::Default;
-	rtBuffDesc.m_size = sizeof(Vertex_PCU) * 3;
-	rtBuffDesc.m_stride.m_strideBytes = sizeof(Vertex_PCU);
+	rtBuffDesc.m_size = sizeof(Vec3) * 3;
+	rtBuffDesc.m_stride.m_strideBytes = sizeof(Vec3);
 	rtBuffDesc.m_type = BufferType::Vertex;
 
 	Buffer* intermRtBuffert = nullptr;
@@ -450,7 +465,7 @@ void Basic3DMode::StartUpRayTracing()
 	triDesc.m_indexType = IndexBufferType::UNKNOWN;
 	triDesc.m_transform = Mat44();
 	triDesc.m_vertexCount = 3;
-	triDesc.m_vertexFormat = TextureFormat::R32G32B32A32_FLOAT;
+	triDesc.m_vertexFormat = TextureFormat::R32G32B32_FLOAT;
 	triDesc.m_pVertexBuffer = m_rtGeomBuffer;
 
 	AccelStructs::BuildDesc accelStructDesc = {};
@@ -502,6 +517,8 @@ void Basic3DMode::StartUpRayTracing()
 	topLevelbuildInfo.m_inputs.m_instanceDescAddress = (unsigned int) m_instanceBuffer->GetGPUAddress();
 	accelStructDesc.m_inputs = topLevelbuildInfo.m_inputs;
 
+
+	// THERE IS SOME ERROR BUILDING TLAS BUFFER, FIX IT. 
 	rtCmdList->BuildRtAccelStruct(accelStructDesc, m_scratchBuffer, m_TLASbuffer);
 
 	rtCmdList->Close();

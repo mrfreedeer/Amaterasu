@@ -1144,13 +1144,17 @@ AccelStructs::PrebuildInfo Renderer::GetAccelStructPrebuildInfo(AccelStructs::Bu
 	buildInputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
 	buildInputs.NumDescs = buildDesc.m_structCount;
 
-	D3D12_RAYTRACING_GEOMETRY_DESC* apiGeomDescArray = new D3D12_RAYTRACING_GEOMETRY_DESC[buildDesc.m_structCount];
+	// Only necessary if it's BLAS
+	D3D12_RAYTRACING_GEOMETRY_DESC* apiGeomDescArray = nullptr;
+	if (buildDesc.m_type == RtAccelStructType::BottomLevel) {
+		apiGeomDescArray = new D3D12_RAYTRACING_GEOMETRY_DESC[buildDesc.m_structCount];
 
-	for (unsigned int geomDescIndex = 0; geomDescIndex < buildDesc.m_structCount; ++geomDescIndex) {
-		apiGeomDescArray[geomDescIndex] = LocalToD3D12(buildDesc.m_triDesc[geomDescIndex]);
+		for (unsigned int geomDescIndex = 0; geomDescIndex < buildDesc.m_structCount; ++geomDescIndex) {
+			apiGeomDescArray[geomDescIndex] = LocalToD3D12(buildDesc.m_triDesc[geomDescIndex]);
+		}
+
+		buildInputs.pGeometryDescs = apiGeomDescArray;
 	}
-
-	buildInputs.pGeometryDescs = apiGeomDescArray;
 
 	m_device->GetRaytracingAccelerationStructurePrebuildInfo(&buildInputs, &prebuildInfo);
 
@@ -1166,7 +1170,9 @@ AccelStructs::PrebuildInfo Renderer::GetAccelStructPrebuildInfo(AccelStructs::Bu
 	prebuildInfoToReturn.m_inputs.m_structCount = buildDesc.m_structCount;
 	prebuildInfoToReturn.m_inputs.m_instanceDescAddress = (unsigned int)buildInputs.InstanceDescs;
 
-	delete[] apiGeomDescArray;
+	if (buildDesc.m_type == RtAccelStructType::BottomLevel) {
+		delete[] apiGeomDescArray;
+	}
 
 	return prebuildInfoToReturn;
 }
